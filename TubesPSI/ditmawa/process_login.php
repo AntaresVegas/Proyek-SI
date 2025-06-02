@@ -41,7 +41,7 @@ error_log("DITMAWA Login attempt - Email: $email, User Type: $user_type");
 
 // Validate user type
 if ($user_type !== 'ditmawa') {
-    $_SESSION['error'] = "Tipe pengguna tidak sesuai untuk halaman ditmawa";
+    $_SESSION['error'] = "Tipe pengguna tidak sesuai untuk halaman Ditmawa";
     header("Location: ../index.php");
     exit();
 }
@@ -59,8 +59,8 @@ try {
         throw new Exception("Database connection failed");
     }
 
-    // Prepare and execute query
-    $sql = "SELECT ditmawa_id, ditmawa_nama, ditmawa_email, ditmawa_password, ditmawa_statusPersetujuan FROM ditmawa WHERE ditmawa_email = ?";
+    // Prepare and execute query (no more ditmawa_statusPersetujuan)
+    $sql = "SELECT ditmawa_id, ditmawa_nama, ditmawa_email, ditmawa_password FROM ditmawa WHERE ditmawa_email = ?";
     $stmt = $conn->prepare($sql);
     
     if (!$stmt) {
@@ -79,18 +79,11 @@ try {
     }
 
     $row = $result->fetch_assoc();
-    error_log("DITMAWA User found: " . $row['ditmawa_email'] . " - Status: " . $row['ditmawa_statusPersetujuan']);
-
-    // Check if account is approved
-    if ($row['ditmawa_statusPersetujuan'] !== 'disetujui' && $row['ditmawa_statusPersetujuan'] !== 'approved') {
-        $_SESSION['error'] = "Akun Anda belum disetujui oleh admin. Status: " . $row['ditmawa_statusPersetujuan'];
-        header("Location: ../index.php");
-        exit();
-    }
+    error_log("DITMAWA User found: " . $row['ditmawa_email']);
 
     // Check password
     $password_match = false;
-    
+
     // Try password_verify first (for hashed passwords)
     if (password_verify($password, $row['ditmawa_password'])) {
         $password_match = true;
@@ -108,20 +101,17 @@ try {
         $_SESSION['username'] = $row['ditmawa_email'];
         $_SESSION['nama'] = $row['ditmawa_nama'];
         $_SESSION['user_type'] = 'ditmawa';
-        $_SESSION['status_persetujuan'] = $row['ditmawa_statusPersetujuan'];
-        
+
         error_log("DITMAWA Login successful for: $email");
-        
-        // Check if dashboard file exists
+
+        // Redirect to dashboard
         $dashboard_file = 'ditmawa_dashboard.php';
         if (!file_exists($dashboard_file)) {
-            // If dashboard doesn't exist, create a simple one or redirect to a working page
-            $_SESSION['error'] = "Dashboard ditmawa tidak ditemukan. File: $dashboard_file";
+            $_SESSION['error'] = "Dashboard Ditmawa tidak ditemukan. File: $dashboard_file";
             header("Location: ../index.php");
             exit();
         }
-        
-        // Redirect to dashboard
+
         header("Location: $dashboard_file");
         exit();
     } else {
@@ -137,7 +127,6 @@ try {
     header("Location: ../index.php");
     exit();
 } finally {
-    // Close connection
     if (isset($stmt)) {
         $stmt->close();
     }
