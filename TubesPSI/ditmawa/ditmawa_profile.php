@@ -90,7 +90,7 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #f8f9fa;
+            background: #ff8c00;
             width: 100%;
             padding: 10px 30px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -334,16 +334,15 @@ try {
 
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
-        <li><a href="#">Data Event</a></li>
+        <li><a href="ditmawa_dataEvent.php">Data Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
 
     <div class="navbar-right">
         <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
             <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
-            <i class="fas fa-user-circle icon"></i>
         </a>
-        <a href="../logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
+        <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
     </div>
 </nav>
 
