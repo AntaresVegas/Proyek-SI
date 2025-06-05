@@ -20,11 +20,12 @@ $query = "
         m.mahasiswa_nama AS nama,
         m.mahasiswa_email AS email,
         m.mahasiswa_npm AS npm,
-        pe.status_persetujuan AS status,
+        pe.pengajuan_status AS status,
         pe.pengajuan_event_proposal_file AS form_file
-    FROM pengjajuan_event pe
-    JOIN mahasiswa m ON pe.mahasiwa_id = m.mahasiswa_id
+    FROM pengajuan_event pe
+    JOIN mahasiswa m ON pe.mahasiswa_id = m.mahasiswa_id
 ";
+
 $result = $conn->query($query);
 ?>
 
@@ -47,7 +48,7 @@ $result = $conn->query($query);
             padding-top: 70px; /* ruang navbar fixed */
             color: #2c3e50;
         }
-        /* Navbar */
+        /* Navbar styles */
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -55,43 +56,51 @@ $result = $conn->query($query);
             background: #ff8c00;
             width: 100%;
             padding: 10px 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             font-family: 'Segoe UI', sans-serif;
             position: fixed;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
-            color: #2c3e50;
         }
+
         .navbar-left {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .navbar-logo {
             width: 50px;
             height: 50px;
-            object-fit: cover;
+            object-fit: cover;  
         }
+
         .navbar-title {
-            font-weight: bold;
-            font-size: 18px;
-            user-select: none;
+            color: #2c3e50;
+            font-size: 14px;
+            line-height: 1.2;
         }
+
         .navbar-menu {
             display: flex;
             list-style: none;
             gap: 25px;
         }
+
         .navbar-menu li a {
             text-decoration: none;
             color: #2c3e50;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 15px;
             transition: color 0.3s;
         }
+
         .navbar-menu li a:hover {
             color: #007bff;
         }
+
         .navbar-right {
             display: flex;
             align-items: center;
@@ -99,17 +108,21 @@ $result = $conn->query($query);
             font-size: 15px;
             color: #2c3e50;
         }
+
         .user-name {
             font-weight: 500;
         }
+
         .icon {
             font-size: 20px;
             cursor: pointer;
             transition: color 0.3s;
         }
+
         .icon:hover {
             color: #007bff;
         }
+
 
         /* Container utama */
         .container {
@@ -199,25 +212,27 @@ $result = $conn->query($query);
     </style>
 </head>
 <body>
-
 <nav class="navbar">
     <div class="navbar-left">
-        <img src="../img/logoDitmawa.png" alt="Logo Ditmawa" class="navbar-logo" />
-        <div class="navbar-title">Pengelolaan Event UNPAR</div>
+        <img src="../img/logoDitmawa.png" alt="Logo UNPAR" class="navbar-logo">
+        <div class="navbar-title">
+            <span>Pengelolaan</span><br>
+            <strong>Event UNPAR</strong>
+        </div>
     </div>
 
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
-        <li><a href="ditmawa_dataEvent.php" style="font-weight: bold; border-bottom: 2px solid #007bff;">Data Event</a></li>
+        <li><a href="ditmawa_dataEvent.php">Data Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
 
     <div class="navbar-right">
-        <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
-            <span class="user-name"><?= htmlspecialchars($nama) ?></span>
+        <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
             <i class="fas fa-user-circle icon"></i>
         </a>
-        <a href="../logout.php" title="Logout"><i class="fas fa-right-from-bracket icon"></i></a>
+        <a href="../logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
     </div>
 </nav>
 

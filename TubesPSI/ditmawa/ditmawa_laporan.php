@@ -295,7 +295,7 @@ try {
 
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
-        <li><a href="ditmawa_data_event.php">Data Event</a></li>
+        <li><a href="ditmawa_dataEvent.php">Data Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
 
