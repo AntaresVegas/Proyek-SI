@@ -304,8 +304,7 @@ try {
             <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
             <i class="fas fa-user-circle icon"></i>
         </a>
-        <i class="fas fa-bell icon"></i>
-        <a href="../logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
+        <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
     </div>
 </nav>
 
@@ -353,6 +352,5 @@ try {
         </table>
     </div>
 </div>
-
 </body>
 </html>
