@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 04, 2025 at 03:43 PM
+-- Generation Time: Jun 08, 2025 at 08:09 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -112,6 +112,21 @@ INSERT INTO `mahasiswa` (`mahasiswa_id`, `mahasiswa_nama`, `mahasiswa_npm`, `mah
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `notification_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `message` varchar(255) NOT NULL,
+  `link` varchar(255) DEFAULT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `organisasi`
 --
 
@@ -170,6 +185,15 @@ CREATE TABLE `ruangan` (
   `lantai_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `ruangan`
+--
+
+INSERT INTO `ruangan` (`ruangan_id`, `ruangan_nama`, `lantai_id`) VALUES
+(1, '10317', 3),
+(2, '10318', 3),
+(3, '10323', 3);
+
 -- --------------------------------------------------------
 
 --
@@ -209,6 +233,13 @@ ALTER TABLE `lantai`
 --
 ALTER TABLE `mahasiswa`
   ADD PRIMARY KEY (`mahasiswa_id`);
+
+--
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`notification_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `organisasi`
@@ -273,6 +304,12 @@ ALTER TABLE `mahasiswa`
   MODIFY `mahasiswa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `organisasi`
 --
 ALTER TABLE `organisasi`
@@ -294,7 +331,7 @@ ALTER TABLE `pengajuan_event`
 -- AUTO_INCREMENT for table `ruangan`
 --
 ALTER TABLE `ruangan`
-  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `unit`
@@ -311,6 +348,12 @@ ALTER TABLE `unit`
 --
 ALTER TABLE `lantai`
   ADD CONSTRAINT `lantai_ibfk_1` FOREIGN KEY (`gedung_id`) REFERENCES `gedung` (`gedung_id`);
+
+--
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `mahasiswa` (`mahasiswa_id`);
 
 --
 -- Constraints for table `peminjaman_ruangan`
