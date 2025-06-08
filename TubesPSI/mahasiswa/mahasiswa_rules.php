@@ -220,21 +220,20 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li> 
-        <li><a href="#" class="active">Rules</a></li>
-        <li><a href="#">Form</a></li>
-        <li><a href="#">Event</a></li>
-        <li><a href="#">Laporan</a></li>
+        <li><a href="mahasiswa_rules.php" class="active">Rules</a></li>
+        <li><a href="mahasiswa_pengajuan.php">Form</a></li>
+        <li><a href="mahasiswa_event.php">Event</a></li>
+        <li><a href="mahasiswa_laporan.php">Laporan</a></li>
+        <li><a href="mahasiswa_history.php">History</a></li>
+
     </ul>
 
-    <div class="navbar-right">
-        <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
-        <i class="fas fa-user-circle icon"></i>
-        <?php if ($isLoggedIn): ?>
-            <i class="fas fa-bell icon"></i>
-            <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
-        <?php else: ?>
-            <a href="../index.php" style="color: #2c3e50; text-decoration: none; font-weight: 500;">Login</a>
-        <?php endif; ?>
+<div class="navbar-right">
+        <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
+            <i class="fas fa-user-circle icon"></i>
+        </a>
+        <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
     </div>
 </nav>
 
