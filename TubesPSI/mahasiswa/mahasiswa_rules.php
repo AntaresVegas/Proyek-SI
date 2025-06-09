@@ -88,7 +88,10 @@ $isLoggedIn = isset($_SESSION['user_id']);
         .navbar-menu li a:hover {
             color: #007bff;
         }
-
+        .navbar-menu li a:hover,
+        .navbar-menu li a.active { /* Added active class style */
+            color: #007bff;
+        }
         .navbar-right {
             display: flex;
             align-items: center;

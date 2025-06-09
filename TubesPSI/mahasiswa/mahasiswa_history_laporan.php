@@ -125,7 +125,10 @@ $conn->close();
         .navbar-menu li a:hover {
             color: #007bff;
         }
-
+        .navbar-menu li a:hover,
+        .navbar-menu li a.active { /* Added active class style */
+            color: #007bff;
+        }
         .navbar-right {
             display: flex;
             align-items: center;
@@ -262,7 +265,7 @@ $conn->close();
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
         <li><a href="mahasiswa_event.php">Event</a></li>
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
-        <li><a href="mahasiswa_history.php">History</a></li>
+        <li><a href="mahasiswa_history.php"class="active">History</a></li>
     </ul>
 
 <div class="navbar-right">

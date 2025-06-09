@@ -220,8 +220,8 @@ try {
         }
 
         .navbar-menu li a:hover,
-        .navbar-menu li a.active {
-            color: #a1c4fd; /* Warna hover/active untuk mahasiswa */
+        .navbar-menu li a.active { /* Added active class style */
+            color: #007bff;
         }
 
         .navbar-right {

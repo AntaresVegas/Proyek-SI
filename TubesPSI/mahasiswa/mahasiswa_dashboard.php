@@ -753,6 +753,27 @@ try {
                 font-size: 18px;
             }
         }
+        /* New style for 'Klik Lebih Detail' link */
+        .detail-link-container {
+            text-align: center; /* Align to the right */
+            margin-top: 15px;
+            margin-bottom: 20px;
+            padding-right: 10px; /* Add some padding to the right */
+        }
+
+        .detail-link {
+            color: red;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+
+        .detail-link:hover {
+            color: darkred;
+            text-decoration: underline;
+        }
+
     </style>
 </head>
 <body>
@@ -797,7 +818,7 @@ try {
                 </div>
             </div>
         </div>
-        <a href="../logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
+        <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
     </div>
 </nav>
 
@@ -918,6 +939,9 @@ try {
             }
             ?>
         </div>
+        <div class="detail-link-container">
+            <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Tanggal Lebih Detail</a>
+        </div> 
     </div>
     <div class="quick-links-section">
         <div class="section-title" style="border-bottom: none;">

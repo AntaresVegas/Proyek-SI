@@ -143,7 +143,10 @@ try {
         .navbar-menu li a:hover {
             color: #007bff; /* Biru terang untuk hover */
         }
-
+        .navbar-menu li a:hover,
+        .navbar-menu li a.active { /* Added active class style */
+            color: #007bff;
+        }
         .navbar-right {
             display: flex;
             align-items: center;
@@ -294,9 +297,9 @@ try {
     </div>
 
     <ul class="navbar-menu">
-        <li><a href="ditmawa_dashboard.php">Home</a></li>
-        <li><a href="ditmawa_dataEvent.php">Data Event</a></li>
-        <li><a href="ditmawa_laporan.php">Laporan</a></li>
+        <li><a href="ditmawa_dashboard.php" >Home</a></li>
+        <li><a href="ditmawa_ListKegiatan.php">Data Event</a></li>
+        <li><a href="ditmawa_laporan.php"class="active">Laporan</a></li>
     </ul>
 
     <div class="navbar-right">

@@ -127,6 +127,8 @@ try {
             $stmt_calendar_events->close();
         } else {
             error_log("Failed to prepare statement for fetching calendar events: " . $conn->error);
+            // Optionally, set a user-friendly message
+            // $_SESSION['error_message'] = "Gagal memuat data kegiatan.";
         }
 
     } else {
@@ -299,9 +301,9 @@ try {
             margin-bottom: 15px;
             color: #3498db; /* Example color, can be specific per card */
         }
-         .stat-card.events .icon { color: #3498db; }
-         .stat-card.students .icon { color: #27ae60; }
-         .stat-card.pending .icon { color: #f39c12; }
+           .stat-card.events .icon { color: #3498db; }
+           .stat-card.students .icon { color: #27ae60; }
+           .stat-card.pending .icon { color: #f39c12; }
 
 
         .stat-card .number {
@@ -537,6 +539,27 @@ try {
             background-color: #ffffff;
         }
 
+        /* New style for 'Klik Lebih Detail' link */
+        .detail-link-container {
+            text-align: center; /* Align to the right */
+            margin-top: 15px;
+            margin-bottom: 20px;
+            padding-right: 10px; /* Add some padding to the right */
+        }
+
+        .detail-link {
+            color: red;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+
+        .detail-link:hover {
+            color: darkred;
+            text-decoration: underline;
+        }
+
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -580,6 +603,10 @@ try {
             .calendar-header .nav-arrow {
                 font-size: 18px;
             }
+            .detail-link-container {
+                text-align: center; /* Center the link on smaller screens */
+                padding-right: 0;
+            }
         }
     </style>
 </head>
@@ -596,7 +623,7 @@ try {
 
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php" class="active">Home</a></li>
-        <li><a href="ditmawa_dataEvent.php">Data Event</a></li>
+        <li><a href="ditmawa_ListKegiatan.php">Data Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
 
@@ -670,11 +697,15 @@ try {
                 $totalCells = $firstDayOfWeek -1 + $daysInMonth;
                 $remainingCells = (7 - ($totalCells % 7)) % 7;
                 for ($i = 0; $i < $remainingCells; $i++) {
-                     echo '<div class="day-cell empty-day"></div>';
+                    echo '<div class="day-cell empty-day"></div>';
                 }
                 ?>
             </div>
+        <div class="detail-link-container">
+            <a href="ditmawa_dataEvent.php" class="detail-link">Klik Untuk Tanggal Lebih Detail</a>
         </div>
+        </div>
+
         <div class="info-grid">
             <div class="info-card">
                 <h3><i class="fas fa-user-check"></i> Informasi Login</h3>

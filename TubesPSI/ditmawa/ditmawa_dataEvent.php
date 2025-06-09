@@ -461,6 +461,7 @@ try {
             color: #007bff;
             margin-bottom: 5px;
         }
+        
 
         .modal-body .event-item span {
             font-size: 14px;
@@ -558,8 +559,8 @@ try {
     </div>
 
     <ul class="navbar-menu">
-        <li><a href="ditmawa_dashboard.php">Home</a></li>
-        <li><a href="ditmawa_data_event.php" class="active">Data Event</a></li>
+        <li><a href="ditmawa_dashboard.php" >Home</a></li>
+        <li><a href="ditmawa_ListKegiatan.php" class="active">Data Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
 
