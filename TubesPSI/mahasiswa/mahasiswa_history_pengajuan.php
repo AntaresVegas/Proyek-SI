@@ -66,7 +66,22 @@ $conn->close();
         .detail-button { background-color: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 14px; transition: background-color 0.3s; display: inline-block; }
         .detail-button:hover { background-color: #0056b3; }
         .no-data { text-align: center; padding: 20px; color: #777; }
+        .download-button {
+            background-color: #f44336; /* Red for download */
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+        }
 
+        .download-button:hover {
+            background-color: #d32f2f;
+        }
         /* === STYLE BARU UNTUK STATUS BADGE === */
         .status-badge {
             padding: 5px 12px;
@@ -109,6 +124,8 @@ $conn->close();
 <div class="container">
     <div class="header">
         <h1>History Pengajuan Event</h1>
+        <a href="mahasiswa_history.php" class="download-button" style="background-color: #6c757d;">Kembali</a>
+
     </div>
 
     <table class="data-table">
