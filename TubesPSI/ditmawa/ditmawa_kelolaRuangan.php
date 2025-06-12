@@ -162,7 +162,7 @@ $conn->close();
     </ul>
     <div class="navbar-right">
         <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($ditmawa_nama); ?></span><i class="fas fa-user-circle icon" style="margin-left:10px;"></i></a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
 

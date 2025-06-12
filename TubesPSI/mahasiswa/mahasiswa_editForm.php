@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../config/db_connection.php'; // Sesuaikan path koneksi
+include '../config/db_connection.php';
 
 // 1. Otentikasi & Otorisasi
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
@@ -11,21 +11,18 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
 $user_id = $_SESSION['user_id'];
 $nama = $_SESSION['nama'] ?? 'User';
 $email = $_SESSION['username'] ?? 'No email';
-
 $message = '';
 $message_type = '';
 $event_data = null;
 $selected_ruangan_ids = [];
 
-// 2. Ambil ID pengajuan dari URL
 $pengajuan_id = $_GET['id'] ?? null;
 if (!$pengajuan_id) {
-    die("Error: ID Pengajuan tidak valid atau tidak disediakan.");
+    die("Error: ID Pengajuan tidak valid.");
 }
 
-// 3. Logika untuk UPDATE data saat form disubmit
+// 3. Logika UPDATE data saat form disubmit (Tidak ada perubahan di sini)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Ambil semua data dari form yang di-submit
     $pengajuan_namaEvent = $_POST['pengajuan_namaEvent'];
     $pengajuan_TypeKegiatan = $_POST['pengajuan_TypeKegiatan'];
     $pengajuan_event_jam_mulai = $_POST['pengajuan_event_jam_mulai'];
@@ -34,43 +31,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pengajuan_event_tanggal_selesai = $_POST['pengajuan_event_tanggal_selesai'];
     $new_selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : [];
 
-    // Ambil path file yang sudah ada dari hidden input
     $rundown_file_path = $_POST['existing_rundown_file'];
     $proposal_file_path = $_POST['existing_proposal_file'];
 
-    // Handle upload file baru jika ada, dan timpa path yang lama
-    $target_dir = "uploads/"; // Asumsi folder uploads ada di root
     if (isset($_FILES['jadwal_event_rundown_file']) && $_FILES['jadwal_event_rundown_file']['error'] == UPLOAD_ERR_OK) {
-        $rundown_file_path = $target_dir . 'rundown/' . uniqid() . "_" . basename($_FILES["jadwal_event_rundown_file"]["name"]);
+        $rundown_file_path = 'uploads/rundown/' . uniqid() . "_" . basename($_FILES["jadwal_event_rundown_file"]["name"]);
         move_uploaded_file($_FILES["jadwal_event_rundown_file"]["tmp_name"], '../' . $rundown_file_path);
     }
     if (isset($_FILES['pengajuan_event_proposal_file']) && $_FILES['pengajuan_event_proposal_file']['error'] == UPLOAD_ERR_OK) {
-        $proposal_file_path = $target_dir . 'proposal/' . uniqid() . "_" . basename($_FILES["pengajuan_event_proposal_file"]["name"]);
+        $proposal_file_path = 'uploads/proposal/' . uniqid() . "_" . basename($_FILES["pengajuan_event_proposal_file"]["name"]);
         move_uploaded_file($_FILES["pengajuan_event_proposal_file"]["tmp_name"], '../' . $proposal_file_path);
     }
 
-    // Lakukan UPDATE ke database
     $conn->begin_transaction();
     try {
-        $stmt = $conn->prepare("
-            UPDATE pengajuan_event SET
-                pengajuan_namaEvent = ?, pengajuan_TypeKegiatan = ?,
-                pengajuan_event_jam_mulai = ?, pengajuan_event_jam_selesai = ?,
-                pengajuan_event_tanggal_mulai = ?, pengajuan_event_tanggal_selesai = ?,
-                jadwal_event_rundown_file = ?, pengajuan_event_proposal_file = ?,
-                pengajuan_tanggalEdit = NOW()
-            WHERE pengajuan_id = ? AND mahasiswa_id = ?
-        ");
-        $stmt->bind_param("ssssssssii",
-            $pengajuan_namaEvent, $pengajuan_TypeKegiatan,
-            $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai,
-            $pengajuan_event_tanggal_mulai, $pengajuan_event_tanggal_selesai,
-            $rundown_file_path, $proposal_file_path,
-            $pengajuan_id, $user_id
-        );
+        $stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_namaEvent = ?, pengajuan_TypeKegiatan = ?, pengajuan_event_jam_mulai = ?, pengajuan_event_jam_selesai = ?, pengajuan_event_tanggal_mulai = ?, pengajuan_event_tanggal_selesai = ?, jadwal_event_rundown_file = ?, pengajuan_event_proposal_file = ?, pengajuan_status = 'Diajukan', pengajuan_tanggalEdit = NOW(), pengajuan_komentarDitmawa = NULL WHERE pengajuan_id = ? AND mahasiswa_id = ?");
+        $stmt->bind_param("ssssssssii", $pengajuan_namaEvent, $pengajuan_TypeKegiatan, $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai, $pengajuan_event_tanggal_mulai, $pengajuan_event_tanggal_selesai, $rundown_file_path, $proposal_file_path, $pengajuan_id, $user_id);
         $stmt->execute();
-
-        // Update peminjaman ruangan: hapus yang lama, masukkan yang baru
+        
         $conn->query("DELETE FROM peminjaman_ruangan WHERE pengajuan_id = $pengajuan_id");
         if (!empty($new_selected_ruangan_ids)) {
             $insert_peminjaman_stmt = $conn->prepare("INSERT INTO peminjaman_ruangan (pengajuan_id, ruangan_id) VALUES (?, ?)");
@@ -80,9 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $insert_peminjaman_stmt->close();
         }
-        
         $conn->commit();
-        $message = "Pengajuan event berhasil diperbarui!";
+        $message = "Pengajuan event berhasil diperbarui dan diajukan kembali untuk peninjauan!";
         $message_type = 'success';
     } catch (Exception $e) {
         $conn->rollback();
@@ -92,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
 }
 
-// 4. Ambil data event yang akan diedit untuk mengisi form
+// 4. Ambil data event yang akan diedit untuk mengisi form (Tidak ada perubahan di sini)
 $stmt = $conn->prepare("SELECT pe.*, m.mahasiswa_npm FROM pengajuan_event pe JOIN mahasiswa m ON pe.mahasiswa_id = m.mahasiswa_id WHERE pe.pengajuan_id = ? AND pe.mahasiswa_id = ?");
 $stmt->bind_param("ii", $pengajuan_id, $user_id);
 $stmt->execute();
@@ -104,23 +81,20 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-// Ambil data ruangan yang sudah terpilih
 $stmt_ruangan = $conn->prepare("SELECT ruangan_id FROM peminjaman_ruangan WHERE pengajuan_id = ?");
 $stmt_ruangan->bind_param("i", $pengajuan_id);
 $stmt_ruangan->execute();
 $result_ruangan = $stmt_ruangan->get_result();
 while($row = $result_ruangan->fetch_assoc()){
-    $selected_ruangan_ids[] = (string)$row['ruangan_id']; // Konversi ke string untuk perbandingan di JS
+    $selected_ruangan_ids[] = (string)$row['ruangan_id'];
 }
 $stmt_ruangan->close();
 
-// Ambil data gedung untuk dropdown
 $gedung_options = [];
 $result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY gedung_nama ASC");
 while ($row = $result_gedung->fetch_assoc()) {
     $gedung_options[] = $row;
 }
-
 $conn->close();
 ?>
 
@@ -132,40 +106,35 @@ $conn->close();
     <title>Edit Pengajuan Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        /* Sebagian besar CSS sama, hanya menambahkan sedikit style untuk file input */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 80px;}
         .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left { display: flex; align-items: center; gap: 10px; }
-        .navbar-logo { width: 50px; height: 50px; object-fit: cover; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
+        .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
-        .navbar-menu { display: flex; list-style: none; gap: 25px; }
-        .navbar-menu li a { text-decoration: none; color:rgb(253, 253, 253); font-weight: 500; font-size: 15px; }
-        .navbar-menu li a:hover, .navbar-menu li a.active { color: #007bff; }
-        .navbar-right { display: flex; align-items: center; gap: 15px; font-size: 15px; color:rgb(255, 255, 255); }
-        .user-name { font-weight: 500; }
-        .icon { font-size: 20px; cursor: pointer; }
+        .navbar-menu { list-style: none; }
+        .navbar-menu li a { text-decoration: none; color:rgb(253, 253, 253); font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #87CEEB; }
+        .navbar-right { color:rgb(255, 255, 255); }
         .container { max-width: 900px; margin: 20px auto 30px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
         .main-content { padding: 30px; }
-        .header { background:rgb(44, 62, 80); color: white; padding: 20px 30px; border-radius: 10px 10px 0 0; }
-        .header h1 { font-size: 24px; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; color: #34495e; font-weight: 500; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #f8f8f8; }
-        .form-group input[readonly] { background-color: #e9ecef; cursor: not-allowed; }
-        .button-group { display: flex; justify-content: flex-end; margin-top: 25px; }
-        .button-group button { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .button-group button.submit { background-color: #28a745; color: white; }
-        .message { padding: 15px; margin-bottom: 20px; border-radius: 5px; font-weight: bold; text-align: center;}
+        .header { background:rgb(44, 62, 80); color: white; padding: 20px 30px; border-radius: 15px 15px 0 0; text-align: center;}
+        .header h1 { font-size: 24px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #f8f8f8; }
+        .form-group input[readonly] { background-color: #e9ecef; }
+        .button-group { text-align: right; margin-top: 25px; }
+        .btn-submit { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; background-color: #28a745; color: white; }
+        .message { padding: 15px; margin-bottom: 20px; border-radius: 5px; text-align: center;}
         .message.success { background-color: #d4edda; color: #155724; }
         .message.error { background-color: #f8d7da; color: #721c24; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; margin-left: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .checkbox-group { border: 1px solid #ccc; border-radius: 5px; padding: 10px; max-height: 150px; overflow-y: auto; background-color: #f8f8f8; }
-        .hidden-file-input { display: none; }
-        .custom-file-upload button { background-color: #007bff; color: white; padding: 8px 12px; border-radius: 5px; font-size: 14px; }
-        .file-name { color: #555; font-style: italic; margin-left: 10px;}
-        .current-file a { color: #007bff; text-decoration: none; }
-        .current-file { margin-bottom: 5px; font-size: 14px; }
+        .rejection-reason-box { background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px 20px; margin-bottom: 25px; }
+        .rejection-reason-box h4 { color: #856404; margin-bottom: 10px; }
+        .current-file { margin-bottom: 8px; font-size: 14px; color: #555; }
+        .current-file a { color: #007bff; }
+        .form-control-file { display: block; width: 100%; } /* Style untuk input file */
     </style>
 </head>
 <body>
@@ -180,106 +149,62 @@ $conn->close();
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
-    <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i></a><a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a></div>
+    <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left:15px;"></i></a><a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a></div>
 </nav>
 
 <div class="container">
-    <div class="header">
-        <h1>Edit Pengajuan Event</h1>
-    </div>
+    <div class="header"><h1>Edit Pengajuan Event</h1></div>
     <div class="main-content">
         <?php if (!empty($message)): ?>
             <div class="message <?php echo $message_type; ?>"><?php echo $message; ?></div>
         <?php endif; ?>
 
+        <?php if ($event_data['pengajuan_status'] == 'Ditolak' && !empty($event_data['pengajuan_komentarDitmawa'])): ?>
+            <div class="rejection-reason-box"><h4><i class="fas fa-comment-dots"></i> Alasan Penolakan dari Ditmawa:</h4><p><?php echo nl2br(htmlspecialchars($event_data['pengajuan_komentarDitmawa'])); ?></p></div>
+        <?php endif; ?>
+        
         <form id="eventForm" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Nama Penanggung Jawab</label>
-                <input type="text" value="<?php echo htmlspecialchars($nama); ?>" readonly>
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" value="<?php echo htmlspecialchars($email); ?>" readonly>
-            </div>
-            <div class="form-group">
-                <label>NPM</label>
-                <input type="text" value="<?php echo htmlspecialchars($event_data['mahasiswa_npm']); ?>" readonly>
-            </div>
-            <div class="form-group">
-                <label for="pengajuan_namaEvent">Nama Event</label>
-                <input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" value="<?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="pengajuan_TypeKegiatan">Tipe Kegiatan</label>
-                <input type="text" id="pengajuan_TypeKegiatan" name="pengajuan_TypeKegiatan" value="<?php echo htmlspecialchars($event_data['pengajuan_TypeKegiatan']); ?>" required>
-            </div>
-
+            <div class="form-group"><label>Nama Penanggung Jawab</label><input type="text" value="<?php echo htmlspecialchars($nama); ?>" readonly></div>
+            <div class="form-group"><label>Email</label><input type="email" value="<?php echo htmlspecialchars($email); ?>" readonly></div>
+            <div class="form-group"><label>NPM</label><input type="text" value="<?php echo htmlspecialchars($event_data['mahasiswa_npm']); ?>" readonly></div>
+            <div class="form-group"><label for="pengajuan_namaEvent">Nama Event</label><input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" value="<?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?>" required></div>
+            <div class="form-group"><label for="pengajuan_TypeKegiatan">Tipe Kegiatan</label><input type="text" id="pengajuan_TypeKegiatan" name="pengajuan_TypeKegiatan" value="<?php echo htmlspecialchars($event_data['pengajuan_TypeKegiatan']); ?>" required></div>
             <hr style="margin: 25px 0;">
-
-            <div class="form-group">
-                <label for="gedung_id">Nama Gedung</label>
-                <select id="gedung_id" name="gedung_id" required>
-                    <option value="">Pilih Gedung</option>
-                    <?php foreach ($gedung_options as $gedung) {
-                        echo "<option value='{$gedung['gedung_id']}'>" . htmlspecialchars($gedung['gedung_nama']) . "</option>";
-                    } ?>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="lantai_id">Nomor Lantai <span class="loader" id="lantai_loader"></span></label>
-                <select id="lantai_id" name="lantai_id" required disabled>
-                    <option value="">Pilih Gedung Terlebih Dahulu</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="ruangan_selection">Pilih Ruangan <span class="loader" id="ruangan_loader"></span></label>
-                <div id="ruangan_selection" class="checkbox-group">
-                    <p style="color: #666;">Pilih Lantai Terlebih Dahulu</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
-                <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_jam_mulai']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
-                <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_jam_selesai']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="pengajuan_event_tanggal_mulai">Tanggal Mulai</label>
-                <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_tanggal_mulai']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="pengajuan_event_tanggal_selesai">Tanggal Selesai</label>
-                <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_tanggal_selesai']); ?>" required>
-            </div>
+            <div class="form-group"><label for="gedung_id">Nama Gedung</label><select id="gedung_id" name="gedung_id" required><option value="">Pilih Gedung</option><?php foreach ($gedung_options as $gedung) { echo "<option value='{$gedung['gedung_id']}'>" . htmlspecialchars($gedung['gedung_nama']) . "</option>"; } ?></select></div>
+            <div class="form-group"><label for="lantai_id">Nomor Lantai</label><select id="lantai_id" name="lantai_id" required disabled><option value="">Pilih Gedung Terlebih Dahulu</option></select></div>
+            <div class="form-group"><label for="ruangan_selection">Pilih Ruangan</label><div id="ruangan_selection" class="checkbox-group"><p style="color: #666;">Pilih Lantai Terlebih Dahulu</p></div></div>
+            <div class="form-group"><label for="pengajuan_event_jam_mulai">Jam Mulai</label><input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_jam_mulai']); ?>" required></div>
+            <div class="form-group"><label for="pengajuan_event_jam_selesai">Jam Selesai</label><input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_jam_selesai']); ?>" required></div>
+            <div class="form-group"><label for="pengajuan_event_tanggal_mulai">Tanggal Mulai</label><input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_tanggal_mulai']); ?>" required></div>
+            <div class="form-group"><label for="pengajuan_event_tanggal_selesai">Tanggal Selesai</label><input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" value="<?php echo htmlspecialchars($event_data['pengajuan_event_tanggal_selesai']); ?>" required></div>
             
             <input type="hidden" name="existing_rundown_file" value="<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>">
             <input type="hidden" name="existing_proposal_file" value="<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>">
 
             <div class="form-group">
-                <label>Rundown Acara</label>
-                <div class="current-file">File saat ini: <a href="../<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" target="_blank"><?php echo basename($event_data['jadwal_event_rundown_file']); ?></a></div>
-                <div class="custom-file-upload">
-                    <input type="file" id="jadwal_event_rundown_file" name="jadwal_event_rundown_file" class="hidden-file-input">
-                    <button type="button" onclick="document.getElementById('jadwal_event_rundown_file').click()">Ubah File</button>
-                    <span id="rundown_file_name" class="file-name">Pilih file baru untuk mengganti...</span>
+                <label for="jadwal_event_rundown_file">Rundown Acara</label>
+                <div class="current-file">
+                    File saat ini: 
+                    <a href="../<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" target="_blank">
+                        <?php echo basename($event_data['jadwal_event_rundown_file']); ?>
+                    </a>
                 </div>
+                <p style="font-size: 12px; color: #666; margin-top: 5px; margin-bottom: 5px;">Pilih file baru di bawah ini hanya jika Anda ingin menggantinya.</p>
+                <input type="file" id="jadwal_event_rundown_file" name="jadwal_event_rundown_file" class="form-control-file">
             </div>
 
             <div class="form-group">
-                <label>Proposal Kegiatan</label>
-                <div class="current-file">File saat ini: <a href="../<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" target="_blank"><?php echo basename($event_data['pengajuan_event_proposal_file']); ?></a></div>
-                <div class="custom-file-upload">
-                    <input type="file" id="pengajuan_event_proposal_file" name="pengajuan_event_proposal_file" class="hidden-file-input">
-                    <button type="button" onclick="document.getElementById('pengajuan_event_proposal_file').click()">Ubah File</button>
-                    <span id="proposal_file_name" class="file-name">Pilih file baru untuk mengganti...</span>
+                <label for="pengajuan_event_proposal_file">Proposal Kegiatan</label>
+                <div class="current-file">
+                    File saat ini: 
+                    <a href="../<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" target="_blank">
+                        <?php echo basename($event_data['pengajuan_event_proposal_file']); ?>
+                    </a>
                 </div>
+                <p style="font-size: 12px; color: #666; margin-top: 5px; margin-bottom: 5px;">Pilih file baru di bawah ini hanya jika Anda ingin menggantinya.</p>
+                <input type="file" id="pengajuan_event_proposal_file" name="pengajuan_event_proposal_file" class="form-control-file">
             </div>
-
-            <div class="button-group">
-                <button type="submit" class="submit">Simpan Perubahan</button>
-            </div>
+            <div class="button-group"><button type="submit" class="btn-submit">Simpan & Ajukan Ulang</button></div>
         </form>
     </div>
 </div>

@@ -147,7 +147,7 @@ try {
         <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
             <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
         </a>
-        <a href="../logout.php" title="Logout">
+        <a href="logout.php" title="Logout">
             <i class="fas fa-sign-out-alt icon"></i>
         </a>
     </div>
