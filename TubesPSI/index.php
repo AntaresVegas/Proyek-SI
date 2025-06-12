@@ -66,7 +66,7 @@ session_start();
                 <div class="form-group"><label for="email">Email:</label><input type="text" id="email" name="email" required autocomplete="email" /></div>
                 <div class="form-group"><label for="password">Password:</label><input type="password" id="password" name="password" required autocomplete="current-password" /></div>
                 <div class="form-group"><button type="submit" class="btn">Login</button></div>
-
+                
                 <div class="form-links">
                     <a href="./mahasiswa/forgot_password.php" id="forgot-password-link">Lupa Password?</a>
                     <a href="./mahasiswa/register.php" id="register-link">Daftar Akun Baru</a>
