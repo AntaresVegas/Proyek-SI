@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 08, 2025 at 08:09 PM
+-- Generation Time: Jun 12, 2025 at 06:30 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -124,6 +124,13 @@ CREATE TABLE `notifications` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `notifications`
+--
+
+INSERT INTO `notifications` (`notification_id`, `user_id`, `message`, `link`, `is_read`, `created_at`) VALUES
+(2, 0, 'Selamat! Pengajuan event \'ISEC\' Anda telah disetujui.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=4', 0, '2025-06-12 04:22:17');
+
 -- --------------------------------------------------------
 
 --
@@ -146,6 +153,14 @@ CREATE TABLE `peminjaman_ruangan` (
   `pengajuan_id` int(11) DEFAULT NULL,
   `ruangan_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `peminjaman_ruangan`
+--
+
+INSERT INTO `peminjaman_ruangan` (`peminjaman_id`, `pengajuan_id`, `ruangan_id`) VALUES
+(1, 1, 1),
+(2, 4, 3);
 
 -- --------------------------------------------------------
 
@@ -172,6 +187,16 @@ CREATE TABLE `pengajuan_event` (
   `pengajuan_LPJ` longblob DEFAULT NULL,
   `pengajuan_statusLPJ` enum('Belum Dikirim','Diterima','Revisi') DEFAULT 'Belum Dikirim'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pengajuan_event`
+--
+
+INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `mahasiswa_id`, `pengajuan_TypeKegiatan`, `pengajuan_event_jam_mulai`, `pengajuan_event_jam_selesai`, `pengajuan_event_tanggal_mulai`, `pengajuan_event_tanggal_selesai`, `jadwal_event_rundown_file`, `pengajuan_event_proposal_file`, `pengajuan_status`, `pengajuan_tanggalApprove`, `ditmawa_id`, `pengajuan_tanggalEdit`, `pengajuan_komentarDitmawa`, `pengajuan_LPJ`, `pengajuan_statusLPJ`) VALUES
+(1, 'Seminar AI Masa Depan', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, 'Disetujui', NULL, 1, '2025-06-12 10:06:24', NULL, NULL, 'Belum Dikirim'),
+(2, 'Workshop Fotografi Dasar', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, 'Diajukan', NULL, NULL, '2025-06-12 10:06:24', NULL, NULL, 'Belum Dikirim'),
+(3, 'Lomba Catur Antar Jurusan', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, 'Ditolak', NULL, 1, '2025-06-12 10:06:24', NULL, NULL, 'Belum Dikirim'),
+(4, 'ISEC', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', '', '', 'Disetujui', '2025-06-12 06:22:17', 1, '2025-06-12 11:20:39', '', NULL, 'Belum Dikirim');
 
 -- --------------------------------------------------------
 
@@ -307,7 +332,7 @@ ALTER TABLE `mahasiswa`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `organisasi`
@@ -319,13 +344,13 @@ ALTER TABLE `organisasi`
 -- AUTO_INCREMENT for table `peminjaman_ruangan`
 --
 ALTER TABLE `peminjaman_ruangan`
-  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `pengajuan_event`
 --
 ALTER TABLE `pengajuan_event`
-  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `ruangan`

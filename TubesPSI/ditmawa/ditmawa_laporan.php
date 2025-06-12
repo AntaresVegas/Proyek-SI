@@ -299,6 +299,7 @@ try {
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php" >Home</a></li>
         <li><a href="ditmawa_ListKegiatan.php">Data Event</a></li>
+        <li><a href="ditmawa_dataEvent.php"     >Kalender Event</a></li>
         <li><a href="ditmawa_laporan.php"class="active">Laporan</a></li>
     </ul>
 
