@@ -85,10 +85,14 @@ try {
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f0f2f5 0%, #e0e4eb 100%); /* Light background from image */
+            background-color: #1e3c72;
+            background-image: url('../img/backgroundDitmawa.jpeg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             min-height: 100vh;
-            padding-top: 70px; /* Space for fixed navbar */
-            color: #333;
+            padding-top: 80px;
         }
 
         /* Navbar styles (from your existing dashboard) */
@@ -299,7 +303,8 @@ try {
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php" >Home</a></li>
         <li><a href="ditmawa_ListKegiatan.php">Data Event</a></li>
-        <li><a href="ditmawa_dataEvent.php"     >Kalender Event</a></li>
+        <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
         <li><a href="ditmawa_laporan.php"class="active">Laporan</a></li>
     </ul>
 

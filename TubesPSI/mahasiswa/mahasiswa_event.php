@@ -88,6 +88,25 @@ $conn->close();
         .modal-body .event-item { border-left: 4px solid rgb(2, 71, 25); padding: 10px; margin-bottom: 10px; background-color: #f8f9fa; }
         .modal-body .event-item h4 { margin-bottom: 5px; }
         .modal-body .event-item span { display: block; font-size: 14px; color: #555; }
+               /* --- STYLE BARU UNTUK HEADER --- */
+        .page-header {
+            background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%);
+            color: white;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 1100px; /* Samakan dengan lebar container kalender */
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .page-header h1 {
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .page-header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -110,7 +129,10 @@ $conn->close();
         <a href="../logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
-
+<div class="page-header">
+    <h1>Kalender Institusional UNPAR</h1>
+    <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
+</div>
 <div class="calendar-container">
     <div class="calendar-header">
         <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>">&larr;</a>

@@ -95,6 +95,7 @@ try {
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--light-gray); padding-top: 80px; }
+        
         .navbar { display: flex; justify-content: space-between; align-items: center; background: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
@@ -158,6 +159,8 @@ try {
         .notification-message { margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark); line-height: 1.4; }
         .notification-time { font-size: 12px; color: var(--text-light); }
         .no-notifications { padding: 20px; text-align: center; color: #777; }
+        .detail-link-container { text-align: center; margin-top: 15px; }
+        .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -245,7 +248,7 @@ try {
     </div>
 
     <div class="calendar-wrapper">
-        <h2 class="calendar-title">KALENDER EVENT</h2>
+        <h2 class="calendar-title">KALENDER INSTITUSIONAL UNPAR</h2>
         <div class="calendar-header">
             <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" class="nav-arrow">&larr;</a>
             <h2><?php setlocale(LC_TIME, 'id_ID.UTF-8'); echo mb_convert_case(strftime('%B %Y', $date->getTimestamp()), MB_CASE_TITLE, "UTF-8"); ?></h2>
@@ -274,6 +277,9 @@ try {
             }
             ?>
         </div>
+            <div class="detail-link-container">
+                <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+            </div>
     </div>
 </div>
 

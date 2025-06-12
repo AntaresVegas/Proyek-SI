@@ -67,22 +67,54 @@ $conn->close();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Data Event - Event Management Unpar</title>
+    <title>Kalender Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* General styles, sama seperti sebelumnya */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 70px; color: #333; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e3c72;
+            background-image: url('../img/backgroundDitmawa.jpeg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding-top: 80px;
+        }        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: #2c3e50; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #0056b3; }
+        .navbar-menu li a.active { /* Added active class style */
+            color: #007bff;
+        }        
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #2c3e50; }
         .icon { font-size: 20px; cursor: pointer; }
-        .calendar-container { max-width: 1100px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
+
+        /* --- STYLE BARU UNTUK HEADER --- */
+        .page-header {
+            background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%);
+            color: white;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 1100px; /* Samakan dengan lebar container kalender */
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .page-header h1 {
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .page-header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        /* --- AKHIR STYLE BARU --- */
+
+        .calendar-container { max-width: 1100px; margin: 20px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-header h2 { font-size: 28px; }
         .calendar-header a { text-decoration: none; font-size: 24px; color: #ff8c00; }
@@ -115,6 +147,7 @@ $conn->close();
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
         <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
+        <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php" class="active">Kalender Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
@@ -124,6 +157,10 @@ $conn->close();
     </div>
 </nav>
 
+<div class="page-header">
+    <h1>Kalender Institusional UNPAR</h1>
+    <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
+</div>
 <div class="calendar-container">
     <div class="calendar-header">
         <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>">&larr;</a>
@@ -157,7 +194,6 @@ $conn->close();
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Definisi konstanta dan elemen DOM
     const calendarGrid = document.getElementById('calendarGrid');
     const gedungFilter = document.getElementById('gedungFilter');
     const lantaiFilter = document.getElementById('lantaiFilter');
@@ -168,7 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentMonth = <?php echo $currentMonth; ?>;
     const currentYear = <?php echo $currentYear; ?>;
     
-    // Fungsi untuk update filter lantai berdasarkan gedung
     function updateLantaiFilter() {
         const selectedGedungId = gedungFilter.value;
         lantaiFilter.innerHTML = '<option value="">Semua Lantai</option>';
@@ -187,14 +222,13 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchEventsAndRenderCalendar();
     }
 
-    // Fungsi untuk merender kalender
     function renderCalendar(eventsData) {
         const date = new Date(currentYear, currentMonth - 1, 1);
         const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
         let firstDayOfWeek = date.getDay(); 
-        if (firstDayOfWeek === 0) firstDayOfWeek = 7; // Konversi Minggu (0) ke 7
+        if (firstDayOfWeek === 0) firstDayOfWeek = 7; 
 
-        let html = `<div class="day-name">Sen</div><div class="day-name">Sel</div><div class="day-name">Rab</div><div class="day-name">Kam</div><div class="day-name">Jum</div><div class="day-name">Sab</div><div class="day-name">Min</div>`;
+        let html = `<div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>`;
         for (let i = 1; i < firstDayOfWeek; i++) {
             html += '<div class="day-cell empty-day"></div>';
         }
@@ -216,12 +250,10 @@ document.addEventListener('DOMContentLoaded', function() {
         addDayCellClickListeners();
     }
 
-    // Fungsi untuk mengambil data event dari server dan merender kalender
     function fetchEventsAndRenderCalendar() {
         const selectedGedung = gedungFilter.value;
         const selectedLantai = lantaiFilter.value;
         
-        // --- PERBAIKAN 1: Menambahkan ../ pada path fetch ---
         fetch(`../fetch_event_data.php?month=${currentMonth}&year=${currentYear}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
             .then(response => response.json())
             .then(data => {
@@ -230,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => console.error('Error fetching events:', error));
     }
 
-    // Fungsi untuk menambahkan event listener pada setiap sel tanggal
     function addDayCellClickListeners() {
         document.querySelectorAll('.day-cell:not(.empty-day)').forEach(cell => {
             cell.addEventListener('click', function() {
@@ -242,7 +273,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('modalBody').innerHTML = '<p>Memuat...</p>';
                 eventModal.style.display = 'flex';
 
-                // --- PERBAIKAN 2: Menambahkan ../ pada path fetch & memperbaiki format modal ---
                 fetch(`../fetch_event_details.php?date=${date}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
                     .then(response => response.json())
                     .then(data => {
@@ -252,7 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             data.forEach(event => {
                                 const eventItem = document.createElement('div');
                                 eventItem.className = 'event-item';
-                                // --- PERBAIKAN 3: Menggunakan 'event.lokasi' yang sudah diformat ---
                                 eventItem.innerHTML = `
                                     <h4>${event.name}</h4>
                                     <span><strong>Waktu:</strong> ${event.start_time} - ${event.end_time}</span>
@@ -272,13 +301,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Event listeners untuk filter dan modal
     gedungFilter.addEventListener('change', updateLantaiFilter);
     lantaiFilter.addEventListener('change', fetchEventsAndRenderCalendar);
     closeButton.addEventListener('click', () => { eventModal.style.display = 'none'; });
     window.addEventListener('click', (event) => { if (event.target == eventModal) { eventModal.style.display = 'none'; } });
 
-    // Panggil fungsi awal saat halaman dimuat
     fetchEventsAndRenderCalendar();
 });
 </script>

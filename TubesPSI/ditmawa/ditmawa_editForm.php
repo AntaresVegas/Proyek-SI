@@ -139,8 +139,17 @@ $conn->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding-top: 80px; color: #333; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e3c72;
+            background-image: url('../img/backgroundDitmawa.jpeg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding-top: 80px;
+        }        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; object-fit: cover; }
         .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
@@ -180,6 +189,8 @@ $conn->close();
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
         <li><a href="ditmawa_ListKegiatan.php">Data Event</a></li>
+        <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">
