@@ -323,7 +323,7 @@ $conn->close();
         .form-group input[type="file"] {
             padding: 8px 0;
         }
-
+        .form-group input[readonly] { background-color: #e9ecef; }
         .form-group input[type="text"]:focus,
         .form-group input[type="email"]:focus,
         .form-group input[type="time"]:focus,
