@@ -219,7 +219,7 @@ $conn->close();
                 <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" aria-label="Bulan Berikutnya">&rarr;</a>
             </div>
             <div class="calendar-grid">
-                <div class="day-name">Sen</div><div class="day-name">Sel</div><div class="day-name">Rab</div><div class="day-name">Kam</div><div class="day-name">Jum</div><div class="day-name">Sab</div><div class="day-name">Min</div>
+                <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
                 <?php for ($i = 1; $i < $firstDayOfWeek; $i++) echo '<div class="day-cell empty-day"></div>'; ?>
                 <?php for ($day = 1; $day <= $daysInMonth; $day++): ?>
                     <div class="day-cell">

@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let firstDayOfWeek = date.getDay(); 
         if (firstDayOfWeek === 0) firstDayOfWeek = 7; // Konversi Minggu (0) menjadi 7
 
-        let html = `<div class="day-name">Sen</div><div class="day-name">Sel</div><div class="day-name">Rab</div><div class="day-name">Kam</div><div class="day-name">Jum</div><div class="day-name">Sab</div><div class="day-name">Min</div>`;
+        let html = `<div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>`;
         for (let i = 1; i < firstDayOfWeek; i++) {
             html += '<div class="day-cell empty-day"></div>';
         }
