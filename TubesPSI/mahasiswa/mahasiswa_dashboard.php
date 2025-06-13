@@ -293,7 +293,7 @@ try {
 
         <div class="dashboard-card">
             <h3 class="dashboard-section-title">
-                <span>📄 Aktivitas Pengajuan Terakhir</span>
+                <span>📄 Aktivitas Pengajuan Terakhir </span>
                 <a href="mahasiswa_history.php" class="view-all-link">Lihat Riwayat &rarr;</a>
             </h3>
             <?php if (!empty($recent_submissions)): ?>

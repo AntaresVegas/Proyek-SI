@@ -180,7 +180,7 @@ $conn->close();
                         $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
                     ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($row['mahasiswa_nama']); ?><br><small><?php echo htmlspecialchars($row['mahasiswa_npm']); ?></small></td>
+                            <td><?php echo htmlspecialchars($row['mahasiswa_nama']); ?><br></td>
                             <td><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></td>
                             <td>
                                 <span class="status-badge <?php echo $status_class; ?>">
