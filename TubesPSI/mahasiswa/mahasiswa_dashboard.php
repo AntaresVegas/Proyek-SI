@@ -94,15 +94,14 @@ try {
             --status-green: #198754; --status-red: #dc3545; --status-yellow: #ffc107;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--light-gray); padding-top: 80px; }
-        
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--light-gray); padding-top: 80px;  background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: white; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #a7d8de; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: white; }
         .icon { font-size: 20px; cursor: pointer; }
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
@@ -110,6 +109,15 @@ try {
         .no-data-message { text-align: center; color: var(--text-light); padding: 40px 20px; font-style: italic; background: #fff; border-radius: 8px; border: 1px dashed var(--border-color); }
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
         @media (min-width: 1200px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+        
+        /* === KODE CSS YANG DITAMBAHKAN === */
+        .dashboard-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
         .dashboard-section-title { font-size: 1.6em; color: var(--text-dark); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .view-all-link { font-size: 0.6em; font-weight: 600; text-decoration: none; color: var(--secondary-color); }
         .event-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; align-items: stretch; transition: transform 0.2s; }
@@ -205,7 +213,7 @@ try {
     </div>
 
     <div class="dashboard-grid">
-        <div>
+        <div class="dashboard-card">
             <h3 class="dashboard-section-title">
                 <span>🗓️ Event Mahasiswa Terdekat</span>
                 <a href="mahasiswa_event.php" class="view-all-link">Lihat Semua &rarr;</a>
@@ -228,7 +236,7 @@ try {
             <?php endif; ?>
         </div>
 
-        <div>
+        <div class="dashboard-card">
             <h3 class="dashboard-section-title">
                 <span>📄 Aktivitas Pengajuan Terakhir</span>
                 <a href="mahasiswa_history.php" class="view-all-link">Lihat Riwayat &rarr;</a>

@@ -35,6 +35,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
             background: #f4f6f9; /* Light background for content page */
             min-height: 100vh;
             color: #333;
+            background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;
         }
 
         .navbar {

@@ -34,6 +34,7 @@ $conn->close();
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f0f2f5 0%, #e0e5ec 100%);
             min-height: 100vh;
+            background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;
         }
 
         .navbar {
