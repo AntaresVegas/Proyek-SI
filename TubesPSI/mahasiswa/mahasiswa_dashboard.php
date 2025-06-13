@@ -102,7 +102,7 @@ try {
         .navbar-title { color: white; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #a7d8de; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: white; }
         .icon { font-size: 20px; cursor: pointer; }
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; flex-grow: 1; }
@@ -111,13 +111,7 @@ try {
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
         @media (min-width: 1200px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
         
-        .dashboard-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        
+        .dashboard-card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .dashboard-section-title { font-size: 1.6em; color: var(--text-dark); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .view-all-link { font-size: 0.6em; font-weight: 600; text-decoration: none; color: var(--secondary-color); }
         .event-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; align-items: stretch; transition: transform 0.2s; }
@@ -167,61 +161,101 @@ try {
         .no-notifications { padding: 20px; text-align: center; color: #777; }
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
+        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #fff; }
 
-        /* ===== FOOTER STYLES ===== */
-        .page-footer {
-            background-color: var(--primary-color);
-            color: #e9ecef;
-            padding: 40px 0;
-            margin-top: 40px;
+        /* ===== CSS UNTUK ALUR LAYANAN BARU ===== */
+        .service-flow-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 25px 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
         }
-        .footer-container {
-            max-width: 1400px;
+        .service-flow-container h2 {
+            text-align: center;
+            font-size: 1.8em;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+        }
+        .timeline {
+            position: relative;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 30px;
+            list-style: none;
         }
-        .footer-left {
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20px;
+            height: 100%;
+            width: 3px;
+            background: #e9ecef;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 30px;
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        .timeline-step {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 3px var(--primary-color);
+        }
+        .timeline-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
             display: flex;
             align-items: center;
             gap: 20px;
         }
-        .footer-logo {
-            width: 60px;
-            height: 60px;
+        .timeline-content .icon-container {
+            font-size: 2.5em;
+            color: var(--primary-color);
         }
-        .footer-left h4 {
+        .timeline-content h4 {
             font-size: 1.2em;
-            font-weight: 500;
-            line-height: 1.4;
+            margin-bottom: 8px;
+            color: var(--text-dark);
         }
-        .footer-right ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .timeline-content p {
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: var(--text-light);
         }
-        .footer-right li {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .timeline-content a {
+            color: var(--secondary-color);
+            font-weight: bold;
+            text-decoration: none;
         }
-        .footer-right .social-icons {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-        }
-        .footer-right .social-icons a {
-            color: #e9ecef;
-            font-size: 1.5em;
-            transition: color 0.3s;
-        }
-        .footer-right .social-icons a:hover {
-            color: #fff;
+        .timeline-content a:hover {
+            text-decoration: underline;
         }
 
     </style>
@@ -271,7 +305,7 @@ try {
         <div class="dashboard-card">
             <h3 class="dashboard-section-title">
                 <span>🗓️ Event Mahasiswa Terdekat</span>
-                <a href="mahasiswa_event.php" class="view-all-link">Lihat Semua &rarr;</a>
+                <a href="mahasiswa_event.php" class="view-all-link">Lihat Semua →</a>
             </h3>
             <?php if (!empty($upcoming_events)): ?>
                 <?php foreach ($upcoming_events as $event): ?>
@@ -293,8 +327,8 @@ try {
 
         <div class="dashboard-card">
             <h3 class="dashboard-section-title">
-                <span>📄 Aktivitas Pengajuan Terakhir </span>
-                <a href="mahasiswa_history.php" class="view-all-link">Lihat Riwayat &rarr;</a>
+                <span>📄 Aktivitas Pengajuan Terakhir</span>
+                <a href="mahasiswa_history.php" class="view-all-link">Lihat Riwayat →</a>
             </h3>
             <?php if (!empty($recent_submissions)): ?>
                 <?php foreach ($recent_submissions as $submission): ?>
@@ -313,9 +347,9 @@ try {
     <div class="calendar-wrapper">
         <h2 class="calendar-title">KALENDER INSTITUSIONAL UNPAR</h2>
         <div class="calendar-header">
-            <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" class="nav-arrow">&larr;</a>
+            <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" class="nav-arrow">←</a>
             <h2><?php setlocale(LC_TIME, 'id_ID.UTF-8'); echo mb_convert_case(strftime('%B %Y', $date->getTimestamp()), MB_CASE_TITLE, "UTF-8"); ?></h2>
-            <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" class="nav-arrow">&rarr;</a>
+            <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" class="nav-arrow">→</a>
         </div>
         <div class="calendar-grid">
                 <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
@@ -343,6 +377,63 @@ try {
             <div class="detail-link-container">
                 <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
             </div>
+    </div>
+    <br>
+    <br>
+        <div class="service-flow-container">
+        <h2>Alur Pengajuan Event</h2>
+        <ul class="timeline">
+            <li class="timeline-item">
+                <div class="timeline-step">1</div>
+                <div class="timeline-content">
+                    <div class="icon-container"><i class="fas fa-book-open"></i></div>
+                    <div>
+                        <h4>Baca Peraturan & Ketentuan</h4>
+                        <p>Pahami semua persyaratan yang tercantum di halaman <a href="mahasiswa_rules.php">Rules</a> sebelum memulai proses pengajuan.</p>
+                    </div>
+                </div>
+            </li>
+            <li class="timeline-item">
+                <div class="timeline-step">2</div>
+                <div class="timeline-content">
+                    <div class="icon-container"><i class="fas fa-building"></i></div>
+                    <div>
+                        <h4>Cek Ketersediaan Ruangan</h4>
+                        <p>Hubungi Administrasi Sarana & Prasarana (ASP) untuk memastikan ruangan yang Anda inginkan tersedia pada tanggal acara.</p>
+                    </div>
+                </div>
+            </li>
+            <li class="timeline-item">
+                <div class="timeline-step">3</div>
+                <div class="timeline-content">
+                    <div class="icon-container"><i class="fas fa-file-alt"></i></div>
+                    <div>
+                        <h4>Isi Formulir Pengajuan</h4>
+                        <p>Setelah ruangan terkonfirmasi, isi formulir pengajuan secara lengkap dan akurat melalui halaman <a href="mahasiswa_pengajuan.php">Form</a>.</p>
+                    </div>
+                </div>
+            </li>
+            <li class="timeline-item">
+                <div class="timeline-step">4</div>
+                <div class="timeline-content">
+                    <div class="icon-container"><i class="fas fa-tasks"></i></div>
+                    <div>
+                        <h4>Tunggu Persetujuan Ditmawa</h4>
+                        <p>Pengajuan Anda akan direview oleh Ditmawa. Anda bisa memantau status pengajuan di halaman <a href="mahasiswa_history.php">History</a>.</p>
+                    </div>
+                </div>
+            </li>
+            <li class="timeline-item">
+                <div class="timeline-step">5</div>
+                <div class="timeline-content">
+                    <div class="icon-container"><i class="fas fa-file-upload"></i></div>
+                    <div>
+                        <h4>Unggah Laporan (LPJ)</h4>
+                        <p>Setelah acara Anda disetujui dan selesai dilaksanakan, segera unggah Laporan Pertanggungjawaban (LPJ) melalui halaman <a href="mahasiswa_laporan.php">Laporan</a>.</p>
+                    </div>
+                </div>
+            </li>
+        </ul>
     </div>
 </div>
 
@@ -374,9 +465,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         li.innerHTML = `
                             <a href="${notif.link || '#'}">
-                                ${statusDot}
-                                <div class="notification-content">
-                                    <p class="notification-message">${notif.message}</p>
+                                <span class="math-inline">\{statusDot\}
+<div class\="notification\-content"\>
+<p class\="notification\-message"\></span>{notif.message}</p>
                                     <small class="notification-time">${notif.time_ago}</small>
                                 </div>
                             </a>`;
@@ -441,13 +532,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
             </ul>
             <div class="social-icons">
-                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="#" aria-label="RSS"><i class="fas fa-rss"></i></a>
             </div>
         </div>
     </div>
 </footer>
+
 </body>
 </html>
