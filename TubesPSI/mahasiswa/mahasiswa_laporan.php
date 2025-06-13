@@ -184,7 +184,7 @@ $conn->close();
         <li><a href="mahasiswa_laporan.php" class="active">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
-    <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 15px;"></i></a><a href="../logout.php"><i class="fas fa-sign-out-alt icon"></i></a></div>
+    <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 15px;"></i></a><a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a></div>
 </nav>
 
 <div class="content-wrapper">
