@@ -347,13 +347,16 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="footer-container">
         <div class="footer-left">
             <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
-            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
+            </div>
         </div>
         <div class="footer-right">
             <ul>
                 <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
-                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
-                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
             </ul>
             <div class="social-icons">
                 <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
