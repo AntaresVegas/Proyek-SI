@@ -102,7 +102,7 @@ try {
         .navbar-title { color: white; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #a7d8de; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: white; }
         .icon { font-size: 20px; cursor: pointer; }
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; flex-grow: 1; }
