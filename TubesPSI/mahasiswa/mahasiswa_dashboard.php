@@ -436,7 +436,6 @@ try {
         </ul>
     </div>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const notificationBell = document.getElementById('notificationBell');
@@ -465,9 +464,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         li.innerHTML = `
                             <a href="${notif.link || '#'}">
-                                <span class="math-inline">\{statusDot\}
-<div class\="notification\-content"\>
-<p class\="notification\-message"\></span>{notif.message}</p>
+                                ${statusDot}
+                                <div class="notification-content">
+                                    <p class="notification-message">${notif.message}</p>
                                     <small class="notification-time">${notif.time_ago}</small>
                                 </div>
                             </a>`;
@@ -518,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchNotifications();
 });
 </script>
-
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
