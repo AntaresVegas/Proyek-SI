@@ -57,7 +57,6 @@ try {
         }
 
         // Fetch event data for the calendar for the current month
-        // PERBAIKAN NAMA KOLOM DI SINI
         $stmt_calendar_events = $conn->prepare("
             SELECT 
                 pe.pengajuan_namaEvent,
@@ -111,6 +110,7 @@ $conn->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { height: 100%; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #1e3c72;
@@ -121,6 +121,8 @@ $conn->close();
             background-attachment: fixed;
             min-height: 100vh;
             padding-top: 80px;
+            display: flex;
+            flex-direction: column;
         }
         .navbar { display: flex; justify-content: space-between; align-items: center; background: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
@@ -128,12 +130,12 @@ $conn->close();
         .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: #2c3e50; font-weight: 500; }
-        .navbar-menu li a.active,        
-        .navbar-menu li a.active { /* Added active class style */
+        .navbar-menu li a.active {
             color: #007bff;
         }     
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #2c3e50; }
         .icon { font-size: 20px; cursor: pointer; }
+        .main-content { flex-grow: 1; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
         .content-card { background: rgba(255, 255, 255, 0.9); border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }
         .welcome-section { background: linear-gradient(135deg,rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; border-radius: 10px; padding: 25px; margin-bottom: 30px; text-align: center; }
@@ -162,6 +164,65 @@ $conn->close();
         .empty-day { background-color: #f9f9f9; }
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
+
+        /* ===== FOOTER STYLES ===== */
+        .page-footer {
+            background-color: #ff8c00; /* Warna disamakan dengan navbar Ditmawa */
+            color: #fff; /* Warna teks putih agar kontras */
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-logo {
+            width: 60px;
+            height: 60px;
+        }
+        .footer-left h4 {
+            font-size: 1.2em;
+            font-weight: 500;
+            line-height: 1.4;
+            color: #2c3e50; /* Menyamakan warna teks title di navbar */
+        }
+        .footer-right ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            color: #2c3e50;
+        }
+        .footer-right li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #2c3e50;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
+
     </style>
 </head>
 <body>
@@ -186,63 +247,86 @@ $conn->close();
     </div>
 </nav>
 
-<div class="container">
-    <div class="content-card">
-        <div class="welcome-section">
-            <h2>Selamat Datang di Dashboard Ditmawa</h2>
-            <p>Pengelolaan event dan kegiatan kemahasiswaan Universitas Katolik Parahyangan</p>
-        </div>
+<div class="main-content">
+    <div class="container">
+        <div class="content-card">
+            <div class="welcome-section">
+                <h2>Selamat Datang di Dashboard Ditmawa</h2>
+                <p>Pengelolaan event dan kegiatan kemahasiswaan Universitas Katolik Parahyangan</p>
+            </div>
 
-        <div class="stats-grid">
-            <div class="stat-card events">
-                <div class="icon"><i class="fas fa-calendar-alt"></i></div>
-                <div class="number"><?php echo $total_events_stat; ?></div>
-                <div class="label">Total Event</div>
+            <div class="stats-grid">
+                <div class="stat-card events">
+                    <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="number"><?php echo $total_events_stat; ?></div>
+                    <div class="label">Total Event</div>
+                </div>
+                <div class="stat-card students">
+                    <div class="icon"><i class="fas fa-users"></i></div>
+                    <div class="number"><?php echo $total_mahasiswa; ?></div>
+                    <div class="label">Total Mahasiswa</div>
+                </div>
+                <div class="stat-card pending">
+                    <div class="icon"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="number"><?php echo $pending_approvals; ?></div>
+                    <div class="label">Menunggu Persetujuan</div>
+                </div>
             </div>
-            <div class="stat-card students">
-                <div class="icon"><i class="fas fa-users"></i></div>
-                <div class="number"><?php echo $total_mahasiswa; ?></div>
-                <div class="label">Total Mahasiswa</div>
-            </div>
-            <div class="stat-card pending">
-                <div class="icon"><i class="fas fa-hourglass-half"></i></div>
-                <div class="number"><?php echo $pending_approvals; ?></div>
-                <div class="label">Menunggu Persetujuan</div>
-            </div>
-        </div>
 
-        <div class="calendar-wrapper">
-            <h2 class="calendar-title">KALENDER INSTITUSIONAL UNPAR</h2>
-            <div class="calendar-header">
-                <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" aria-label="Bulan Sebelumnya">&larr;</a>
-                <h2><?php echo $date->format('F Y'); ?></h2>
-                <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" aria-label="Bulan Berikutnya">&rarr;</a>
-            </div>
-            <div class="calendar-grid">
-                <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
-                <?php for ($i = 1; $i < $firstDayOfWeek; $i++) echo '<div class="day-cell empty-day"></div>'; ?>
-                <?php for ($day = 1; $day <= $daysInMonth; $day++): ?>
-                    <div class="day-cell">
-                        <div class="day-number"><?php echo $day; ?></div>
-                        <?php if (isset($calendar_events[$day])): ?>
-                            <?php foreach ($calendar_events[$day] as $eventName): ?>
-                                <span class="event-indicator"><?php echo $eventName; ?></span>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                <?php endfor; ?>
-                <?php 
-                    $totalCells = $firstDayOfWeek - 1 + $daysInMonth;
-                    $remainingCells = (7 - ($totalCells % 7)) % 7;
-                    for ($i = 0; $i < $remainingCells; $i++) echo '<div class="day-cell empty-day"></div>';
-                ?>
-            </div>
-            <div class="detail-link-container">
-                <a href="ditmawa_dataEvent.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+            <div class="calendar-wrapper">
+                <h2 class="calendar-title">KALENDER INSTITUSIONAL UNPAR</h2>
+                <div class="calendar-header">
+                    <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" aria-label="Bulan Sebelumnya">&larr;</a>
+                    <h2><?php echo $date->format('F Y'); ?></h2>
+                    <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" aria-label="Bulan Berikutnya">&rarr;</a>
+                </div>
+                <div class="calendar-grid">
+                    <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
+                    <?php for ($i = 1; $i < $firstDayOfWeek; $i++) echo '<div class="day-cell empty-day"></div>'; ?>
+                    <?php for ($day = 1; $day <= $daysInMonth; $day++): ?>
+                        <div class="day-cell">
+                            <div class="day-number"><?php echo $day; ?></div>
+                            <?php if (isset($calendar_events[$day])): ?>
+                                <?php foreach ($calendar_events[$day] as $eventName): ?>
+                                    <span class="event-indicator"><?php echo $eventName; ?></span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    <?php endfor; ?>
+                    <?php 
+                        $totalCells = $firstDayOfWeek - 1 + $daysInMonth;
+                        $remainingCells = (7 - ($totalCells % 7)) % 7;
+                        for ($i = 0; $i < $remainingCells; $i++) echo '<div class="day-cell empty-day"></div>';
+                    ?>
+                </div>
+                <div class="detail-link-container">
+                    <a href="ditmawa_dataEvent.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
+                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

@@ -108,14 +108,15 @@ $conn->close();
     <style>
         /* Sebagian besar CSS sama, hanya menambahkan sedikit style untuk file input */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 80px;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 80px;background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;}
+        
         .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
         .navbar-menu { list-style: none; }
         .navbar-menu li a { text-decoration: none; color:rgb(253, 253, 253); font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #87CEEB; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { color:rgb(255, 255, 255); }
         .container { max-width: 900px; margin: 20px auto 30px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
         .main-content { padding: 30px; }

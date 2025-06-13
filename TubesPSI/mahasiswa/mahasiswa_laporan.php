@@ -67,9 +67,26 @@ $conn->close();
     <title>Upload LPJ - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: rgb(2, 71, 25);
+            --secondary-color: #0d6efd;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding-top: 80px;background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;}
-        .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
+        html { height: 100%; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #f4f7f6; 
+            padding-top: 80px;
+            background-image: url('../img/backgroundUnpar.jpeg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+        .content-wrapper { flex-grow: 1; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background:var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
@@ -93,46 +110,65 @@ $conn->close();
         .upload-message.success { background-color: #198754; color: white; }
         .upload-message.error { background-color: #dc3545; color: white; }
         .upload-message.show { opacity: 1; }
-
-        /* --- STYLE BARU (KOMBINASI) --- */
-        .template-info-box {
-            background-color: #e9f5ff;
-            border-left: 5px solid #0d6efd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
+        .template-info-box { background-color: #e9f5ff; border-left: 5px solid #0d6efd; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+        .template-info-box .template-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .btn-download-template { display: block; width: 100%; padding: 12px; text-align: center; background-color: #0d6efd; color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: background-color 0.3s; margin-bottom: 15px; }
+        .btn-download-template:hover { background-color: #0b5ed7; }
+        .btn-download-template i { margin-right: 8px; }
+        .template-note { font-size: 14px; color: #555; line-height: 1.5; margin: 0; text-align: center; }
+        .page-footer {
+            background-color: var(--primary-color);
+            color: #e9ecef;
+            padding: 40px 0;
+            margin-top: 40px;
         }
-        .template-info-box .template-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
         }
-        .btn-download-template {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            text-align: center;
-            background-color: #0d6efd;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-logo {
+            width: 60px;
+            height: 60px;
+        }
+        .footer-left h4 {
+            font-size: 1.2em;
             font-weight: 500;
-            transition: background-color 0.3s;
-            margin-bottom: 15px;
+            line-height: 1.4;
         }
-        .btn-download-template:hover {
-            background-color: #0b5ed7;
-        }
-        .btn-download-template i {
-            margin-right: 8px;
-        }
-        .template-note {
-            font-size: 14px;
-            color: #555;
-            line-height: 1.5;
+        .footer-right ul {
+            list-style: none;
+            padding: 0;
             margin: 0;
-            text-align: center;
+        }
+        .footer-right li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
         }
     </style>
 </head>
@@ -148,52 +184,53 @@ $conn->close();
         <li><a href="mahasiswa_laporan.php" class="active">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
-    <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 15px;"></i></a><a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a></div>
+    <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 15px;"></i></a><a href="../logout.php"><i class="fas fa-sign-out-alt icon"></i></a></div>
 </nav>
 
-<div class="container">
-    <div class="header"><h1>Laporan Pertanggungjawaban Event</h1></div>
+<div class="content-wrapper">
+    <div class="container">
+        <div class="header"><h1>Laporan Pertanggungjawaban Event</h1></div>
 
-    <form action="mahasiswa_laporan.php" method="POST" enctype="multipart/form-data" id="lpjForm">
-        <div class="form-group">
-            <label for="pengajuan_id">Pilih Event yang Telah Selesai</label>
-            <select id="pengajuan_id" name="pengajuan_id" required>
-                <option value="">-- Pilih Event yang Sudah Disetujui --</option>
-                <?php if (!empty($events_for_lpj)): ?>
-                    <?php foreach ($events_for_lpj as $event): ?>
-                        <option value="<?php echo htmlspecialchars($event['pengajuan_id']); ?>"><?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?> (<?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?>)</option>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <option value="" disabled>Tidak ada event yang perlu di-LPJ-kan</option>
-                <?php endif; ?>
-            </select>
-        </div>
+        <form action="mahasiswa_laporan.php" method="POST" enctype="multipart/form-data" id="lpjForm">
+            <div class="form-group">
+                <label for="pengajuan_id">Pilih Event yang Telah Selesai</label>
+                <select id="pengajuan_id" name="pengajuan_id" required>
+                    <option value="">-- Pilih Event yang Sudah Disetujui --</option>
+                    <?php if (!empty($events_for_lpj)): ?>
+                        <?php foreach ($events_for_lpj as $event): ?>
+                            <option value="<?php echo htmlspecialchars($event['pengajuan_id']); ?>"><?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?> (<?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?>)</option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="" disabled>Tidak ada event yang perlu di-LPJ-kan</option>
+                    <?php endif; ?>
+                </select>
+            </div>
 
-        <div class="template-info-box">
-            <p class="template-title">Gunakan Template Resmi Untuk Laporan Anda</p>
-            <a href="../templates/LPJ_Template.docx" class="btn-download-template" download>
-                <i class="fas fa-download"></i> Unduh Template LPJ
-            </a>
-            <p class="template-note">
-                <strong>Penting:</strong> Pastikan laporan dibuat sesuai dengan template yang disediakan.
-            </p>
-        </div>
-        <div class="form-group">
-            <label for="dokumen_lpj">Unggah Dokumen LPJ Anda</label>
-            <input type="file" id="dokumen_lpj" name="dokumen_lpj" class="form-control-file" accept=".pdf,.doc,.docx" required>
-        </div>
+            <div class="template-info-box">
+                <p class="template-title">Gunakan Template Resmi Untuk Laporan Anda</p>
+                <a href="../templates/LPJ_Template.docx" class="btn-download-template" download>
+                    <i class="fas fa-download"></i> Unduh Template LPJ
+                </a>
+                <p class="template-note">
+                    <strong>Penting:</strong> Pastikan laporan dibuat sesuai dengan template yang disediakan.
+                </p>
+            </div>
+            <div class="form-group">
+                <label for="dokumen_lpj">Unggah Dokumen LPJ Anda</label>
+                <input type="file" id="dokumen_lpj" name="dokumen_lpj" class="form-control-file" accept=".pdf,.doc,.docx" required>
+            </div>
 
-        <div class="form-actions">
-            <button type="button" class="btn btn-clear" onclick="document.getElementById('lpjForm').reset();">Clear</button>
-            <button type="submit" name="submit_lpj" class="btn btn-submit">Submit LPJ</button>
-        </div>
-    </form>
+            <div class="form-actions">
+                <button type="button" class="btn btn-clear" onclick="document.getElementById('lpjForm').reset();">Clear</button>
+                <button type="submit" name="submit_lpj" class="btn btn-submit">Submit LPJ</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <div id="uploadMessage" class="upload-message <?php echo !empty($message) ? 'show ' . $message_type : ''; ?>"><?php echo htmlspecialchars($message); ?></div>
 
 <script>
-    // JavaScript tidak ada perubahan
     window.onload = function() {
         const messageDiv = document.getElementById('uploadMessage');
         if (messageDiv.textContent.trim() !== '') {
@@ -212,6 +249,28 @@ $conn->close();
         }
     };
 </script>
+
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
+                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>

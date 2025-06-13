@@ -11,7 +11,6 @@ $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
 $message = '';
 $message_type = '';
 
-// --- LOGIKA UNTUK PROSES SETUJUI/TOLAK LPJ ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
     $pengajuan_id = $_POST['pengajuan_id'];
     $new_status = '';
@@ -39,31 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
     }
 }
 
-
-// --- LOGIKA FETCH SEMUA DATA LAPORAN ---
 $laporan_data = [];
 try {
-    // Query ini mengambil SEMUA LPJ yang pernah diunggah
     $sql = "
         SELECT 
-            pe.pengajuan_id,
-            pe.pengajuan_namaEvent,
-            pe.pengajuan_LPJ,
-            pe.pengajuan_statusLPJ,
-            pe.pengajuan_komentarLPJ,
-            m.mahasiswa_nama,
-            m.mahasiswa_npm
-        FROM 
-            pengajuan_event pe
-        JOIN 
-            mahasiswa m ON pe.mahasiswa_id = m.mahasiswa_id
-        WHERE 
-            pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
-        ORDER BY 
-            pe.pengajuan_event_tanggal_selesai DESC
+            pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_LPJ, pe.pengajuan_statusLPJ,
+            pe.pengajuan_komentarLPJ, m.mahasiswa_nama, m.mahasiswa_npm
+        FROM pengajuan_event pe
+        JOIN mahasiswa m ON pe.mahasiswa_id = m.mahasiswa_id
+        WHERE pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
+        ORDER BY pe.pengajuan_event_tanggal_selesai DESC
     ";
     $stmt = $conn->prepare($sql);
-
     if ($stmt) {
         $stmt->execute();
         $result = $stmt->get_result();
@@ -83,18 +69,30 @@ $conn->close();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kelola Laporan Pertanggungjawaban - Event Management Unpar</title>
+    <title>Kelola Laporan - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; padding-top: 80px; }
+        html { height: 100%; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-image: url('../img/backgroundDitmawa.jpeg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+            padding-top: 80px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+        .main-content { flex-grow: 1; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
         .navbar-menu { list-style: none; }
         .navbar-menu a { text-decoration: none; color: #2c3e50; font-weight: 500; }
-        .navbar-menu a.active, .navbar-menu a:hover { color: #0056b3; }
+        .navbar-menu a.active, .navbar-menu a:hover { color: #007bff; }
         .icon { font-size: 20px; }
         .container { max-width: 1300px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }
         .laporan-header { text-align: center; margin-bottom: 30px; }
@@ -112,11 +110,10 @@ $conn->close();
         .message.success { background-color: #d1e7dd; color: #0f5132; }
         .message.error { background-color: #f8d7da; color: #842029; }
         .status-badge { padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; text-align: center; font-size: 12px; text-transform: capitalize; white-space: nowrap; }
-        .status-badge.menunggu-persetujuan { background-color: #ffc107; color: #333; }
-        .status-badge.ditolak { background-color: #dc3545; }
+        .status-badge.menunggu-persetujuan, .status-badge.diterima { background-color: #ffc107; color: #333; }
+        .status-badge.ditolak, .status-badge.revisi { background-color: #dc3545; }
         .status-badge.disetujui { background-color: #28a745; }
         .alasan-ditolak { font-size: 13px; color: #dc3545; font-style: italic; max-width: 250px; word-wrap: break-word; }
-        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 15% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
@@ -124,6 +121,16 @@ $conn->close();
         .close-button { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-body textarea { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; min-height: 100px; margin-bottom: 20px; }
         .modal-footer { text-align: right; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; }
+        .footer-container { max-width: 1300px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -146,69 +153,71 @@ $conn->close();
     </div>
 </nav>
 
-<div class="container">
-    <div class="laporan-header">
-        <h1>Kelola Laporan Pertanggungjawaban</h1>
-    </div>
+<div class="main-content">
+    <div class="container">
+        <div class="laporan-header">
+            <h1>Kelola Laporan Pertanggungjawaban</h1>
+        </div>
 
-    <?php if ($message): ?>
-        <div class="message <?php echo $message_type; ?>"><?php echo htmlspecialchars($message); ?></div>
-    <?php endif; ?>
+        <?php if ($message): ?>
+            <div class="message <?php echo $message_type; ?>"><?php echo htmlspecialchars($message); ?></div>
+        <?php endif; ?>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>NAMA MAHASISWA</th>
-                <th>NAMA ACARA</th>
-                <th>STATUS LPJ</th>
-                <th>KETERANGAN</th>
-                <th>DOKUMEN LPJ</th>
-                <th>AKSI</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (!empty($laporan_data)): ?>
-                <?php foreach ($laporan_data as $row):
-                    $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
-                ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($row['mahasiswa_nama']); ?></td>
-                        <td><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></td>
-                        <td>
-                            <span class="status-badge <?php echo $status_class; ?>">
-                                <?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?>
-                            </span>
-                        </td>
-                        <td>
-                            <?php if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])): ?>
-                                <div class="alasan-ditolak"><?php echo htmlspecialchars($row['pengajuan_komentarLPJ']); ?></div>
-                            <?php else: ?>
-                                -
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if (!empty($row['pengajuan_LPJ'])): ?>
-                                <a href="../<?php echo htmlspecialchars($row['pengajuan_LPJ']); ?>" class="download-button" download><i class="fas fa-download"></i> Download</a>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <form method="POST" action="ditmawa_laporan.php" style="display:inline;">
-                                    <input type="hidden" name="pengajuan_id" value="<?php echo $row['pengajuan_id']; ?>">
-                                    <button type="submit" name="setujui_lpj" class="btn btn-approve">Setujui</button>
-                                </form>
-                                <button type="button" class="btn btn-reject" onclick="openRejectModal('<?php echo $row['pengajuan_id']; ?>')">Tolak</button>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <td colspan="6" class="no-data-message">Belum ada LPJ yang pernah diunggah.</td>
+                    <th>NAMA MAHASISWA</th>
+                    <th>NAMA ACARA</th>
+                    <th>STATUS LPJ</th>
+                    <th>KETERANGAN</th>
+                    <th>DOKUMEN LPJ</th>
+                    <th>AKSI</th>
                 </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php if (!empty($laporan_data)): ?>
+                    <?php foreach ($laporan_data as $row):
+                        $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
+                    ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($row['mahasiswa_nama']); ?><br><small><?php echo htmlspecialchars($row['mahasiswa_npm']); ?></small></td>
+                            <td><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></td>
+                            <td>
+                                <span class="status-badge <?php echo $status_class; ?>">
+                                    <?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])): ?>
+                                    <div class="alasan-ditolak"><?php echo htmlspecialchars($row['pengajuan_komentarLPJ']); ?></div>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($row['pengajuan_LPJ'])): ?>
+                                    <a href="../<?php echo htmlspecialchars($row['pengajuan_LPJ']); ?>" class="download-button" download><i class="fas fa-download"></i> Download</a>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form method="POST" action="ditmawa_laporan.php" style="display:inline;">
+                                        <input type="hidden" name="pengajuan_id" value="<?php echo $row['pengajuan_id']; ?>">
+                                        <button type="submit" name="setujui_lpj" class="btn btn-approve">Setujui</button>
+                                    </form>
+                                    <button type="button" class="btn btn-reject" onclick="openRejectModal('<?php echo $row['pengajuan_id']; ?>')">Tolak</button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" class="no-data-message">Belum ada LPJ yang pernah diunggah.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div id="rejectModal" class="modal">
@@ -245,6 +254,28 @@ $conn->close();
         }
     }
 </script>
+
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
+                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>

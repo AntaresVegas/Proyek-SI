@@ -1,61 +1,38 @@
 <?php
 session_start();
 
-// Check if user is logged in and is a ditmawa
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
-    header("Location: ../index.php"); // Redirect to login page if not authorized
+    header("Location: ../index.php");
     exit();
 }
 
-// Include database connection
 require_once('../config/db_connection.php');
 
-// Set default values for session variables for navbar
 $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
 
-// Current month and year for calendar
 $currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
 $currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
-// Adjust month and year if out of range
-if ($currentMonth < 1) {
-    $currentMonth = 12;
-    $currentYear--;
-} elseif ($currentMonth > 12) {
-    $currentMonth = 1;
-    $currentYear++;
-}
+if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; } 
+elseif ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
 
 $date = new DateTime("$currentYear-$currentMonth-01");
 $daysInMonth = $date->format('t');
-$firstDayOfWeek = $date->format('N'); // 1 for Monday, 7 for Sunday
+$firstDayOfWeek = $date->format('N');
 
-$prevMonth = $currentMonth - 1;
-$prevYear = $currentYear;
-if ($prevMonth < 1) {
-    $prevMonth = 12;
-    $prevYear--;
-}
+$prevMonth = $currentMonth - 1; $prevYear = $currentYear;
+if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
 
-$nextMonth = $currentMonth + 1;
-$nextYear = $currentYear;
-if ($nextMonth > 12) {
-    $nextMonth = 1;
-    $nextYear++;
-}
+$nextMonth = $currentMonth + 1; $nextYear = $currentYear;
+if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 
-// Fetch buildings and floors for filters
 $buildings = [];
 $floors = [];
 try {
     $result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY gedung_nama");
-    while ($row = $result_gedung->fetch_assoc()) {
-        $buildings[] = $row;
-    }
+    while ($row = $result_gedung->fetch_assoc()) { $buildings[] = $row; }
     $result_lantai = $conn->query("SELECT lantai_id, gedung_id, lantai_nomor FROM lantai ORDER BY gedung_id, lantai_nomor");
-    while ($row = $result_lantai->fetch_assoc()) {
-        $floors[] = $row;
-    }
+    while ($row = $result_lantai->fetch_assoc()) { $floors[] = $row; }
 } catch (Exception $e) {
     error_log("Error fetching location data for Ditmawa: " . $e->getMessage());
 }
@@ -71,49 +48,31 @@ $conn->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { height: 100%; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e3c72;
             background-image: url('../img/backgroundDitmawa.jpeg');
             background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
+            background-position: center;
             background-attachment: fixed;
-            min-height: 100vh;
+            min-height: 100%;
             padding-top: 80px;
-        }        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left { display: flex; align-items: center; gap: 10px; }
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content { flex-grow: 1; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
-        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu { list-style: none; }
         .navbar-menu li a { text-decoration: none; color: #2c3e50; font-weight: 500; }
-        .navbar-menu li a.active { /* Added active class style */
-            color: #007bff;
-        }        
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #2c3e50; }
         .icon { font-size: 20px; cursor: pointer; }
-
-        /* --- STYLE BARU UNTUK HEADER --- */
-        .page-header {
-            background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%);
-            color: white;
-            padding: 25px;
-            margin: 20px auto;
-            max-width: 1100px; /* Samakan dengan lebar container kalender */
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .page-header h1 {
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        .page-header p {
-            opacity: 0.9;
-            font-size: 16px;
-        }
-        /* --- AKHIR STYLE BARU --- */
-
+        .page-header { background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .page-header h1 { margin-bottom: 10px; font-size: 28px; }
+        .page-header p { opacity: 0.9; font-size: 16px; }
         .calendar-container { max-width: 1100px; margin: 20px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-header h2 { font-size: 28px; }
@@ -135,6 +94,16 @@ $conn->close();
         .modal-body .event-item { border-left: 4px solid #ff8c00; padding: 10px; margin-bottom: 10px; background-color: #fff9f2; }
         .modal-body .event-item h4 { margin-bottom: 5px; color: #d97706; }
         .modal-body .event-item span { display: block; font-size: 14px; color: #555; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; }
+        .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -157,31 +126,33 @@ $conn->close();
     </div>
 </nav>
 
-<div class="page-header">
-    <h1>Kalender Institusional UNPAR</h1>
-    <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
-</div>
-<div class="calendar-container">
-    <div class="calendar-header">
-        <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>">&larr;</a>
-        <h2><?php echo $date->format('F Y'); ?></h2>
-        <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>">&rarr;</a>
+<div class="main-content">
+    <div class="page-header">
+        <h1>Kalender Institusional UNPAR</h1>
+        <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
     </div>
-
-    <div class="filter-section">
-        <select id="gedungFilter">
-            <option value="">Semua Gedung</option>
-            <?php foreach ($buildings as $building): ?>
-                <option value="<?php echo $building['gedung_id']; ?>"><?php echo htmlspecialchars($building['gedung_nama']); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <select id="lantaiFilter" disabled>
-            <option value="">Semua Lantai</option>
-        </select>
-    </div>
-
-    <div class="calendar-grid" id="calendarGrid">
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>">&larr;</a>
+            <h2><?php echo $date->format('F Y'); ?></h2>
+            <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>">&rarr;</a>
         </div>
+
+        <div class="filter-section">
+            <select id="gedungFilter">
+                <option value="">Semua Gedung</option>
+                <?php foreach ($buildings as $building): ?>
+                    <option value="<?php echo $building['gedung_id']; ?>"><?php echo htmlspecialchars($building['gedung_nama']); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select id="lantaiFilter" disabled>
+                <option value="">Semua Lantai</option>
+            </select>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            </div>
+    </div>
 </div>
 
 <div id="eventModal" class="modal" style="display: none;">
@@ -192,6 +163,28 @@ $conn->close();
     </div>
 </div>
 
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
+                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+            </ul>
+             <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const calendarGrid = document.getElementById('calendarGrid');
@@ -199,16 +192,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const lantaiFilter = document.getElementById('lantaiFilter');
     const eventModal = document.getElementById('eventModal');
     const closeButton = document.querySelector('.close-button');
-
     const allFloors = <?php echo json_encode($floors); ?>;
     const currentMonth = <?php echo $currentMonth; ?>;
     const currentYear = <?php echo $currentYear; ?>;
-    
     function updateLantaiFilter() {
         const selectedGedungId = gedungFilter.value;
         lantaiFilter.innerHTML = '<option value="">Semua Lantai</option>';
         lantaiFilter.disabled = true;
-
         if (selectedGedungId) {
             const filteredFloors = allFloors.filter(floor => floor.gedung_id == selectedGedungId);
             filteredFloors.forEach(floor => {
@@ -221,22 +211,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         fetchEventsAndRenderCalendar();
     }
-
     function renderCalendar(eventsData) {
         const date = new Date(currentYear, currentMonth - 1, 1);
         const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
         let firstDayOfWeek = date.getDay(); 
         if (firstDayOfWeek === 0) firstDayOfWeek = 7; 
-
         let html = `<div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>`;
         for (let i = 1; i < firstDayOfWeek; i++) {
             html += '<div class="day-cell empty-day"></div>';
         }
-
         for (let day = 1; day <= daysInMonth; day++) {
             const fullDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const hasEvents = eventsData[day] && eventsData[day].length > 0;
-            
             html += `<div class="day-cell ${hasEvents ? 'has-events' : ''}" data-date="${fullDate}">`;
             html += `<div class="day-number">${day}</div>`;
             if (hasEvents) {
@@ -249,11 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarGrid.innerHTML = html;
         addDayCellClickListeners();
     }
-
     function fetchEventsAndRenderCalendar() {
         const selectedGedung = gedungFilter.value;
         const selectedLantai = lantaiFilter.value;
-        
         fetch(`../fetch_event_data.php?month=${currentMonth}&year=${currentYear}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
             .then(response => response.json())
             .then(data => {
@@ -261,18 +245,15 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => console.error('Error fetching events:', error));
     }
-
     function addDayCellClickListeners() {
         document.querySelectorAll('.day-cell:not(.empty-day)').forEach(cell => {
             cell.addEventListener('click', function() {
                 const date = this.dataset.date;
                 const selectedGedung = gedungFilter.value;
                 const selectedLantai = lantaiFilter.value;
-
                 document.getElementById('modalDate').textContent = new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 document.getElementById('modalBody').innerHTML = '<p>Memuat...</p>';
                 eventModal.style.display = 'flex';
-
                 fetch(`../fetch_event_details.php?date=${date}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
                     .then(response => response.json())
                     .then(data => {
@@ -300,12 +281,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
     gedungFilter.addEventListener('change', updateLantaiFilter);
     lantaiFilter.addEventListener('change', fetchEventsAndRenderCalendar);
     closeButton.addEventListener('click', () => { eventModal.style.display = 'none'; });
     window.addEventListener('click', (event) => { if (event.target == eventModal) { eventModal.style.display = 'none'; } });
-
     fetchEventsAndRenderCalendar();
 });
 </script>

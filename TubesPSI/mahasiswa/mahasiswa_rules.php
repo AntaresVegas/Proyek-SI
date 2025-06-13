@@ -209,6 +209,66 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 font-size: 17px;
             }
         }
+        :root {
+            --primary-color: rgb(2, 71, 25); --secondary-color: #0d6efd; --light-gray: #f8f9fa;
+            --text-dark: #212529; --text-light: #6c757d; --border-color: #dee2e6;
+            --status-green: #198754; --status-red: #dc3545; --status-yellow: #ffc107;
+        }
+        /* ===== FOOTER STYLES ===== */
+        .page-footer {
+            background-color: var(--primary-color);
+            color: #e9ecef;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-logo {
+            width: 60px;
+            height: 60px;
+        }
+        .footer-left h4 {
+            font-size: 1.2em;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .footer-right ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-right li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
 
     </style>
 </head>
@@ -287,7 +347,29 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <p><strong>Pemberitahuan:</strong> Panitia wajib memberitahukan pihak kampus jika ada perubahan atau pembatalan event.</p>
         <p><strong>Kewenangan Universitas:</strong> Pihak universitas berhak membatalkan event jika ditemukan pelanggaran peraturan.</p>
     </div>
+    
 </div>
-
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
+                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
+
 </html>

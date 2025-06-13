@@ -94,7 +94,8 @@ try {
             --status-green: #198754; --status-red: #dc3545; --status-yellow: #ffc107;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--light-gray); padding-top: 80px;  background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; }
+        html { height: 100%; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--light-gray); padding-top: 80px;  background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; min-height: 100%; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
@@ -104,13 +105,12 @@ try {
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: white; }
         .icon { font-size: 20px; cursor: pointer; }
-        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; flex-grow: 1; }
         .welcome-section { background: linear-gradient(135deg, var(--primary-color) 0%, #307a4a 100%); color: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center; }
         .no-data-message { text-align: center; color: var(--text-light); padding: 40px 20px; font-style: italic; background: #fff; border-radius: 8px; border: 1px dashed var(--border-color); }
         .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
         @media (min-width: 1200px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
         
-        /* === KODE CSS YANG DITAMBAHKAN === */
         .dashboard-card {
             background: #fff;
             border-radius: 12px;
@@ -148,8 +148,6 @@ try {
         .day-number { font-weight: bold; }
         .event-indicator { font-size: 0.8em; background: var(--status-green); color: white; padding: 3px 5px; border-radius: 4px; margin-top: 5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .empty-day { background-color: var(--light-gray); }
-        
-        /* === CSS Notifikasi yang Diperbarui === */
         .notification-container { position: relative; }
         .notification-badge { position: absolute; top: -5px; right: -8px; background-color: var(--status-red); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 1px solid white; }
         .notifications-dropdown { display: none; position: absolute; top: 50px; right: 0; background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); width: 380px; z-index: 1001; }
@@ -160,15 +158,72 @@ try {
         #notificationList { list-style: none; padding: 8px; margin: 0; max-height: 320px; overflow-y: auto; }
         .notification-list-item { background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); list-style: none; }
         .notification-list-item a { text-decoration: none; color: inherit; display: flex; align-items: center; padding: 12px 15px; }
-        .notification-list-item.unread { background-color: #fff8f8; /* Latar belakang merah muda untuk belum dibaca */ }
+        .notification-list-item.unread { background-color: #fff8f8; }
         .status-dot { height: 10px; width: 10px; border-radius: 50%; flex-shrink: 0; margin-right: 12px; }
-        .status-dot.unread { background-color: var(--status-red); } /* Titik merah */
-        .status-dot.read { background-color: var(--secondary-color); } /* Titik biru */
+        .status-dot.unread { background-color: var(--status-red); }
+        .status-dot.read { background-color: var(--secondary-color); }
         .notification-message { margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark); line-height: 1.4; }
         .notification-time { font-size: 12px; color: var(--text-light); }
         .no-notifications { padding: 20px; text-align: center; color: #777; }
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
+
+        /* ===== FOOTER STYLES ===== */
+        .page-footer {
+            background-color: var(--primary-color);
+            color: #e9ecef;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-logo {
+            width: 60px;
+            height: 60px;
+        }
+        .footer-left h4 {
+            font-size: 1.2em;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .footer-right ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-right li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
+
     </style>
 </head>
 <body>
@@ -373,5 +428,26 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <h4>UNIVERSITAS<br>KATOLIK PARAHYANGAN</h4>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655; (022) 204 2004</li>
+                <li><i class="fas fa-envelope"></i> humkoler@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>
