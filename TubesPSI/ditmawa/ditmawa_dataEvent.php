@@ -128,7 +128,7 @@ $conn->close();
 
 <div class="main-content">
     <div class="page-header">
-        <h1>Kalender Institusional UNPAR</h1>
+        <h1>Kalender Event UNPAR</h1>
         <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
     </div>
     <div class="calendar-container">
