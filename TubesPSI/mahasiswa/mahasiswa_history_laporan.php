@@ -65,13 +65,14 @@ $conn->close();
             flex-direction: column;
         }
         .content-wrapper { flex-grow: 1; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background:var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
-        .navbar-menu { list-style: none; }
-        .navbar-menu li a { text-decoration: none; color:white; font-weight: 500; }
+        .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
+        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu li a { text-decoration: none; color:rgb(253, 253, 253); font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
         .icon { font-size: 20px; color: white; }
         .container { max-width: 1200px; margin: 20px auto 30px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .header { background:rgb(44, 62, 80); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; margin: -30px -30px 30px -30px; border-radius: 15px 15px 0 0; }
@@ -116,7 +117,7 @@ $conn->close();
     </ul>
     <div class="navbar-right">
         <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt iconLog"></i></a>
     </div>
 </nav>
 

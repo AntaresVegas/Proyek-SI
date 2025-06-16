@@ -140,6 +140,20 @@ try {
         .day-name { text-align: center; font-weight: 600; color: var(--text-light); padding: 10px 0; background-color: var(--light-gray); }
         .day-cell { background-color: #fff; padding: 8px; min-height: 100px; position: relative; }
         .day-number { font-weight: bold; }
+        
+        /* ===== CSS BARU UNTUK TANDA HARI INI ===== */
+        .day-cell.today .day-number {
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
         .event-indicator { font-size: 0.8em; background: var(--status-green); color: white; padding: 3px 5px; border-radius: 4px; margin-top: 5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .empty-day { background-color: var(--light-gray); }
         .notification-container { position: relative; }
@@ -354,9 +368,18 @@ try {
         <div class="calendar-grid">
                 <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
             <?php 
+            // ----- PERUBAHAN PHP UNTUK TANDA HARI INI -----
+            $today_day = date('j');
+            $today_month = date('n');
+            $today_year = date('Y');
+
             for ($i = 1; $i < $firstDayOfWeek; $i++) { echo '<div class="day-cell empty-day"></div>'; }
+            
             for ($day = 1; $day <= $daysInMonth; $day++) {
-                echo '<div class="day-cell">';
+                $isToday = ($day == $today_day && $currentMonth == $today_month && $currentYear == $today_year);
+                $cellClass = 'day-cell' . ($isToday ? ' today' : '');
+
+                echo '<div class="' . $cellClass . '">';
                 echo '<div class="day-number">' . $day . '</div>';
                 if (isset($calendar_events[$day])) {
                     foreach ($calendar_events[$day] as $eventName) {
@@ -365,6 +388,7 @@ try {
                 }
                 echo '</div>';
             }
+
             $totalCells = $firstDayOfWeek - 1 + $daysInMonth;
             $remainingCells = (7 - ($totalCells % 7)) % 7;
             if ($remainingCells > 0) {

@@ -13,13 +13,14 @@ $user_id = $_SESSION['user_id'] ?? 'No ID';
 require_once('../config/db_connection.php');
 
 // Initialize statistics variables
-$total_events_stat = 0;
-$total_mahasiswa = 0;
+$total_events_this_month = 0;
+$completed_events_this_month = 0;
 $pending_approvals = 0;
 
-// Current month and year for calendar
+// Current month and year for calendar and stats
 $currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
 $currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+$today = date('Y-m-d'); // Get current date for highlighting
 
 if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; } 
 elseif ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
@@ -38,17 +39,25 @@ $calendar_events = [];
 
 try {
     if (isset($conn) && $conn->ping()) {
-        // Count total events for statistics
-        $result_stat_events = $conn->query("SELECT COUNT(*) as total FROM pengajuan_event");
-        if ($result_stat_events) {
-            $total_events_stat = $result_stat_events->fetch_assoc()['total'];
+        // Count total events starting this month
+        $stmt_events_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?");
+        $stmt_events_month->bind_param("ii", $currentMonth, $currentYear);
+        $stmt_events_month->execute();
+        $result_events_month = $stmt_events_month->get_result();
+        if ($result_events_month) {
+            $total_events_this_month = $result_events_month->fetch_assoc()['total'];
         }
+        $stmt_events_month->close();
 
-        // Count total mahasiswa
-        $result_mahasiswa = $conn->query("SELECT COUNT(*) as total FROM mahasiswa");
-        if ($result_mahasiswa) {
-            $total_mahasiswa = $result_mahasiswa->fetch_assoc()['total'];
+        // Count completed events this month
+        $stmt_completed_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ? AND pengajuan_event_tanggal_selesai < ?");
+        $stmt_completed_month->bind_param("iis", $currentMonth, $currentYear, $today);
+        $stmt_completed_month->execute();
+        $result_completed_month = $stmt_completed_month->get_result();
+        if ($result_completed_month) {
+            $completed_events_this_month = $result_completed_month->fetch_assoc()['total'];
         }
+        $stmt_completed_month->close();
 
         // Count pending event approvals
         $result_pending = $conn->query("SELECT COUNT(*) as total FROM pengajuan_event WHERE pengajuan_status = 'Diajukan'");
@@ -137,29 +146,47 @@ $conn->close();
         .icon { font-size: 20px; cursor: pointer; }
         .main-content { flex-grow: 1; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
-        .content-card { background: rgba(255, 255, 255, 0.9); border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }
+        
+        /* === PERUBAHAN CSS === */
+        .content-card { 
+            background: rgba(255, 255, 255, 0.9); 
+            border-radius: 15px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            padding: 30px;
+            margin-bottom: 30px; /* Menambahkan jarak antar kartu */
+        }
         .welcome-section { background: linear-gradient(135deg,rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; border-radius: 10px; padding: 25px; margin-bottom: 30px; text-align: center; }
         .welcome-section h2 { font-size: 28px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; } /* Dihapus margin-bottom dari sini karena sudah ada di content-card */
         .stat-card { background: white; border-left: 5px solid; border-radius: 10px; padding: 25px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .stat-card.events { border-color: #3498db; }
-        .stat-card.students { border-color: #27ae60; }
+        .stat-card.completed { border-color: #27ae60; }
         .stat-card.pending { border-color: #f39c12; }
         .stat-card .icon { font-size: 40px; margin-bottom: 15px; }
         .stat-card.events .icon { color: #3498db; }
-        .stat-card.students .icon { color: #27ae60; }
+        .stat-card.completed .icon { color: #27ae60; }
         .stat-card.pending .icon { color: #f39c12; }
         .stat-card .number { font-size: 32px; font-weight: bold; }
         .stat-card .label { color: #7f8c8d; font-size: 14px; text-transform: uppercase; }
-        .calendar-wrapper { margin-top: 30px; }
+        .calendar-wrapper { margin-top: 0; } /* Dihapus margin-top dari sini */
         .calendar-title { text-align: center; font-size: 1.8em; margin-bottom: 20px; font-weight: 600; color: #2c3e50;}
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-header h2 { font-size: 1.5em; }
         .calendar-header a { text-decoration: none; color: #ff8c00; font-size: 1.5em; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .day-name { text-align: center; font-weight: 600; padding: 10px 0; font-size: 0.9em; }
-        .day-cell { border: 1px solid #f0f0f0; min-height: 100px; padding: 5px; font-size: 0.8em; background: #fff; border-radius: 4px; }
+        .day-cell { border: 1px solid #f0f0f0; min-height: 100px; padding: 5px; font-size: 0.8em; background: #fff; border-radius: 4px; position: relative; }
         .day-number { font-weight: bold; }
+        .day-cell.today .day-number {
+            background-color: #ff8c00;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .event-indicator { font-size: 0.9em; background-color: #ffe8cc; color: #d97706; padding: 2px 4px; border-radius: 4px; margin-top: 3px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .empty-day { background-color: #f9f9f9; }
         .detail-link-container { text-align: center; margin-top: 15px; }
@@ -167,8 +194,8 @@ $conn->close();
 
         /* ===== FOOTER STYLES ===== */
         .page-footer {
-            background-color: #ff8c00; /* Warna disamakan dengan navbar Ditmawa */
-            color: #fff; /* Warna teks putih agar kontras */
+            background-color: #ff8c00;
+            color: #fff;
             padding: 40px 0;
             margin-top: 40px;
         }
@@ -195,7 +222,7 @@ $conn->close();
             font-size: 1.2em;
             font-weight: 500;
             line-height: 1.4;
-            color: #2c3e50; /* Menyamakan warna teks title di navbar */
+            color: #2c3e50;
         }
         .footer-right ul {
             list-style: none;
@@ -257,14 +284,14 @@ $conn->close();
 
             <div class="stats-grid">
                 <div class="stat-card events">
-                    <div class="icon"><i class="fas fa-calendar-alt"></i></div>
-                    <div class="number"><?php echo $total_events_stat; ?></div>
-                    <div class="label">Total Event</div>
+                    <div class="icon"><i class="fas fa-calendar-day"></i></div>
+                    <div class="number"><?php echo $total_events_this_month; ?></div>
+                    <div class="label">Total Event Bulan Ini</div>
                 </div>
-                <div class="stat-card students">
-                    <div class="icon"><i class="fas fa-users"></i></div>
-                    <div class="number"><?php echo $total_mahasiswa; ?></div>
-                    <div class="label">Total Mahasiswa</div>
+                <div class="stat-card completed">
+                    <div class="icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="number"><?php echo $completed_events_this_month; ?></div>
+                    <div class="label">Event Selesai Bulan Ini</div>
                 </div>
                 <div class="stat-card pending">
                     <div class="icon"><i class="fas fa-hourglass-half"></i></div>
@@ -272,19 +299,26 @@ $conn->close();
                     <div class="label">Menunggu Persetujuan</div>
                 </div>
             </div>
-
+        </div> <div class="content-card">
             <div class="calendar-wrapper">
                 <h2 class="calendar-title">KALENDER INSTITUSIONAL UNPAR</h2>
                 <div class="calendar-header">
-                    <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" aria-label="Bulan Sebelumnya">&larr;</a>
+                    <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>" aria-label="Bulan Sebelumnya">←</a>
                     <h2><?php echo $date->format('F Y'); ?></h2>
-                    <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" aria-label="Bulan Berikutnya">&rarr;</a>
+                    <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>" aria-label="Bulan Berikutnya">→</a>
                 </div>
                 <div class="calendar-grid">
                     <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
                     <?php for ($i = 1; $i < $firstDayOfWeek; $i++) echo '<div class="day-cell empty-day"></div>'; ?>
-                    <?php for ($day = 1; $day <= $daysInMonth; $day++): ?>
-                        <div class="day-cell">
+                    <?php 
+                    $today_day = date('j');
+                    $today_month = date('n');
+                    $today_year = date('Y');
+                    for ($day = 1; $day <= $daysInMonth; $day++): 
+                        $isToday = ($day == $today_day && $currentMonth == $today_month && $currentYear == $today_year);
+                        $cellClass = 'day-cell' . ($isToday ? ' today' : '');
+                    ?>
+                        <div class="<?php echo $cellClass; ?>">
                             <div class="day-number"><?php echo $day; ?></div>
                             <?php if (isset($calendar_events[$day])): ?>
                                 <?php foreach ($calendar_events[$day] as $eventName): ?>
@@ -303,8 +337,7 @@ $conn->close();
                     <a href="ditmawa_dataEvent.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
                 </div>
             </div>
-        </div>
-    </div>
+        </div> </div>
 </div>
 
 <footer class="page-footer">
