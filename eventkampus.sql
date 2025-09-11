@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 13, 2025 at 02:35 PM
+-- Generation Time: Sep 11, 2025 at 06:15 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -83,7 +83,10 @@ CREATE TABLE `lantai` (
 INSERT INTO `lantai` (`lantai_id`, `gedung_id`, `lantai_nomor`) VALUES
 (1, 1, '1'),
 (2, 1, '2'),
-(3, 1, '3');
+(3, 1, '3'),
+(4, 2, '1'),
+(5, 2, '2'),
+(6, 2, '3');
 
 -- --------------------------------------------------------
 
@@ -162,7 +165,9 @@ CREATE TABLE `peminjaman_ruangan` (
 
 INSERT INTO `peminjaman_ruangan` (`peminjaman_id`, `pengajuan_id`, `ruangan_id`) VALUES
 (1, 1, 1),
-(2, 4, 3);
+(2, 4, 3),
+(3, 5, 1),
+(4, 5, 4);
 
 -- --------------------------------------------------------
 
@@ -199,7 +204,8 @@ INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `mahasiswa
 (1, 'Seminar AI Masa Depan', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, 'Disetujui', NULL, 1, '2025-06-12 10:06:24', NULL, NULL, '', NULL),
 (2, 'Workshop Fotografi Dasar', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, 'Diajukan', NULL, NULL, '2025-06-12 10:06:24', NULL, NULL, '', NULL),
 (3, 'Lomba Catur Antar Jurusan', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, 'Ditolak', '2025-06-12 20:24:59', 1, '2025-06-12 10:06:24', 'tempatnya tolong diisi', NULL, '', NULL),
-(4, 'ISEC', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', '', '', 'Disetujui', '2025-06-12 06:22:17', 1, '2025-06-12 11:20:39', '', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'kurang lengkap');
+(4, 'ISEC', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', '', '', 'Disetujui', '2025-06-12 06:22:17', 1, '2025-06-12 11:20:39', '', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'kurang lengkap'),
+(5, 'Science Fest', 0, 'Lomba', '11:12:00', '16:12:00', '2025-09-18', '2025-09-20', 0x75706c6f6164732f72756e646f776e2f363863323463333535393735395f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323463333535396334615f5450532026204d495320363138323130313033392e706466, 'Diajukan', NULL, NULL, '2025-09-11 11:12:37', NULL, NULL, 'Menunggu Persetujuan', NULL);
 
 -- --------------------------------------------------------
 
@@ -220,7 +226,9 @@ CREATE TABLE `ruangan` (
 INSERT INTO `ruangan` (`ruangan_id`, `ruangan_nama`, `lantai_id`) VALUES
 (1, '10317', 3),
 (2, '10318', 3),
-(3, '10323', 3);
+(3, '10323', 3),
+(4, '9017', 4),
+(5, '9018', 4);
 
 -- --------------------------------------------------------
 
@@ -323,7 +331,7 @@ ALTER TABLE `gedung`
 -- AUTO_INCREMENT for table `lantai`
 --
 ALTER TABLE `lantai`
-  MODIFY `lantai_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `lantai_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `mahasiswa`
@@ -347,19 +355,19 @@ ALTER TABLE `organisasi`
 -- AUTO_INCREMENT for table `peminjaman_ruangan`
 --
 ALTER TABLE `peminjaman_ruangan`
-  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `pengajuan_event`
 --
 ALTER TABLE `pengajuan_event`
-  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `ruangan`
 --
 ALTER TABLE `ruangan`
-  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `unit`
