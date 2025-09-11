@@ -8,18 +8,28 @@ if (!isset($_GET['lantai_ids']) || !is_array($_GET['lantai_ids'])) {
 }
 
 $lantai_ids = $_GET['lantai_ids'];
+if (empty($lantai_ids)) {
+    echo json_encode([]);
+    exit();
+}
+
 $placeholders = implode(',', array_fill(0, count($lantai_ids), '?'));
 $types = str_repeat('i', count($lantai_ids));
 
-// Join dengan tabel lantai dan gedung untuk mendapatkan konteks lengkap
+// KODE SQL DIPERBAIKI: Mengurutkan berdasarkan angka gedung, nomor lantai, dan angka ruangan
 $sql = "
     SELECT r.ruangan_id, r.ruangan_nama, l.lantai_nomor, g.gedung_nama
     FROM ruangan r
     JOIN lantai l ON r.lantai_id = l.lantai_id
     JOIN gedung g ON l.gedung_id = g.gedung_id
     WHERE r.lantai_id IN ($placeholders)
-    ORDER BY g.gedung_nama, l.lantai_nomor, r.ruangan_nama ASC
+    ORDER BY 
+        CAST(SUBSTRING(g.gedung_nama, 7) AS UNSIGNED) ASC, 
+        l.lantai_nomor ASC, 
+        CAST(SUBSTRING(r.ruangan_nama, 7) AS UNSIGNED) ASC
 ";
+// Catatan: Angka 7 pada SUBSTRING(r.ruangan_nama, 7) mengasumsikan nama ruangan diawali 'Ruang '. 
+// Jika formatnya beda (misal 'R-'), sesuaikan angkanya.
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$lantai_ids);

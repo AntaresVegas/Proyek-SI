@@ -6,11 +6,9 @@ ini_set('display_errors', 1);
 header('Content-Type: application/json');
 
 // 1. Verifikasi Path Koneksi Database
-// Menggunakan @ untuk menekan warning default, agar kita bisa handle error sendiri.
 $db_connection_file = __DIR__ . '/../config/db_connection.php';
 
 if (!file_exists($db_connection_file)) {
-    // Jika file koneksi tidak ditemukan, kirim pesan error yang jelas.
     echo json_encode(['error' => 'File koneksi database tidak ditemukan. Path: ' . $db_connection_file]);
     exit();
 }
@@ -19,7 +17,6 @@ include $db_connection_file;
 
 // 2. Cek Apakah Koneksi Berhasil
 if (!isset($conn) || $conn->connect_error) {
-    // Jika variabel $conn tidak ada atau ada error saat koneksi.
     echo json_encode(['error' => 'Gagal terhubung ke database: ' . ($conn->connect_error ?? 'Variabel koneksi tidak didefinisikan.')]);
     exit();
 }
@@ -36,21 +33,20 @@ if (empty($gedung_ids)) {
     exit();
 }
 
-// 3. Query ke Database (Kode ini sudah benar)
 $placeholders = implode(',', array_fill(0, count($gedung_ids), '?'));
 $types = str_repeat('i', count($gedung_ids));
 
+// KODE SQL DIPERBAIKI: Mengurutkan berdasarkan angka gedung, lalu nomor lantai
 $sql = "
     SELECT l.lantai_id, l.lantai_nomor, g.gedung_nama 
     FROM lantai l
     JOIN gedung g ON l.gedung_id = g.gedung_id
     WHERE l.gedung_id IN ($placeholders) 
-    ORDER BY g.gedung_nama, l.lantai_nomor ASC
+    ORDER BY CAST(SUBSTRING(g.gedung_nama, 7) AS UNSIGNED) ASC, l.lantai_nomor ASC
 ";
 
 $stmt = $conn->prepare($sql);
 if ($stmt === false) {
-    // Jika prepare statement gagal
     echo json_encode(['error' => 'Gagal menyiapkan query: ' . $conn->error]);
     exit();
 }

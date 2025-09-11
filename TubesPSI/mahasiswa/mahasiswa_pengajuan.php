@@ -50,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
     $pengajuan_event_jam_selesai = $_POST['pengajuan_event_jam_selesai'];
     $pengajuan_event_tanggal_mulai = $_POST['pengajuan_event_tanggal_mulai'];
     $pengajuan_event_tanggal_selesai = $_POST['pengajuan_event_tanggal_selesai'];
-    // **BARU**: Ambil tanggal persiapan dan beres, set ke NULL jika kosong
     $tanggal_persiapan = !empty($_POST['tanggal_persiapan']) ? $_POST['tanggal_persiapan'] : null;
     $tanggal_beres = !empty($_POST['tanggal_beres']) ? $_POST['tanggal_beres'] : null;
     $selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : []; // Array of selected room IDs
@@ -82,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
     }
 
     if ($message_type !== 'error') {
-        // **DIUBAH**: Query INSERT diperbarui dengan kolom tanggal_persiapan dan tanggal_beres
         $stmt = $conn->prepare("
             INSERT INTO pengajuan_event (
                 pengajuan_namaEvent, mahasiswa_id, pengajuan_TypeKegiatan,
@@ -94,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
         ");
 
-        // **DIUBAH**: bind_param diperbarui untuk mencocokkan kolom baru (menjadi 11 parameter)
         $stmt->bind_param("sisssssssss",
             $pengajuan_namaEvent, $user_id, $pengajuan_TypeKegiatan,
             $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai,
@@ -127,7 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
 
 // Fetch buildings for the checkboxes
 $gedung_options = [];
-$result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY gedung_nama ASC");
+// BARU (Mengurutkan berdasarkan angka setelah kata 'Gedung ')
+$result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY CAST(SUBSTRING(gedung_nama, 7) AS UNSIGNED) ASC");
 while ($row = $result_gedung->fetch_assoc()) {
     $gedung_options[] = $row;
 }
@@ -142,8 +140,7 @@ $conn->close();
     <title>Form Pengajuan Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* All your existing CSS goes here. I'm omitting it for brevity but you should keep it. */
-        /* Existing CSS from the template */
+        /* CSS Umum dan Layout */
         * {
             margin: 0;
             padding: 0;
@@ -152,20 +149,20 @@ $conn->close();
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f0f2f5 0%, #e0e5ec 100%); /* Lighter gradient for better contrast with the form */
-            min-height: 100vh;
-            background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;
+            background-image: url('../img/backgroundUnpar.jpeg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
         }
 
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background:rgb(2, 71, 25);
+            background: rgb(2, 71, 25);
             width: 100%;
             padding: 10px 30px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            font-family: 'Segoe UI', sans-serif;
             position: fixed;
             top: 0;
             left: 0;
@@ -186,7 +183,7 @@ $conn->close();
         }
 
         .navbar-title {
-            color:rgb(255, 255, 255);
+            color: rgb(255, 255, 255);
             font-size: 14px;
             line-height: 1.2;
         }
@@ -199,25 +196,23 @@ $conn->close();
 
         .navbar-menu li a {
             text-decoration: none;
-            color:rgb(253, 253, 253);
+            color: rgb(253, 253, 253);
             font-weight: 500;
             font-size: 15px;
             transition: color 0.3s;
         }
 
-        .navbar-menu li a:hover {
-            color: #007bff;
-        }
         .navbar-menu li a:hover,
-        .navbar-menu li a.active { /* Added active class style */
+        .navbar-menu li a.active {
             color: #007bff;
         }
+        
         .navbar-right {
             display: flex;
             align-items: center;
             gap: 15px;
             font-size: 15px;
-            color:rgb(255, 255, 255);
+            color: rgb(255, 255, 255);
         }
 
         .user-name {
@@ -235,29 +230,23 @@ $conn->close();
         }
 
         .container {
-            max-width: 900px; /* Adjusted for wider form */
+            max-width: 900px;
             margin: 80px auto 30px;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            display: flex; /* For sidebar layout */
         }
 
-
         .main-content {
-            flex-grow: 1; /* Take remaining space */
             padding: 30px;
         }
 
         .header {
-            background:rgb(44, 62, 80);
+            background: rgb(44, 62, 80);
             color: white;
             padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px; /* Added margin for separation */
+            margin-bottom: 20px;
             border-radius: 10px;
         }
 
@@ -265,6 +254,7 @@ $conn->close();
             font-size: 24px;
         }
 
+        /* Form Styling */
         .form-section h2 {
             color: #2c3e50;
             margin-bottom: 20px;
@@ -272,12 +262,12 @@ $conn->close();
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        .form-group label {
+        .form-group > label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             color: #34495e;
             font-weight: 500;
         }
@@ -293,27 +283,19 @@ $conn->close();
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
-            box-sizing: border-box;
-            background-color: #f8f8f8; /* Light grey background */
+            background-color: #f8f8f8;
         }
 
-        .form-group input[type="file"] {
-            padding: 8px 0;
+        .form-group input[readonly] { 
+            background-color: #e9ecef; 
         }
-        .form-group input[readonly] { background-color: #e9ecef; }
-        .form-group input[type="text"]:focus,
-        .form-group input[type="email"]:focus,
-        .form-group input[type="time"]:focus,
-        .form-group input[type="date"]:focus,
+        
+        .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             border-color: #007bff;
             outline: none;
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-
-        .form-group select[multiple] {
-            min-height: 100px; /* For multi-select rooms */
         }
 
         .button-group {
@@ -329,65 +311,46 @@ $conn->close();
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.3s;
         }
 
         .button-group button.clear {
             background-color: #f44336;
             color: white;
         }
-
-        .button-group button.clear:hover {
-            background-color: #d32f2f;
-        }
-
-        .button-group button.next,
-        .button-group button.submit {
+        .button-group button.clear:hover { background-color: #d32f2f; }
+        .button-group button.next, .button-group button.submit {
             background-color: #28a745;
             color: white;
         }
-
-        .button-group button.next:hover,
-        .button-group button.submit:hover {
-            background-color: #218838;
-        }
-
+        .button-group button.next:hover, .button-group button.submit:hover { background-color: #218838; }
         .button-group button.back {
             background-color: #6c757d;
             color: white;
         }
+        .button-group button.back:hover { background-color: #5a6268; }
 
-        .button-group button.back:hover {
-            background-color: #5a6268;
-        }
-
-        /* Styling for messages */
+        /* Pesan Notifikasi */
         .message {
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 5px;
             font-weight: bold;
         }
-
         .message.success {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-
         .message.error {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
 
-        /* Hide steps initially */
-        .form-step {
-            display: none;
-        }
-        .form-step.active {
-            display: block;
-        }
+        /* Multi-step Form */
+        .form-step { display: none; }
+        .form-step.active { display: block; }
 
         /* Loader */
         .loader {
@@ -397,63 +360,95 @@ $conn->close();
             width: 20px;
             height: 20px;
             animation: spin 2s linear infinite;
-            display: none; /* Hidden by default */
+            display: none;
             margin-left: 10px;
             vertical-align: middle;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .checkbox-group {
-            border: 1px solid #ccc;
+
+        /* ===== START: DESAIN CHECKBOX KUSTOM MODERN ===== */
+        .checkbox-placeholder {
+            background-color: #f8f9fa;
             border-radius: 5px;
-            padding: 10px;
-            max-height: 200px; /* Optional: Scroll if too many rooms */
-            overflow-y: auto; /* Optional: Scroll if too many rooms */
-            background-color: #f8f8f8;
-        }
-
-        .checkbox-group label {
-            display: block;
-            margin-bottom: 8px;
-            cursor: pointer;
-            color: #34495e;
-            font-weight: normal; /* Override the general label font-weight */
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 8px;
-            width: auto; /* Ensure checkbox itself doesn't take full width */
-        }
-        
-        .checkbox-group.disabled {
-            background-color: #e9ecef;
-            cursor: not-allowed;
-        }
-        
-        .checkbox-group.disabled p {
+            padding: 15px;
             color: #6c757d;
+            border: 1px dashed #dee2e6;
+        }
+
+        .checkbox-group-modern {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            opacity: 0;
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+
+        .checkbox-item label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: normal;
+            color: #495057;
+            margin-bottom: 0;
+        }
+
+        .checkbox-item label::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #adb5bd;
+            border-radius: 4px;
+            margin-right: 12px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + label::before {
+            background-color: #007bff;
+            border-color: #007bff;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 60%;
+        }
+
+        .checkbox-item label:hover::before {
+            border-color: #007bff;
         }
         
+        .checkbox-item input[type="checkbox"]:focus + label::before {
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        /* ===== END: DESAIN CHECKBOX KUSTOM MODERN ===== */
+
         /* Custom File Upload Styling */
         .custom-file-upload {
             display: flex;
             align-items: center;
-            gap: 10px; /* Space between button and file name */
+            gap: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             background-color: #f8f8f8;
-            padding: 5px; /* Adjust padding as needed */
+            padding: 5px;
         }
 
-        .hidden-file-input {
-            display: none; /* Hide the default file input */
-        }
-
+        .hidden-file-input { display: none; }
         .upload-button {
-            background-color: #007bff; /* Blue button */
+            background-color: #007bff;
             color: white;
             padding: 8px 15px;
             border: none;
@@ -461,35 +456,27 @@ $conn->close();
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.3s ease;
-            flex-shrink: 0; /* Prevent button from shrinking */
+            flex-shrink: 0;
         }
-
-        .upload-button:hover {
-            background-color: #0056b3;
-        }
-
+        .upload-button:hover { background-color: #0056b3; }
         .file-name {
-            flex-grow: 1; /* Allow file name to take remaining space */
+            flex-grow: 1;
             color: #555;
             font-size: 14px;
-            overflow: hidden; /* Hide overflow text */
-            text-overflow: ellipsis; /* Add ellipsis for long file names */
-            white-space: nowrap; /* Prevent wrapping */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        /* Make sure the label also looks good */
-        .file-upload-label {
-            margin-bottom: 5px; /* Space below the label */
-            display: block; /* Ensure it takes its own line */
+        .date-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
-        :root {
-            --primary-color: rgb(2, 71, 25); --secondary-color: #0d6efd; --light-gray: #f8f9fa;
-            --text-dark: #212529; --text-light: #6c757d; --border-color: #dee2e6;
-            --status-green: #198754; --status-red: #dc3545; --status-yellow: #ffc107;
-        }
-        /* ===== FOOTER STYLES ===== */
+
+        /* Footer */
         .page-footer {
-            background-color: var(--primary-color);
+            background-color: rgb(2, 71, 25);
             color: #e9ecef;
             padding: 40px 0;
             margin-top: 40px;
@@ -516,7 +503,6 @@ $conn->close();
         .footer-left h4 {
             font-size: 1.2em;
             font-weight: 500;
-            line-height: 1.4;
         }
         .footer-right ul {
             list-style: none;
@@ -539,34 +525,8 @@ $conn->close();
             font-size: 1.5em;
             transition: color 0.3s;
         }
-        .footer-right .social-icons a:hover {
-            color: #fff;
-        }
-
-        /* === CSS BARU UNTUK CATATAN/NOTE === */
-        .form-note {
-            background-color: #fffbe6; /* Light Yellow */
-            border-left: 5px solid #ffc107; /* Yellow Accent */
-            padding: 15px;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        .form-note p {
-            margin: 5px 0 0 0;
-            line-height: 1.5;
-        }
-        .form-note .fa-info-circle {
-            margin-right: 8px;
-            color: #ffc107;
-        }
-        .date-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
+        .footer-right .social-icons a:hover { color: #fff; }
+        
     </style>
 </head>
 <body>
@@ -582,7 +542,7 @@ $conn->close();
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
-        <li><a href="mahasiswa_pengajuan.php"class="active">Form</a></li>
+        <li><a href="mahasiswa_pengajuan.php" class="active">Form</a></li>
         <li><a href="mahasiswa_event.php">Event</a></li>
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
@@ -604,7 +564,7 @@ $conn->close();
 
         <?php if (!empty($message)): ?>
             <div class="message <?php echo $message_type; ?>">
-                <?php echo $message; ?>
+                <?php echo htmlspecialchars($message); ?>
             </div>
         <?php endif; ?>
 
@@ -642,7 +602,6 @@ $conn->close();
                         <label for="pengajuan_TypeKegiatan">Tipe Kegiatan</label>
                         <input type="text" id="pengajuan_TypeKegiatan" name="pengajuan_TypeKegiatan" placeholder="Contoh: Seminar, Workshop, Lomba" required>
                     </div>
-
                     <div class="button-group">
                         <button type="button" class="clear" onclick="clearForm('step1')">Clear</button>
                         <button type="button" class="next" onclick="nextStep()">Next</button>
@@ -654,10 +613,10 @@ $conn->close();
                 <div class="form-section">
                     <h2>Langkah 2: Detail Jadwal dan Ruangan</h2>
                     <div class="form-group">
-                        <label for="gedung_selection">Pilih Gedung (bisa lebih dari satu)</label>
-                        <div id="gedung_selection" class="checkbox-group">
+                        <label>Pilih Gedung (bisa lebih dari satu)</label>
+                        <div id="gedung_selection" class="checkbox-group-modern">
                             <?php foreach ($gedung_options as $gedung): ?>
-                                <div>
+                                <div class="checkbox-item">
                                     <input type="checkbox" class="gedung-checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>">
                                     <label for="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>"><?php echo htmlspecialchars($gedung['gedung_nama']); ?></label>
                                 </div>
@@ -665,16 +624,16 @@ $conn->close();
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="lantai_selection">Pilih Lantai (bisa lebih dari satu)</label>
-                        <div id="lantai_selection" class="checkbox-group disabled">
-                             <p>Pilih Gedung terlebih dahulu.</p>
+                        <label>Pilih Lantai (bisa lebih dari satu)</label>
+                        <div id="lantai_selection_container">
+                             <div class="checkbox-placeholder"><p>Pilih Gedung terlebih dahulu.</p></div>
                         </div>
                         <span class="loader" id="lantai_loader"></span>
                     </div>
                     <div class="form-group">
-                        <label for="ruangan_selection">Pilih Ruangan (bisa lebih dari satu)</label>
-                        <div id="ruangan_selection" class="checkbox-group disabled">
-                            <p>Pilih Lantai terlebih dahulu.</p>
+                        <label>Pilih Ruangan (bisa lebih dari satu)</label>
+                        <div id="ruangan_selection_container">
+                            <div class="checkbox-placeholder"><p>Pilih Lantai terlebih dahulu.</p></div>
                         </div>
                         <span class="loader" id="ruangan_loader"></span>
                     </div>
@@ -689,15 +648,6 @@ $conn->close();
                             <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required>
                         </div>
                     </div>
-
-                    <!-- <div class="form-note">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>Catatan Penting Peminjaman Tanggal</strong>
-                        <p>
-                            Harap perhitungkan waktu yang dibutuhkan untuk <b>persiapan (loading)</b> sebelum acara dan <b>pemberesan (clearing)</b> setelah acara.
-                            <br><b>Contoh:</b> Jika acara utama Anda tanggal 25, namun butuh persiapan tanggal 24 dan pemberesan tanggal 26, maka Anda harus memilih "Tanggal Mulai Acara" di <b>24</b> dan "Tanggal Selesai Acara" di <b>26</b>.
-                        </p>
-                    </div> -->
 
                     <div class="date-grid">
                         <div class="form-group">
@@ -720,20 +670,21 @@ $conn->close();
                             <input type="date" id="tanggal_beres" name="tanggal_beres">
                         </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="jadwal_event_rundown_file" class="file-upload-label">Rundown Acara (PDF, DOCX)</label>
+                        <label for="jadwal_event_rundown_file">Rundown Acara (PDF, DOCX)</label>
                         <div class="custom-file-upload">
                             <input type="file" id="jadwal_event_rundown_file" name="jadwal_event_rundown_file" accept=".pdf,.doc,.docx" required class="hidden-file-input">
-                            <button type="button" class="upload-button" onclick="document.getElementById('jadwal_event_rundown_file').click()">Pilih File Rundown</button>
+                            <button type="button" class="upload-button" onclick="document.getElementById('jadwal_event_rundown_file').click()">Pilih File</button>
                             <span class="file-name" id="rundown_file_name">Belum ada file dipilih</span>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="pengajuan_event_proposal_file" class="file-upload-label">Proposal Penyelenggaraan Kegiatan (PDF, DOCX)</label>
+                        <label for="pengajuan_event_proposal_file">Proposal Kegiatan (PDF, DOCX)</label>
                         <div class="custom-file-upload">
                             <input type="file" id="pengajuan_event_proposal_file" name="pengajuan_event_proposal_file" accept=".pdf,.doc,.docx" required class="hidden-file-input">
-                            <button type="button" class="upload-button" onclick="document.getElementById('pengajuan_event_proposal_file').click()">Pilih File Proposal</button>
+                            <button type="button" class="upload-button" onclick="document.getElementById('pengajuan_event_proposal_file').click()">Pilih File</button>
                             <span class="file-name" id="proposal_file_name">Belum ada file dipilih</span>
                         </div>
                     </div>
@@ -804,43 +755,29 @@ $conn->close();
         showStep(currentStep);
     }
     
-    // Updated clearForm function
     function clearForm(stepId) {
         const stepElement = document.getElementById(stepId);
         const inputs = stepElement.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
-            // Uncheck all checkboxes
             if (input.type === 'checkbox' || input.type === 'radio') {
                 input.checked = false;
-            } 
-            // Clear file inputs and their display names
-            else if (input.type === 'file') {
-                input.value = ''; // Clear file input
-                 if (input.id === 'jadwal_event_rundown_file') {
-                    document.getElementById('rundown_file_name').textContent = 'Belum ada file dipilih';
-                } else if (input.id === 'pengajuan_event_proposal_file') {
-                    document.getElementById('proposal_file_name').textContent = 'Belum ada file dipilih';
+            } else if (input.type === 'file') {
+                input.value = '';
+                const fileNameSpanId = input.id.replace(/_file$/, '_file_name');
+                const fileNameSpan = document.getElementById(fileNameSpanId);
+                if (fileNameSpan) {
+                    fileNameSpan.textContent = 'Belum ada file dipilih';
                 }
-            } 
-            // Reset select dropdowns
-            else if (input.tagName === 'SELECT') {
+            } else if (input.tagName === 'SELECT') {
                 input.selectedIndex = 0;
-            } 
-            // Clear all other inputs
-            else {
+            } else if (!input.hasAttribute('readonly')) {
                 input.value = '';
             }
         });
         
-        // Specifically reset Step 2 dynamic fields
         if (stepId === 'step2') {
-            const lantaiSelection = document.getElementById('lantai_selection');
-            lantaiSelection.innerHTML = '<p>Pilih Gedung terlebih dahulu.</p>';
-            lantaiSelection.classList.add('disabled');
-
-            const ruanganSelection = document.getElementById('ruangan_selection');
-            ruanganSelection.innerHTML = '<p>Pilih Lantai terlebih dahulu.</p>';
-            ruanganSelection.classList.add('disabled');
+            document.getElementById('lantai_selection_container').innerHTML = '<div class="checkbox-placeholder"><p>Pilih Gedung terlebih dahulu.</p></div>';
+            document.getElementById('ruangan_selection_container').innerHTML = '<div class="checkbox-placeholder"><p>Pilih Lantai terlebih dahulu.</p></div>';
         }
     }
     
@@ -855,54 +792,51 @@ $conn->close();
         fileNameSpan.textContent = this.files.length > 0 ? this.files[0].name : 'Belum ada file dipilih';
     });
 
-
-    // --- NEW DYNAMIC HIERARCHICAL CHECKBOX LOGIC ---
-
+    // --- DYNAMIC HIERARCHICAL CHECKBOX LOGIC ---
     const gedungSelection = document.getElementById('gedung_selection');
-    const lantaiSelection = document.getElementById('lantai_selection');
-    const ruanganSelection = document.getElementById('ruangan_selection');
+    const lantaiContainer = document.getElementById('lantai_selection_container');
+    const ruanganContainer = document.getElementById('ruangan_selection_container');
     const lantaiLoader = document.getElementById('lantai_loader');
     const ruanganLoader = document.getElementById('ruangan_loader');
 
-    // Listener for Gedung checkboxes
     gedungSelection.addEventListener('change', function() {
-        const selectedGedungIds = Array.from(gedungSelection.querySelectorAll('input[type=checkbox]:checked'))
-            .map(cb => cb.value);
+        const selectedGedungIds = Array.from(gedungSelection.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
 
-        // Reset lower levels
-        lantaiSelection.innerHTML = '<p>Pilih Gedung terlebih dahulu.</p>';
-        lantaiSelection.classList.add('disabled');
-        ruanganSelection.innerHTML = '<p>Pilih Lantai terlebih dahulu.</p>';
-        ruanganSelection.classList.add('disabled');
+        lantaiContainer.innerHTML = '<div class="checkbox-placeholder"><p>Pilih Gedung terlebih dahulu.</p></div>';
+        ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p>Pilih Lantai terlebih dahulu.</p></div>';
+        
+        const oldLantaiSelection = document.getElementById('lantai_selection');
+        if (oldLantaiSelection) {
+            oldLantaiSelection.removeEventListener('change', lantaiChangeListener);
+        }
 
         if (selectedGedungIds.length > 0) {
             lantaiLoader.style.display = 'inline-block';
-            
-            // Build query string for multiple IDs
             const queryString = selectedGedungIds.map(id => `gedung_ids[]=${id}`).join('&');
             
             fetch(`get_lantai.php?${queryString}`)
                 .then(response => response.json())
                 .then(data => {
-                    lantaiSelection.innerHTML = ''; // Clear
                     if (data.length > 0) {
+                        let html = '<div id="lantai_selection" class="checkbox-group-modern">';
                         data.forEach(lantai => {
-                            const div = document.createElement('div');
-                            div.innerHTML = `
-                                <input type="checkbox" class="lantai-checkbox" name="lantai_ids[]" value="${lantai.lantai_id}" id="lantai_${lantai.lantai_id}">
-                                <label for="lantai_${lantai.lantai_id}">Lantai ${lantai.lantai_nomor} (${lantai.gedung_nama})</label>
+                            html += `
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="lantai-checkbox" name="lantai_ids[]" value="${lantai.lantai_id}" id="lantai_${lantai.lantai_id}">
+                                    <label for="lantai_${lantai.lantai_id}">Lantai ${lantai.lantai_nomor} (${lantai.gedung_nama})</label>
+                                </div>
                             `;
-                            lantaiSelection.appendChild(div);
                         });
-                        lantaiSelection.classList.remove('disabled');
+                        html += '</div>';
+                        lantaiContainer.innerHTML = html;
+                        document.getElementById('lantai_selection').addEventListener('change', lantaiChangeListener);
                     } else {
-                        lantaiSelection.innerHTML = '<p>Tidak ada lantai ditemukan untuk gedung yang dipilih.</p>';
-                        lantaiSelection.classList.add('disabled');
+                        lantaiContainer.innerHTML = '<div class="checkbox-placeholder"><p>Tidak ada lantai ditemukan untuk gedung yang dipilih.</p></div>';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching lantai:', error);
-                    lantaiSelection.innerHTML = '<p style="color: red;">Gagal memuat data lantai.</p>';
+                    lantaiContainer.innerHTML = '<div class="checkbox-placeholder"><p style="color: red;">Gagal memuat data lantai.</p></div>';
                 })
                 .finally(() => {
                     lantaiLoader.style.display = 'none';
@@ -910,51 +844,44 @@ $conn->close();
         }
     });
 
-    // Listener for Lantai checkboxes
-    lantaiSelection.addEventListener('change', function(e) {
-        // Only proceed if the change was on a checkbox, not the container
-        if (e.target.type !== 'checkbox') return;
-
-        const selectedLantaiIds = Array.from(lantaiSelection.querySelectorAll('input[type=checkbox]:checked'))
-            .map(cb => cb.value);
+    function lantaiChangeListener(e) {
+        const lantaiSelection = e.currentTarget;
+        const selectedLantaiIds = Array.from(lantaiSelection.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
             
-        // Reset ruangan
-        ruanganSelection.innerHTML = '<p>Pilih Lantai terlebih dahulu.</p>';
-        ruanganSelection.classList.add('disabled');
+        ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p>Pilih Lantai terlebih dahulu.</p></div>';
 
         if (selectedLantaiIds.length > 0) {
             ruanganLoader.style.display = 'inline-block';
-            
             const queryString = selectedLantaiIds.map(id => `lantai_ids[]=${id}`).join('&');
             
             fetch(`get_ruangan.php?${queryString}`)
                 .then(response => response.json())
                 .then(data => {
-                    ruanganSelection.innerHTML = ''; // Clear
                     if (data.length > 0) {
+                        let html = '<div id="ruangan_selection" class="checkbox-group-modern">';
                         data.forEach(ruangan => {
-                            const div = document.createElement('div');
-                            div.innerHTML = `
-                                <input type="checkbox" name="ruangan_ids[]" value="${ruangan.ruangan_id}" id="ruangan_${ruangan.ruangan_id}">
-                                <label for="ruangan_${ruangan.ruangan_id}">${ruangan.ruangan_nama} (Lantai ${ruangan.lantai_nomor}, ${ruangan.gedung_nama})</label>
+                            html += `
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="ruangan_ids[]" value="${ruangan.ruangan_id}" id="ruangan_${ruangan.ruangan_id}">
+                                    <label for="ruangan_${ruangan.ruangan_id}">${ruangan.ruangan_nama} (Lantai ${ruangan.lantai_nomor}, ${ruangan.gedung_nama})</label>
+                                </div>
                             `;
-                            ruanganSelection.appendChild(div);
                         });
-                        ruanganSelection.classList.remove('disabled');
+                        html += '</div>';
+                        ruanganContainer.innerHTML = html;
                     } else {
-                        ruanganSelection.innerHTML = '<p>Tidak ada ruangan tersedia untuk lantai yang dipilih.</p>';
-                        ruanganSelection.classList.add('disabled');
+                        ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p>Tidak ada ruangan tersedia untuk lantai yang dipilih.</p></div>';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching ruangan:', error);
-                    ruanganSelection.innerHTML = '<p style="color: red;">Gagal memuat data ruangan.</p>';
+                    ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p style="color: red;">Gagal memuat data ruangan.</p></div>';
                 })
                 .finally(() => {
                     ruanganLoader.style.display = 'none';
                 });
         }
-    });
+    }
 
     // Initial step display
     showStep(currentStep);

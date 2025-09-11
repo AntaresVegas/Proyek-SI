@@ -199,6 +199,19 @@ $calendar_events_json = json_encode($calendar_events);
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+         .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -433,6 +446,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
                 <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
             </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
         </div>
     </div>
 </footer>

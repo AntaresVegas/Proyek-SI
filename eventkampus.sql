@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 11, 2025 at 01:24 PM
+-- Generation Time: Sep 11, 2025 at 04:21 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -62,7 +62,12 @@ CREATE TABLE `gedung` (
 
 INSERT INTO `gedung` (`gedung_id`, `gedung_nama`) VALUES
 (1, 'Gedung 10'),
-(2, 'Gedung 9');
+(2, 'Gedung 9'),
+(3, 'Gedung 0'),
+(4, 'Gedung 2'),
+(5, 'Gedung 3'),
+(6, 'Gedung 4 5'),
+(8, 'Merdeka 30');
 
 -- --------------------------------------------------------
 
@@ -335,7 +340,7 @@ ALTER TABLE `ditmawa`
 -- AUTO_INCREMENT for table `gedung`
 --
 ALTER TABLE `gedung`
-  MODIFY `gedung_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `gedung_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `lantai`
