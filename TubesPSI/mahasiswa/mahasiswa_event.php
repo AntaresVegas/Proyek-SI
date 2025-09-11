@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Check if user is logged in and is a mahasiswa
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
     header("Location: ../index.php");
     exit();
@@ -12,7 +11,6 @@ require_once('../config/db_connection.php');
 $nama = $_SESSION['nama'] ?? 'Mahasiswa';
 $user_id_mahasiswa = $_SESSION['user_id'] ?? null;
 
-// Logika Kalender
 $currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
 $currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
@@ -20,8 +18,6 @@ if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; }
 if ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
 
 $date = new DateTime("$currentYear-$currentMonth-01");
-$daysInMonth = $date->format('t');
-$firstDayOfWeek = $date->format('N'); 
 
 $prevMonth = $currentMonth - 1; $prevYear = $currentYear;
 if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
@@ -29,7 +25,6 @@ if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
 $nextMonth = $currentMonth + 1; $nextYear = $currentYear;
 if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 
-// Ambil data gedung dan lantai untuk filter
 $buildings = [];
 $floors = [];
 try {
@@ -44,7 +39,105 @@ try {
 } catch (Exception $e) {
     error_log("Error fetching location data: " . $e->getMessage());
 }
+
+$calendar_events = [];
+$events_by_id = []; 
+try {
+    $stmt = $conn->prepare("
+        SELECT 
+            pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_event_tanggal_mulai,
+            pe.pengajuan_event_tanggal_selesai, pe.tanggal_persiapan, pe.tanggal_beres,
+            r.lantai_id, l.gedung_id
+        FROM pengajuan_event pe
+        LEFT JOIN peminjaman_ruangan pr ON pe.pengajuan_id = pr.pengajuan_id
+        LEFT JOIN ruangan r ON pr.ruangan_id = r.ruangan_id
+        LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
+        WHERE pe.pengajuan_status = 'Disetujui' AND (
+            (MONTH(pe.pengajuan_event_tanggal_mulai) = ? AND YEAR(pe.pengajuan_event_tanggal_mulai) = ?) OR
+            (MONTH(pe.pengajuan_event_tanggal_selesai) = ? AND YEAR(pe.pengajuan_event_tanggal_selesai) = ?) OR
+            (MONTH(pe.tanggal_persiapan) = ? AND YEAR(pe.tanggal_persiapan) = ?) OR
+            (MONTH(pe.tanggal_beres) = ? AND YEAR(pe.tanggal_beres) = ?)
+        )
+    ");
+    $stmt->bind_param("iiiiiiii", $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $id = $row['pengajuan_id'];
+        if (!isset($events_by_id[$id])) {
+            $events_by_id[$id] = [
+                'name'      => htmlspecialchars($row['pengajuan_namaEvent']),
+                'start'     => $row['pengajuan_event_tanggal_mulai'],
+                'end'       => $row['pengajuan_event_tanggal_selesai'],
+                'prep'      => $row['tanggal_persiapan'],
+                'clear'     => $row['tanggal_beres'],
+                'locations' => []
+            ];
+        }
+        if ($row['gedung_id'] && $row['lantai_id']) {
+            $locations_key = $row['gedung_id'] . '-' . $row['lantai_id'];
+            if (!isset($events_by_id[$id]['locations'][$locations_key])) {
+                $events_by_id[$id]['locations'][$locations_key] = ['gedung' => $row['gedung_id'], 'lantai' => $row['lantai_id']];
+            }
+        }
+    }
+    $stmt->close();
+
+    foreach ($events_by_id as &$event_data) {
+        $event_data['locations'] = array_values($event_data['locations']);
+    }
+    unset($event_data);
+
+    foreach ($events_by_id as $event) {
+        // Proses tanggal utama event
+        $start = new DateTime($event['start']);
+        $end = (new DateTime($event['end']))->modify('+1 day');
+        $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+        foreach ($period as $dt) {
+            if ($dt->format('n') == $currentMonth) {
+                $day = (int)$dt->format('j');
+                $calendar_events[$day][] = ['name' => $event['name'], 'type' => 'main', 'locations' => $event['locations']];
+            }
+        }
+    
+        // Logika untuk rentang waktu persiapan
+        if (!empty($event['prep'])) {
+            $prep_start_dt = new DateTime($event['prep']);
+            $main_event_start_dt = new DateTime($event['start']);
+            if ($prep_start_dt < $main_event_start_dt) {
+                $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
+                foreach ($prep_period as $dt) {
+                    if ($dt->format('n') == $currentMonth) {
+                        $day = (int)$dt->format('j');
+                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Persiapan)', 'type' => 'prep', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                    }
+                }
+            }
+        }
+    
+        // Logika untuk rentang waktu beres-beres
+        if (!empty($event['clear'])) {
+            $main_event_end_dt = new DateTime($event['end']);
+            $clear_end_dt = new DateTime($event['clear']);
+            if ($clear_end_dt > $main_event_end_dt) {
+                $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
+                $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
+                $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
+                foreach ($clear_period as $dt) {
+                    if ($dt->format('n') == $currentMonth) {
+                        $day = (int)$dt->format('j');
+                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Beres-beres)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                    }
+                }
+            }
+        }
+    }
+} catch (Exception $e) {
+    error_log("Error fetching calendar data in mahasiswa_event.php: " . $e->getMessage());
+}
 $conn->close();
+$calendar_events_json = json_encode($calendar_events);
 ?>
 
 <!DOCTYPE html>
@@ -55,7 +148,6 @@ $conn->close();
     <title>Data Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* Salin semua CSS dari kode sebelumnya, tidak ada perubahan di sini */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 70px; background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;}
         .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
@@ -77,9 +169,18 @@ $conn->close();
         .day-name, .day-cell { border: 1px solid #eee; border-radius: 8px; padding: 10px; }
         .day-name { text-align: center; font-weight: 600; background-color: #f8f9fa; }
         .day-cell { min-height: 120px; cursor: pointer; transition: background-color 0.2s; }
-        .day-cell:hover { background-color: #f0f0f0; }
+        .day-cell:not(.empty-day):hover { background-color: #f0f0f0; }
         .day-number { font-size: 18px; font-weight: bold; }
-        .event-indicator { font-size: 12px; color: rgb(2, 71, 25); font-weight: 600; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .event-indicator {
+            font-size: 12px; font-weight: 600; margin-top: 5px; padding: 3px 6px; border-radius: 4px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block;
+            background-color: #198754;
+            color: white;
+        }
+        .event-indicator.prep-clear {
+            background-color: #ffc107;
+            color: #212529;
+        }
         .empty-day { background-color: #fafafa; cursor: default; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
         .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; position: relative; }
@@ -88,85 +189,16 @@ $conn->close();
         .modal-body .event-item { border-left: 4px solid rgb(2, 71, 25); padding: 10px; margin-bottom: 10px; background-color: #f8f9fa; }
         .modal-body .event-item h4 { margin-bottom: 5px; }
         .modal-body .event-item span { display: block; font-size: 14px; color: #555; }
-               /* --- STYLE BARU UNTUK HEADER --- */
-        .page-header {
-            background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%);
-            color: white;
-            padding: 25px;
-            margin: 20px auto;
-            max-width: 1100px; /* Samakan dengan lebar container kalender */
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .page-header h1 {
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        .page-header p {
-            opacity: 0.9;
-            font-size: 16px;
-        }
-                :root {
-            --primary-color: rgb(2, 71, 25); --secondary-color: #0d6efd; --light-gray: #f8f9fa;
-            --text-dark: #212529; --text-light: #6c757d; --border-color: #dee2e6;
-            --status-green: #198754; --status-red: #dc3545; --status-yellow: #ffc107;
-        }
-        /* ===== FOOTER STYLES ===== */
-        .page-footer {
-            background-color: var(--primary-color);
-            color: #e9ecef;
-            padding: 40px 0;
-            margin-top: 40px;
-        }
-        .footer-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 30px;
-        }
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .footer-logo {
-            width: 60px;
-            height: 60px;
-        }
-        .footer-left h4 {
-            font-size: 1.2em;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-        .footer-right ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .footer-right li {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .footer-right .social-icons {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-        }
-        .footer-right .social-icons a {
-            color: #e9ecef;
-            font-size: 1.5em;
-            transition: color 0.3s;
-        }
-        .footer-right .social-icons a:hover {
-            color: #fff;
-        }
+        .page-header { background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .page-header h1 { margin-bottom: 10px; font-size: 28px; }
+        .page-header p { opacity: 0.9; font-size: 16px; }
+        .page-footer { background-color: rgb(2, 71, 25); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -212,8 +244,7 @@ $conn->close();
         </select>
     </div>
 
-    <div class="calendar-grid" id="calendarGrid">
-        </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
 <div id="eventModal" class="modal" style="display: none;">
@@ -223,6 +254,10 @@ $conn->close();
         <div class="modal-body" id="modalBody"></div>
     </div>
 </div>
+
+<script>
+    const calendarEventsData = <?php echo $calendar_events_json; ?>;
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -251,14 +286,39 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             lantaiFilter.disabled = false;
         }
-        fetchEventsAndRenderCalendar();
+        renderFilteredCalendar();
+    }
+
+    function renderFilteredCalendar() {
+        const selectedGedung = gedungFilter.value;
+        const selectedLantai = lantaiFilter.value;
+        const filteredEvents = {};
+        for (const day in calendarEventsData) {
+            if (Object.hasOwnProperty.call(calendarEventsData, day)) {
+                const dayEvents = calendarEventsData[day].filter(event => {
+                    if (!selectedGedung && !selectedLantai) return true;
+                    if (!event.locations || event.locations.length === 0) {
+                         return !selectedGedung && !selectedLantai;
+                    }
+                    return event.locations.some(loc => {
+                        const gedungMatch = !selectedGedung || loc.gedung == selectedGedung;
+                        const lantaiMatch = !selectedLantai || loc.lantai == selectedLantai;
+                        return gedungMatch && lantaiMatch;
+                    });
+                });
+                if (dayEvents.length > 0) {
+                    filteredEvents[day] = dayEvents;
+                }
+            }
+        }
+        renderCalendar(filteredEvents);
     }
 
     function renderCalendar(eventsData) {
         const date = new Date(currentYear, currentMonth - 1, 1);
         const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
         let firstDayOfWeek = date.getDay(); 
-        if (firstDayOfWeek === 0) firstDayOfWeek = 7; // Konversi Minggu (0) menjadi 7
+        if (firstDayOfWeek === 0) firstDayOfWeek = 7;
 
         let html = `<div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>`;
         for (let i = 1; i < firstDayOfWeek; i++) {
@@ -267,13 +327,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (let day = 1; day <= daysInMonth; day++) {
             const fullDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const hasEvents = eventsData[day] && eventsData[day].length > 0;
+            const dayEvents = eventsData[day] || [];
+            const hasEvents = dayEvents.length > 0;
             
             html += `<div class="day-cell ${hasEvents ? 'has-events' : ''}" data-date="${fullDate}">`;
             html += `<div class="day-number">${day}</div>`;
             if (hasEvents) {
-                eventsData[day].forEach(event => {
-                    html += `<span class="event-indicator">${event.name}</span>`;
+                const uniqueEvents = {};
+                dayEvents.forEach(event => {
+                    const key = event.name + event.type;
+                    if (!uniqueEvents[key]) {
+                        uniqueEvents[key] = event;
+                    }
+                });
+
+                Object.values(uniqueEvents).forEach(event => {
+                    const eventTypeClass = (event.type === 'prep' || event.type === 'clear') ? 'prep-clear' : '';
+                    html += `<span class="event-indicator ${eventTypeClass}">${event.name}</span>`;
                 });
             }
             html += `</div>`;
@@ -282,31 +352,41 @@ document.addEventListener('DOMContentLoaded', function() {
         addDayCellClickListeners();
     }
 
-    function fetchEventsAndRenderCalendar() {
-        const selectedGedung = gedungFilter.value;
-        const selectedLantai = lantaiFilter.value;
-        // PERBAIKAN: Menambahkan ../ pada path fetch karena file ini ada di dalam folder /mahasiswa
-        fetch(`../fetch_event_data.php?month=${currentMonth}&year=${currentYear}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
-            .then(response => response.json())
-            .then(data => {
-                renderCalendar(data.events || {});
-            })
-            .catch(error => console.error('Error fetching events:', error));
-    }
-
     function addDayCellClickListeners() {
         document.querySelectorAll('.day-cell:not(.empty-day)').forEach(cell => {
             cell.addEventListener('click', function() {
-                const date = this.dataset.date;
+                const cellDate = this.dataset.date;
+                const dayNumber = new Date(cellDate + 'T00:00:00Z').getUTCDate();
                 const selectedGedung = gedungFilter.value;
                 const selectedLantai = lantaiFilter.value;
 
-                document.getElementById('modalDate').textContent = new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                let dateForFetch = cellDate;
+
+                const dayEvents = calendarEventsData[dayNumber] || [];
+                const filteredDayEvents = dayEvents.filter(event => {
+                    if (!selectedGedung && !selectedLantai) return true;
+                    if (!event.locations || event.locations.length === 0) {
+                        return !selectedGedung && !selectedLantai;
+                    }
+                    return event.locations.some(loc => {
+                        const gedungMatch = !selectedGedung || loc.gedung == selectedGedung;
+                        const lantaiMatch = !selectedLantai || loc.lantai == selectedLantai;
+                        return gedungMatch && lantaiMatch;
+                    });
+                });
+
+                if (filteredDayEvents.length > 0) {
+                    const firstEvent = filteredDayEvents[0];
+                    if ((firstEvent.type === 'prep' || firstEvent.type === 'clear') && firstEvent.main_start_date) {
+                        dateForFetch = firstEvent.main_start_date.split(' ')[0];
+                    }
+                }
+                
+                document.getElementById('modalDate').textContent = new Date(cellDate + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 document.getElementById('modalBody').innerHTML = '<p>Memuat...</p>';
                 eventModal.style.display = 'flex';
 
-                // PERBAIKAN: Menambahkan ../ pada path fetch dan memperbaiki cara menampilkan lokasi
-                fetch(`../fetch_event_details.php?date=${date}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
+                fetch(`../fetch_event_details.php?date=${dateForFetch}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
                     .then(response => response.json())
                     .then(data => {
                         const modalBody = document.getElementById('modalBody');
@@ -315,12 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             data.forEach(event => {
                                 const eventItem = document.createElement('div');
                                 eventItem.className = 'event-item';
-                                // PERBAIKAN: Menggunakan `event.lokasi` yang sudah diformat
-                                eventItem.innerHTML = `
-                                    <h4>${event.name}</h4>
-                                    <span><strong>Waktu:</strong> ${event.start_time} - ${event.end_time}</span>
-                                    <span><strong>Lokasi:</strong> ${event.lokasi}</span>
-                                `;
+                                eventItem.innerHTML = `<h4>${event.name}</h4><span><strong>Waktu:</strong> ${event.start_time} - ${event.end_time}</span><span><strong>Lokasi:</strong> ${event.lokasi}</span>`;
                                 modalBody.appendChild(eventItem);
                             });
                         } else {
@@ -336,11 +411,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     gedungFilter.addEventListener('change', updateLantaiFilter);
-    lantaiFilter.addEventListener('change', fetchEventsAndRenderCalendar);
+    lantaiFilter.addEventListener('change', renderFilteredCalendar);
     closeButton.addEventListener('click', () => { eventModal.style.display = 'none'; });
     window.addEventListener('click', (event) => { if (event.target == eventModal) { eventModal.style.display = 'none'; } });
 
-    fetchEventsAndRenderCalendar();
+    renderFilteredCalendar();
 });
 </script>
 <footer class="page-footer">
@@ -358,12 +433,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
                 <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
             </ul>
-            <div class="social-icons">
-                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-            </div>
         </div>
     </div>
 </footer>

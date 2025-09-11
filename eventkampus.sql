@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 13, 2025 at 02:35 PM
+-- Generation Time: Sep 11, 2025 at 01:24 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -83,7 +83,10 @@ CREATE TABLE `lantai` (
 INSERT INTO `lantai` (`lantai_id`, `gedung_id`, `lantai_nomor`) VALUES
 (1, 1, '1'),
 (2, 1, '2'),
-(3, 1, '3');
+(3, 1, '3'),
+(4, 2, '1'),
+(5, 2, '2'),
+(6, 2, '3');
 
 -- --------------------------------------------------------
 
@@ -131,7 +134,10 @@ CREATE TABLE `notifications` (
 
 INSERT INTO `notifications` (`notification_id`, `user_id`, `message`, `link`, `is_read`, `created_at`) VALUES
 (2, 0, 'Selamat! Pengajuan event \'ISEC\' Anda telah disetujui.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=4', 1, '2025-06-12 04:22:17'),
-(3, 0, 'Mohon maaf, pengajuan event \'Lomba Catur Antar Jurusan\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=3', 0, '2025-06-12 18:24:59');
+(3, 0, 'Mohon maaf, pengajuan event \'Lomba Catur Antar Jurusan\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=3', 0, '2025-06-12 18:24:59'),
+(4, 0, 'Selamat! Pengajuan event \'Science Fest\' Anda telah disetujui.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=5', 0, '2025-09-11 04:34:42'),
+(5, 0, 'Selamat! Pengajuan event \'ISEC\' Anda telah disetujui.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=6', 0, '2025-09-11 05:09:48'),
+(6, 0, 'Selamat! Pengajuan event \'Thormatics\' Anda telah disetujui.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=7', 0, '2025-09-11 11:13:53');
 
 -- --------------------------------------------------------
 
@@ -162,7 +168,12 @@ CREATE TABLE `peminjaman_ruangan` (
 
 INSERT INTO `peminjaman_ruangan` (`peminjaman_id`, `pengajuan_id`, `ruangan_id`) VALUES
 (1, 1, 1),
-(2, 4, 3);
+(2, 4, 3),
+(3, 5, 1),
+(4, 5, 4),
+(5, 6, 1),
+(6, 6, 4),
+(7, 7, 2);
 
 -- --------------------------------------------------------
 
@@ -179,6 +190,8 @@ CREATE TABLE `pengajuan_event` (
   `pengajuan_event_jam_selesai` time DEFAULT NULL,
   `pengajuan_event_tanggal_mulai` date DEFAULT NULL,
   `pengajuan_event_tanggal_selesai` date DEFAULT NULL,
+  `tanggal_persiapan` date DEFAULT NULL,
+  `tanggal_beres` date DEFAULT NULL,
   `jadwal_event_rundown_file` longblob DEFAULT NULL,
   `pengajuan_event_proposal_file` longblob DEFAULT NULL,
   `pengajuan_status` enum('Diajukan','Disetujui','Ditolak') DEFAULT 'Diajukan',
@@ -195,11 +208,14 @@ CREATE TABLE `pengajuan_event` (
 -- Dumping data for table `pengajuan_event`
 --
 
-INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `mahasiswa_id`, `pengajuan_TypeKegiatan`, `pengajuan_event_jam_mulai`, `pengajuan_event_jam_selesai`, `pengajuan_event_tanggal_mulai`, `pengajuan_event_tanggal_selesai`, `jadwal_event_rundown_file`, `pengajuan_event_proposal_file`, `pengajuan_status`, `pengajuan_tanggalApprove`, `ditmawa_id`, `pengajuan_tanggalEdit`, `pengajuan_komentarDitmawa`, `pengajuan_LPJ`, `pengajuan_statusLPJ`, `pengajuan_komentarLPJ`) VALUES
-(1, 'Seminar AI Masa Depan', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, 'Disetujui', NULL, 1, '2025-06-12 10:06:24', NULL, NULL, '', NULL),
-(2, 'Workshop Fotografi Dasar', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, 'Diajukan', NULL, NULL, '2025-06-12 10:06:24', NULL, NULL, '', NULL),
-(3, 'Lomba Catur Antar Jurusan', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, 'Ditolak', '2025-06-12 20:24:59', 1, '2025-06-12 10:06:24', 'tempatnya tolong diisi', NULL, '', NULL),
-(4, 'ISEC', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', '', '', 'Disetujui', '2025-06-12 06:22:17', 1, '2025-06-12 11:20:39', '', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'kurang lengkap');
+INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `mahasiswa_id`, `pengajuan_TypeKegiatan`, `pengajuan_event_jam_mulai`, `pengajuan_event_jam_selesai`, `pengajuan_event_tanggal_mulai`, `pengajuan_event_tanggal_selesai`, `tanggal_persiapan`, `tanggal_beres`, `jadwal_event_rundown_file`, `pengajuan_event_proposal_file`, `pengajuan_status`, `pengajuan_tanggalApprove`, `ditmawa_id`, `pengajuan_tanggalEdit`, `pengajuan_komentarDitmawa`, `pengajuan_LPJ`, `pengajuan_statusLPJ`, `pengajuan_komentarLPJ`) VALUES
+(1, 'Seminar AI Masa Depan', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, NULL, NULL, 'Disetujui', NULL, 1, '2025-06-12 10:06:24', NULL, NULL, '', NULL),
+(2, 'Workshop Fotografi Dasar', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, NULL, NULL, 'Diajukan', NULL, NULL, '2025-06-12 10:06:24', NULL, NULL, '', NULL),
+(3, 'Lomba Catur Antar Jurusan', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, NULL, NULL, 'Ditolak', '2025-06-12 20:24:59', 1, '2025-06-12 10:06:24', 'tempatnya tolong diisi', NULL, '', NULL),
+(4, 'ISEC', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', NULL, NULL, '', '', 'Disetujui', '2025-06-12 06:22:17', 1, '2025-06-12 11:20:39', '', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'kurang lengkap'),
+(5, 'Science Fest', 0, 'Lomba', '11:12:00', '16:12:00', '2025-09-18', '2025-09-20', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363863323463333535393735395f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323463333535396334615f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-09-11 06:34:42', 1, '2025-09-11 11:12:37', '', NULL, 'Menunggu Persetujuan', NULL),
+(6, 'ISEC', 0, 'Lomba', '12:10:00', '14:08:00', '2025-10-01', '2025-10-03', '2025-09-30', '2025-10-04', 0x75706c6f6164732f72756e646f776e2f363863323539376337363962665f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323539376337366637385f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-09-11 07:09:48', 1, '2025-09-11 12:09:16', '', NULL, 'Menunggu Persetujuan', NULL),
+(7, 'Thormatics', 0, 'Tutoring', '10:00:00', '13:00:00', '2025-12-10', '2025-12-12', '2025-12-08', '2025-12-14', 0x75706c6f6164732f72756e646f776e2f363863326165633038316266655f36313832313031303339202d204b6567696174616e20322e706466, 0x75706c6f6164732f70726f706f73616c2f363863326165633038323365645f5475676173204d696e676775206b652d312e706466, 'Disetujui', '2025-09-11 13:13:53', 1, '2025-09-11 18:13:04', '', NULL, 'Menunggu Persetujuan', NULL);
 
 -- --------------------------------------------------------
 
@@ -220,7 +236,9 @@ CREATE TABLE `ruangan` (
 INSERT INTO `ruangan` (`ruangan_id`, `ruangan_nama`, `lantai_id`) VALUES
 (1, '10317', 3),
 (2, '10318', 3),
-(3, '10323', 3);
+(3, '10323', 3),
+(4, '9017', 4),
+(5, '9018', 4);
 
 -- --------------------------------------------------------
 
@@ -323,7 +341,7 @@ ALTER TABLE `gedung`
 -- AUTO_INCREMENT for table `lantai`
 --
 ALTER TABLE `lantai`
-  MODIFY `lantai_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `lantai_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `mahasiswa`
@@ -335,7 +353,7 @@ ALTER TABLE `mahasiswa`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `organisasi`
@@ -347,19 +365,19 @@ ALTER TABLE `organisasi`
 -- AUTO_INCREMENT for table `peminjaman_ruangan`
 --
 ALTER TABLE `peminjaman_ruangan`
-  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `pengajuan_event`
 --
 ALTER TABLE `pengajuan_event`
-  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `ruangan`
 --
 ALTER TABLE `ruangan`
-  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `unit`

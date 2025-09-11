@@ -88,10 +88,11 @@ $conn->close();
         .main-content { flex-grow: 1; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
+        .navbar-title { color:rgb(254, 254, 254); font-size: 14px; line-height: 1.2; }
         .navbar-menu { list-style: none; }
-        .navbar-menu a { text-decoration: none; color: #2c3e50; font-weight: 500; }
+        .navbar-menu a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
         .navbar-menu a.active, .navbar-menu a:hover { color: #007bff; }
         .icon { font-size: 20px; }
         .container { max-width: 1300px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }

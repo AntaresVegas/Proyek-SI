@@ -15,10 +15,18 @@ $pengajuan_events = [];
 
 if ($user_id !== 'No ID') {
     $stmt = $conn->prepare("
-        SELECT pengajuan_id, pengajuan_event_tanggal_mulai, pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit, pengajuan_komentarDitmawa
-        FROM pengajuan_event
-        WHERE mahasiswa_id = ?
-        ORDER BY pengajuan_id DESC
+        SELECT
+            pe.pengajuan_id,
+            pe.pengajuan_event_tanggal_mulai,
+            pe.pengajuan_namaEvent,
+            pe.pengajuan_status,
+            pe.pengajuan_komentarDitmawa,
+            pe.pengajuan_tanggalEdit, -- Menggunakan kolom ini untuk tanggal edit mahasiswa
+            d.ditmawa_nama AS validator_nama
+        FROM pengajuan_event pe
+        LEFT JOIN ditmawa d ON pe.ditmawa_id = d.ditmawa_id
+        WHERE pe.mahasiswa_id = ?
+        ORDER BY pe.pengajuan_id DESC
     ");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -44,14 +52,14 @@ $conn->close();
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #f0f2f5; 
-            min-height: 100%; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100%;
             padding-top: 80px;
-            background-image: url('../img/backgroundUnpar.jpeg'); 
-            background-size: cover; 
-            background-position: center; 
+            background-image: url('../img/backgroundUnpar.jpeg');
+            background-size: cover;
+            background-position: center;
             background-attachment: fixed;
             display: flex;
             flex-direction: column;
@@ -83,6 +91,7 @@ $conn->close();
         .action-button:hover { background-color: #0056b3; }
         .action-disabled { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 5px; background-color: #6c757d; color: white; font-size: 14px; font-weight: 500; cursor: not-allowed; }
         .alasan-ditolak { font-size: 13px; color: #dc3545; margin-top: 4px; font-style: italic; }
+        .modified-info { font-size: 12px; color: #666; margin-top: 5px; } /* Gaya untuk info Last Modified */
         .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; }
         .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
@@ -132,7 +141,8 @@ $conn->close();
                     <th>TANGGAL EVENT</th>
                     <th>NAMA EVENT</th>
                     <th>STATUS</th>
-                    <th>ACTION</th>
+                    <th>VALIDATOR</th>
+                    <th>LAST MODIFIED (Mahasiswa)</th> <th>ACTION</th>
                 </tr>
             </thead>
             <tbody>
@@ -142,13 +152,33 @@ $conn->close();
                             <td><?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?></td>
                             <td>
                                 <?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?>
-                                <?php if ($event['pengajuan_status'] == 'Ditolak' && !empty($event['pengajuan_komentarDitmawa'])): ?>
-                                <?php endif; ?>
                             </td>
                             <td>
                                 <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status'])); ?>">
                                     <?php echo htmlspecialchars($event['pengajuan_status']); ?>
                                 </span>
+                            </td>
+                            <td>
+                                <?php
+                                    // Tampilkan nama validator jika ada
+                                    if (!empty($event['validator_nama'])) {
+                                        echo htmlspecialchars($event['validator_nama']);
+                                    } else {
+                                        echo "N/A"; // Atau 'Belum divalidasi'
+                                    }
+                                ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($event['pengajuan_tanggalEdit'])): ?>
+                                    <div class="modified-info">
+                                        <?php
+                                            // Format tanggal dan waktu dari pengajuan_tanggalEdit
+                                            echo htmlspecialchars(date('d M Y H:i', strtotime($event['pengajuan_tanggalEdit'])));
+                                        ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="modified-info">N/A</div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($event['pengajuan_status'] == 'Disetujui'): ?>
@@ -165,7 +195,7 @@ $conn->close();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="4" class="no-data">Belum ada pengajuan event.</td>
+                        <td colspan="6" class="no-data">Belum ada pengajuan event.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

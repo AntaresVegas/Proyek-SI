@@ -42,115 +42,90 @@ $message = '';
 $message_type = '';
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Determine which step is being submitted
-    if (isset($_POST['form_step']) && $_POST['form_step'] == 'step1') {
-        // Handle Step 1 data (if needed, e.g., validation)
-        // For now, simply move to step 2 in JS
-    } elseif (isset($_POST['form_step']) && $_POST['form_step'] == 'step2') {
-        // Process Step 2 data
-        $pengajuan_namaEvent = $_POST['pengajuan_namaEvent'];
-        $pengajuan_TypeKegiatan = $_POST['pengajuan_TypeKegiatan']; // This field is not in the screenshot but good to have
-        $pengajuan_event_jam_mulai = $_POST['pengajuan_event_jam_mulai'];
-        $pengajuan_event_jam_selesai = $_POST['pengajuan_event_jam_selesai'];
-        $pengajuan_event_tanggal_mulai = $_POST['pengajuan_event_tanggal_mulai'];
-        $pengajuan_event_tanggal_selesai = $_POST['pengajuan_event_tanggal_selesai'];
-        $selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : []; // Array of selected room IDs
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POST['form_step'] == 'step2') {
+    // Process Step 2 data
+    $pengajuan_namaEvent = $_POST['pengajuan_namaEvent'];
+    $pengajuan_TypeKegiatan = $_POST['pengajuan_TypeKegiatan'];
+    $pengajuan_event_jam_mulai = $_POST['pengajuan_event_jam_mulai'];
+    $pengajuan_event_jam_selesai = $_POST['pengajuan_event_jam_selesai'];
+    $pengajuan_event_tanggal_mulai = $_POST['pengajuan_event_tanggal_mulai'];
+    $pengajuan_event_tanggal_selesai = $_POST['pengajuan_event_tanggal_selesai'];
+    // **BARU**: Ambil tanggal persiapan dan beres, set ke NULL jika kosong
+    $tanggal_persiapan = !empty($_POST['tanggal_persiapan']) ? $_POST['tanggal_persiapan'] : null;
+    $tanggal_beres = !empty($_POST['tanggal_beres']) ? $_POST['tanggal_beres'] : null;
+    $selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : []; // Array of selected room IDs
 
-        // File uploads
-        $rundown_file_path = null;
-        $proposal_file_path = null;
+    // File uploads
+    $rundown_file_path = null;
+    $proposal_file_path = null;
 
-        $target_dir_rundown = "uploads/rundown/";
-        $target_dir_proposal = "uploads/proposal/";
+    $target_dir_rundown = "uploads/rundown/";
+    $target_dir_proposal = "uploads/proposal/";
 
-        // Create directories if they don't exist
-        if (!is_dir($target_dir_rundown)) {
-            mkdir($target_dir_rundown, 0777, true);
+    if (!is_dir($target_dir_rundown)) { mkdir($target_dir_rundown, 0777, true); }
+    if (!is_dir($target_dir_proposal)) { mkdir($target_dir_proposal, 0777, true); }
+
+    if (isset($_FILES['jadwal_event_rundown_file']) && $_FILES['jadwal_event_rundown_file']['error'] == UPLOAD_ERR_OK) {
+        $file_name_rundown = basename($_FILES["jadwal_event_rundown_file"]["name"]);
+        $rundown_file_path = $target_dir_rundown . uniqid() . "_" . $file_name_rundown;
+        if (!move_uploaded_file($_FILES["jadwal_event_rundown_file"]["tmp_name"], $rundown_file_path)) {
+            $message = "Error uploading rundown file."; $message_type = 'error'; $rundown_file_path = null;
         }
-        if (!is_dir($target_dir_proposal)) {
-            mkdir($target_dir_proposal, 0777, true);
+    }
+
+    if (isset($_FILES['pengajuan_event_proposal_file']) && $_FILES['pengajuan_event_proposal_file']['error'] == UPLOAD_ERR_OK) {
+        $file_name_proposal = basename($_FILES["pengajuan_event_proposal_file"]["name"]);
+        $proposal_file_path = $target_dir_proposal . uniqid() . "_" . $file_name_proposal;
+        if (!move_uploaded_file($_FILES["pengajuan_event_proposal_file"]["tmp_name"], $proposal_file_path)) {
+            $message = "Error uploading proposal file."; $message_type = 'error'; $proposal_file_path = null;
         }
+    }
 
-        // Rundown file upload
-        if (isset($_FILES['jadwal_event_rundown_file']) && $_FILES['jadwal_event_rundown_file']['error'] == UPLOAD_ERR_OK) {
-            $file_name_rundown = basename($_FILES["jadwal_event_rundown_file"]["name"]);
-            $rundown_file_path = $target_dir_rundown . uniqid() . "_" . $file_name_rundown;
-            if (!move_uploaded_file($_FILES["jadwal_event_rundown_file"]["tmp_name"], $rundown_file_path)) {
-                $message = "Error uploading rundown file.";
-                $message_type = 'error';
-                $rundown_file_path = null; // Reset path if upload fails
-            }
-        }
+    if ($message_type !== 'error') {
+        // **DIUBAH**: Query INSERT diperbarui dengan kolom tanggal_persiapan dan tanggal_beres
+        $stmt = $conn->prepare("
+            INSERT INTO pengajuan_event (
+                pengajuan_namaEvent, mahasiswa_id, pengajuan_TypeKegiatan,
+                pengajuan_event_jam_mulai, pengajuan_event_jam_selesai,
+                pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai,
+                tanggal_persiapan, tanggal_beres,
+                jadwal_event_rundown_file, pengajuan_event_proposal_file,
+                pengajuan_status, pengajuan_tanggalEdit
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
+        ");
 
-        // Proposal file upload
-        if (isset($_FILES['pengajuan_event_proposal_file']) && $_FILES['pengajuan_event_proposal_file']['error'] == UPLOAD_ERR_OK) {
-            $file_name_proposal = basename($_FILES["pengajuan_event_proposal_file"]["name"]);
-            $proposal_file_path = $target_dir_proposal . uniqid() . "_" . $file_name_proposal;
-            if (!move_uploaded_file($_FILES["pengajuan_event_proposal_file"]["tmp_name"], $proposal_file_path)) {
-                $message = "Error uploading proposal file.";
-                $message_type = 'error';
-                $proposal_file_path = null; // Reset path if upload fails
-            }
-        }
+        // **DIUBAH**: bind_param diperbarui untuk mencocokkan kolom baru (menjadi 11 parameter)
+        $stmt->bind_param("sisssssssss",
+            $pengajuan_namaEvent, $user_id, $pengajuan_TypeKegiatan,
+            $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai,
+            $pengajuan_event_tanggal_mulai, $pengajuan_event_tanggal_selesai,
+            $tanggal_persiapan, $tanggal_beres,
+            $rundown_file_path, $proposal_file_path
+        );
 
-        if ($message_type !== 'error') {
-            // Insert into pengajuan_event table
-            $stmt = $conn->prepare("
-                INSERT INTO pengajuan_event (
-                    pengajuan_namaEvent, mahasiswa_id, pengajuan_TypeKegiatan,
-                    pengajuan_event_jam_mulai, pengajuan_event_jam_selesai,
-                    pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai,
-                    jadwal_event_rundown_file, pengajuan_event_proposal_file,
-                    pengajuan_status, pengajuan_tanggalEdit
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
-            ");
-
-            // For pengajuan_TypeKegiatan, using a placeholder, as it's not explicitly on the form,
-            // but is in the DB schema. You might want to add a field for it.
-            // For now, I'll use a default value or infer from event name.
-            // Let's assume 'Seminar' as a default if no specific type is gathered.
-            $default_type_kegiatan = 'Seminar/Workshop';
-            $stmt->bind_param("sisssssbb",
-                $pengajuan_namaEvent,
-                $user_id,
-                $default_type_kegiatan, // Assuming a default or placeholder for TypeKegiatan
-                $pengajuan_event_jam_mulai,
-                $pengajuan_event_jam_selesai,
-                $pengajuan_event_tanggal_mulai,
-                $pengajuan_event_tanggal_selesai,
-                $rundown_file_path, // Storing file path
-                $proposal_file_path // Storing file path
-            );
-
-            if ($stmt->execute()) {
-                $pengajuan_id = $stmt->insert_id;
-
-                // Insert into peminjaman_ruangan for each selected room
-                if (!empty($selected_ruangan_ids)) {
-                    $insert_peminjaman_stmt = $conn->prepare("
-                        INSERT INTO peminjaman_ruangan (pengajuan_id, ruangan_id) VALUES (?, ?)
-                    ");
-                    foreach ($selected_ruangan_ids as $ruangan_id) {
-                        $insert_peminjaman_stmt->bind_param("ii", $pengajuan_id, $ruangan_id);
-                        $insert_peminjaman_stmt->execute();
-                    }
-                    $insert_peminjaman_stmt->close();
+        if ($stmt->execute()) {
+            $pengajuan_id = $stmt->insert_id;
+            if (!empty($selected_ruangan_ids)) {
+                $insert_peminjaman_stmt = $conn->prepare("
+                    INSERT INTO peminjaman_ruangan (pengajuan_id, ruangan_id) VALUES (?, ?)
+                ");
+                foreach ($selected_ruangan_ids as $ruangan_id) {
+                    $insert_peminjaman_stmt->bind_param("ii", $pengajuan_id, $ruangan_id);
+                    $insert_peminjaman_stmt->execute();
                 }
-
-                $message = "Pengajuan event berhasil diajukan!";
-                $message_type = 'success';
-                // Clear form fields if desired, or redirect
-            } else {
-                $message = "Error: " . $stmt->error;
-                $message_type = 'error';
+                $insert_peminjaman_stmt->close();
             }
-            $stmt->close();
+            $message = "Pengajuan event berhasil diajukan!";
+            $message_type = 'success';
+        } else {
+            $message = "Error: " . $stmt->error;
+            $message_type = 'error';
         }
+        $stmt->close();
     }
 }
 
-// Fetch buildings for the first dropdown
+// Fetch buildings for the checkboxes
 $gedung_options = [];
 $result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY gedung_nama ASC");
 while ($row = $result_gedung->fetch_assoc()) {
@@ -167,6 +142,7 @@ $conn->close();
     <title>Form Pengajuan Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        /* All your existing CSS goes here. I'm omitting it for brevity but you should keep it. */
         /* Existing CSS from the template */
         * {
             margin: 0;
@@ -449,9 +425,18 @@ $conn->close();
 
         .checkbox-group input[type="checkbox"] {
             margin-right: 8px;
-            /* Basic styling for checkboxes */
             width: auto; /* Ensure checkbox itself doesn't take full width */
         }
+        
+        .checkbox-group.disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+        
+        .checkbox-group.disabled p {
+            color: #6c757d;
+        }
+        
         /* Custom File Upload Styling */
         .custom-file-upload {
             display: flex;
@@ -557,6 +542,31 @@ $conn->close();
         .footer-right .social-icons a:hover {
             color: #fff;
         }
+
+        /* === CSS BARU UNTUK CATATAN/NOTE === */
+        .form-note {
+            background-color: #fffbe6; /* Light Yellow */
+            border-left: 5px solid #ffc107; /* Yellow Accent */
+            padding: 15px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-note p {
+            margin: 5px 0 0 0;
+            line-height: 1.5;
+        }
+        .form-note .fa-info-circle {
+            margin-right: 8px;
+            color: #ffc107;
+        }
+        .date-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
     </style>
 </head>
 <body>
@@ -569,7 +579,6 @@ $conn->close();
             <strong>Event UNPAR</strong>
         </div>
     </div>
-
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
@@ -578,8 +587,7 @@ $conn->close();
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
-
-<div class="navbar-right">
+    <div class="navbar-right">
         <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
             <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
             <i class="fas fa-user-circle icon"></i>
@@ -602,9 +610,10 @@ $conn->close();
 
         <form id="eventForm" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="form_step" id="form_step" value="step1">
-
+            
             <div class="form-step active" id="step1">
-                <div class="form-section">
+                 <div class="form-section">
+                    <h2>Langkah 1: Informasi Dasar</h2>
                     <div class="form-group">
                         <label for="nama_penanggung_jawab">Nama Penanggung Jawab</label>
                         <input type="text" id="nama_penanggung_jawab" name="nama_penanggung_jawab" value="<?php echo htmlspecialchars($nama); ?>" readonly>
@@ -643,65 +652,91 @@ $conn->close();
 
             <div class="form-step" id="step2">
                 <div class="form-section">
+                    <h2>Langkah 2: Detail Jadwal dan Ruangan</h2>
                     <div class="form-group">
-                        <label for="gedung_id">Nama Gedung</label>
-                        <select id="gedung_id" name="gedung_id" required>
-                            <option value="">Pilih Gedung</option>
+                        <label for="gedung_selection">Pilih Gedung (bisa lebih dari satu)</label>
+                        <div id="gedung_selection" class="checkbox-group">
                             <?php foreach ($gedung_options as $gedung): ?>
-                                <option value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>">
-                                    <?php echo htmlspecialchars($gedung['gedung_nama']); ?>
-                                </option>
+                                <div>
+                                    <input type="checkbox" class="gedung-checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>">
+                                    <label for="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>"><?php echo htmlspecialchars($gedung['gedung_nama']); ?></label>
+                                </div>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="lantai_id">Nomor Lantai</label>
-                        <select id="lantai_id" name="lantai_id" required disabled>
-                            <option value="">Pilih Lantai</option>
-                        </select>
+                        <label for="lantai_selection">Pilih Lantai (bisa lebih dari satu)</label>
+                        <div id="lantai_selection" class="checkbox-group disabled">
+                             <p>Pilih Gedung terlebih dahulu.</p>
+                        </div>
                         <span class="loader" id="lantai_loader"></span>
                     </div>
                     <div class="form-group">
-                        <label for="ruangan_selection">Pilih Ruangan (Anda bisa memilih lebih dari satu)</label>
-                        <div id="ruangan_selection" class="checkbox-group">
-                            <p style="color: #666;">Pilih Gedung dan Lantai terlebih dahulu untuk melihat daftar ruangan.</p>
+                        <label for="ruangan_selection">Pilih Ruangan (bisa lebih dari satu)</label>
+                        <div id="ruangan_selection" class="checkbox-group disabled">
+                            <p>Pilih Lantai terlebih dahulu.</p>
                         </div>
                         <span class="loader" id="ruangan_loader"></span>
                     </div>
-                    <div class="form-group">
-                        <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
-                        <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" required>
+                    
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
+                            <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
+                            <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
-                        <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="pengajuan_event_tanggal_mulai">Tanggal Mulai</label>
-                        <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="pengajuan_event_tanggal_selesai">Tanggal Selesai</label>
-                        <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required>
-                    </div>
-                    <div class="form-group">
-                    <label for="jadwal_event_rundown_file" class="file-upload-label">Rundown Acara (PDF, DOCX)</label>
-                    <div class="custom-file-upload">
-                        <input type="file" id="jadwal_event_rundown_file" name="jadwal_event_rundown_file" accept=".pdf,.doc,.docx" required class="hidden-file-input">
-                        <button type="button" class="upload-button" onclick="document.getElementById('jadwal_event_rundown_file').click()">Pilih File Rundown</button>
-                        <span class="file-name" id="rundown_file_name">Belum ada file dipilih</span>
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="pengajuan_event_proposal_file" class="file-upload-label">Proposal Penyelenggaraan Kegiatan (PDF, DOCX)</label>
-                    <div class="custom-file-upload">
-                        <input type="file" id="pengajuan_event_proposal_file" name="pengajuan_event_proposal_file" accept=".pdf,.doc,.docx" required class="hidden-file-input">
-                        <button type="button" class="upload-button" onclick="document.getElementById('pengajuan_event_proposal_file').click()">Pilih File Proposal</button>
-                        <span class="file-name" id="proposal_file_name">Belum ada file dipilih</span>
-                    </div>
-                </div>
+                    <!-- <div class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Catatan Penting Peminjaman Tanggal</strong>
+                        <p>
+                            Harap perhitungkan waktu yang dibutuhkan untuk <b>persiapan (loading)</b> sebelum acara dan <b>pemberesan (clearing)</b> setelah acara.
+                            <br><b>Contoh:</b> Jika acara utama Anda tanggal 25, namun butuh persiapan tanggal 24 dan pemberesan tanggal 26, maka Anda harus memilih "Tanggal Mulai Acara" di <b>24</b> dan "Tanggal Selesai Acara" di <b>26</b>.
+                        </p>
+                    </div> -->
 
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="pengajuan_event_tanggal_mulai">Tanggal Mulai Acara</label>
+                            <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pengajuan_event_tanggal_selesai">Tanggal Selesai Acara</label>
+                            <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required>
+                        </div>
+                    </div>
+
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="tanggal_persiapan">Tanggal Persiapan (Opsional)</label>
+                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan">
+                        </div>
+                        <div class="form-group">
+                            <label for="tanggal_beres">Tanggal Beres-Beres (Opsional)</label>
+                            <input type="date" id="tanggal_beres" name="tanggal_beres">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="jadwal_event_rundown_file" class="file-upload-label">Rundown Acara (PDF, DOCX)</label>
+                        <div class="custom-file-upload">
+                            <input type="file" id="jadwal_event_rundown_file" name="jadwal_event_rundown_file" accept=".pdf,.doc,.docx" required class="hidden-file-input">
+                            <button type="button" class="upload-button" onclick="document.getElementById('jadwal_event_rundown_file').click()">Pilih File Rundown</button>
+                            <span class="file-name" id="rundown_file_name">Belum ada file dipilih</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pengajuan_event_proposal_file" class="file-upload-label">Proposal Penyelenggaraan Kegiatan (PDF, DOCX)</label>
+                        <div class="custom-file-upload">
+                            <input type="file" id="pengajuan_event_proposal_file" name="pengajuan_event_proposal_file" accept=".pdf,.doc,.docx" required class="hidden-file-input">
+                            <button type="button" class="upload-button" onclick="document.getElementById('pengajuan_event_proposal_file').click()">Pilih File Proposal</button>
+                            <span class="file-name" id="proposal_file_name">Belum ada file dipilih</span>
+                        </div>
+                    </div>
                     <div class="button-group">
                         <button type="button" class="back" onclick="prevStep()">Back</button>
                         <button type="button" class="clear" onclick="clearForm('step2')">Clear</button>
@@ -713,223 +748,6 @@ $conn->close();
     </div>
 </div>
 
-<script>
-    let currentStep = 1;
-    const formSteps = document.querySelectorAll('.form-step');
-    const formStepInput = document.getElementById('form_step');
-
-    function showStep(step) {
-        formSteps.forEach((s, index) => {
-            s.classList.remove('active');
-            if (index + 1 === step) {
-                s.classList.add('active');
-            }
-        });
-        formStepInput.value = `step${step}`;
-    }
-
-    function nextStep() {
-        // Basic validation for Step 1 before moving to Step 2
-        const namaEvent = document.getElementById('pengajuan_namaEvent').value;
-        const typeKegiatan = document.getElementById('pengajuan_TypeKegiatan').value;
-        if (namaEvent.trim() === '' || typeKegiatan.trim() === '') {
-            alert('Harap isi semua kolom Nama Event dan Tipe Kegiatan pada langkah ini.');
-            return;
-        }
-
-        currentStep++;
-        showStep(currentStep);
-    }
-
-    function prevStep() {
-        currentStep--;
-        showStep(currentStep);
-    }
-
-    function clearForm(stepId) {
-        const stepElement = document.getElementById(stepId);
-        const inputs = stepElement.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            if (input.type === 'file') {
-                input.value = ''; // Clear file input
-            } else if (input.tagName === 'SELECT') {
-                input.selectedIndex = 0; // Reset select dropdown
-                if (input.multiple) {
-                    Array.from(input.options).forEach(option => option.selected = false);
-                }
-            } else if (input.type === 'checkbox') { // Clear checkboxes
-                input.checked = false;
-            } else {
-                input.value = ''; // Clear text, email, time, date inputs
-            }
-        });
-
-        // For Step 2, if cleared, also reset disabled states and messages
-        if (stepId === 'step2') {
-            document.getElementById('lantai_id').disabled = true;
-            document.getElementById('lantai_id').innerHTML = '<option value="">Pilih Lantai</option>';
-            document.getElementById('ruangan_selection').innerHTML = '<p style="color: #666;">Pilih Gedung dan Lantai terlebih dahulu untuk melihat daftar ruangan.</p>';
-            document.getElementById('ruangan_selection').style.border = '1px solid #ccc';
-            document.getElementById('ruangan_selection').style.backgroundColor = '#f8f8f8';
-        }
-    }
-
-    // Dynamic dropdowns for Gedung, Lantai, Ruangan
-    document.getElementById('gedung_id').addEventListener('change', function() {
-        const gedungId = this.value;
-        const lantaiSelect = document.getElementById('lantai_id');
-        const ruanganSelectionDiv = document.getElementById('ruangan_selection');
-        const lantaiLoader = document.getElementById('lantai_loader');
-
-        // Reset lantai and ruangan
-        lantaiSelect.innerHTML = '<option value="">Pilih Lantai</option>';
-        lantaiSelect.disabled = true; // Keep disabled until data is loaded
-        ruanganSelectionDiv.innerHTML = '<p style="color: #666;">Pilih Lantai terlebih dahulu untuk melihat daftar ruangan.</p>';
-        ruanganSelectionDiv.style.border = '1px solid #ccc';
-        ruanganSelectionDiv.style.backgroundColor = '#f8f8f8';
-
-        if (gedungId) {
-            lantaiLoader.style.display = 'inline-block'; // Show loader for lantai
-            fetch(`get_lantai.php?gedung_id=${gedungId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.length > 0) {
-                        data.forEach(lantai => {
-                            const option = document.createElement('option');
-                            option.value = lantai.lantai_id;
-                            option.textContent = `Lantai ${lantai.lantai_nomor}`; // Tampilkan "Lantai 1", "Lantai 2", dsb.
-                            lantaiSelect.appendChild(option);
-                        });
-                        lantaiSelect.disabled = false; // Enable lantai select after data loaded
-                    } else {
-                        lantaiSelect.innerHTML = '<option value="">Tidak ada lantai untuk gedung ini</option>';
-                        lantaiSelect.disabled = true; // Keep disabled if no data
-                    }
-                    lantaiLoader.style.display = 'none'; // Hide loader
-                })
-                .catch(error => {
-                    console.error('Error fetching lantai:', error);
-                    lantaiSelect.innerHTML = '<option value="">Gagal memuat lantai</option>';
-                    lantaiSelect.disabled = true;
-                    lantaiLoader.style.display = 'none';
-                });
-        }
-    });
-
-    document.getElementById('lantai_id').addEventListener('change', function() {
-        const lantaiId = this.value;
-        const ruanganSelectionDiv = document.getElementById('ruangan_selection');
-        const ruanganLoader = document.getElementById('ruangan_loader');
-
-        ruanganSelectionDiv.innerHTML = ''; // Clear previous checkboxes
-        ruanganSelectionDiv.style.border = '1px solid #ccc';
-        ruanganSelectionDiv.style.backgroundColor = '#f8f8f8';
-
-        if (lantaiId) {
-            ruanganLoader.style.display = 'inline-block'; // Show loader for ruangan
-            fetch(`get_ruangan.php?lantai_id=${lantaiId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.length > 0) {
-                        data.forEach(ruangan => {
-                            const div = document.createElement('div');
-                            const input = document.createElement('input');
-                            input.type = 'checkbox';
-                            input.id = `ruangan_${ruangan.ruangan_id}`;
-                            input.name = 'ruangan_ids[]'; // Tetap gunakan array untuk dikirim ke PHP
-                            input.value = ruangan.ruangan_id;
-
-                            const label = document.createElement('label');
-                            label.htmlFor = `ruangan_${ruangan.ruangan_id}`;
-                            label.textContent = ruangan.ruangan_nama;
-
-                            div.appendChild(input);
-                            div.appendChild(label);
-                            ruanganSelectionDiv.appendChild(div);
-                        });
-                    } else {
-                        ruanganSelectionDiv.innerHTML = '<p style="color: #666;">Tidak ada ruangan tersedia untuk lantai ini.</p>';
-                    }
-                    ruanganLoader.style.display = 'none'; // Hide loader
-                })
-                .catch(error => {
-                    console.error('Error fetching ruangan:', error);
-                    ruanganSelectionDiv.innerHTML = '<p style="color: red;">Gagal memuat ruangan. Silakan coba lagi.</p>';
-                    ruanganLoader.style.display = 'none';
-                });
-        } else {
-            // If no lantai is selected, reset ruangan div and its styling
-            ruanganSelectionDiv.innerHTML = '<p style="color: #666;">Pilih Gedung dan Lantai terlebih dahulu untuk melihat daftar ruangan.</p>';
-            ruanganSelectionDiv.style.border = '1px dashed #ccc';
-            ruanganSelectionDiv.style.backgroundColor = '#e0e0e0';
-        }
-    });
-    // JavaScript for custom file upload
-document.getElementById('jadwal_event_rundown_file').addEventListener('change', function() {
-    const fileNameSpan = document.getElementById('rundown_file_name');
-    if (this.files && this.files.length > 0) {
-        fileNameSpan.textContent = this.files[0].name;
-    } else {
-        fileNameSpan.textContent = 'Belum ada file dipilih';
-    }
-});
-
-document.getElementById('pengajuan_event_proposal_file').addEventListener('change', function() {
-    const fileNameSpan = document.getElementById('proposal_file_name');
-    if (this.files && this.files.length > 0) {
-        fileNameSpan.textContent = this.files[0].name;
-    } else {
-        fileNameSpan.textContent = 'Belum ada file dipilih';
-    }
-});
-
-// Update clearForm to reset file names too
-function clearForm(stepId) {
-    const stepElement = document.getElementById(stepId);
-    const inputs = stepElement.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-        if (input.type === 'file') {
-            input.value = ''; // Clear file input
-            // Also reset the displayed file name
-            if (input.id === 'jadwal_event_rundown_file') {
-                document.getElementById('rundown_file_name').textContent = 'Belum ada file dipilih';
-            } else if (input.id === 'pengajuan_event_proposal_file') {
-                document.getElementById('proposal_file_name').textContent = 'Belum ada file dipilih';
-            }
-        } else if (input.tagName === 'SELECT') {
-            input.selectedIndex = 0; // Reset select dropdown
-            if (input.multiple) {
-                Array.from(input.options).forEach(option => option.selected = false);
-            }
-        } else if (input.type === 'checkbox') { // Clear checkboxes
-            input.checked = false;
-        } else {
-            input.value = ''; // Clear text, email, time, date inputs
-        }
-    });
-
-    // For Step 2, if cleared, also reset disabled states and messages
-    if (stepId === 'step2') {
-        document.getElementById('lantai_id').disabled = true;
-        document.getElementById('lantai_id').innerHTML = '<option value="">Pilih Lantai</option>';
-        document.getElementById('ruangan_selection').innerHTML = '<p style="color: #666;">Pilih Gedung dan Lantai terlebih dahulu untuk melihat daftar ruangan.</p>';
-        document.getElementById('ruangan_selection').style.border = '1px solid #ccc';
-        document.getElementById('ruangan_selection').style.backgroundColor = '#f8f8f8';
-    }
-}
-    // Initial step display
-    showStep(currentStep);
-</script>
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
@@ -954,5 +772,192 @@ function clearForm(stepId) {
         </div>
     </div>
 </footer>
+
+<script>
+    let currentStep = 1;
+    const formSteps = document.querySelectorAll('.form-step');
+    const formStepInput = document.getElementById('form_step');
+
+    function showStep(step) {
+        formSteps.forEach((s, index) => {
+            s.classList.remove('active');
+            if (index + 1 === step) {
+                s.classList.add('active');
+            }
+        });
+        formStepInput.value = `step${step}`;
+    }
+
+    function nextStep() {
+        const namaEvent = document.getElementById('pengajuan_namaEvent').value;
+        const typeKegiatan = document.getElementById('pengajuan_TypeKegiatan').value;
+        if (namaEvent.trim() === '' || typeKegiatan.trim() === '') {
+            alert('Harap isi semua kolom Nama Event dan Tipe Kegiatan pada langkah ini.');
+            return;
+        }
+        currentStep++;
+        showStep(currentStep);
+    }
+
+    function prevStep() {
+        currentStep--;
+        showStep(currentStep);
+    }
+    
+    // Updated clearForm function
+    function clearForm(stepId) {
+        const stepElement = document.getElementById(stepId);
+        const inputs = stepElement.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            // Uncheck all checkboxes
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } 
+            // Clear file inputs and their display names
+            else if (input.type === 'file') {
+                input.value = ''; // Clear file input
+                 if (input.id === 'jadwal_event_rundown_file') {
+                    document.getElementById('rundown_file_name').textContent = 'Belum ada file dipilih';
+                } else if (input.id === 'pengajuan_event_proposal_file') {
+                    document.getElementById('proposal_file_name').textContent = 'Belum ada file dipilih';
+                }
+            } 
+            // Reset select dropdowns
+            else if (input.tagName === 'SELECT') {
+                input.selectedIndex = 0;
+            } 
+            // Clear all other inputs
+            else {
+                input.value = '';
+            }
+        });
+        
+        // Specifically reset Step 2 dynamic fields
+        if (stepId === 'step2') {
+            const lantaiSelection = document.getElementById('lantai_selection');
+            lantaiSelection.innerHTML = '<p>Pilih Gedung terlebih dahulu.</p>';
+            lantaiSelection.classList.add('disabled');
+
+            const ruanganSelection = document.getElementById('ruangan_selection');
+            ruanganSelection.innerHTML = '<p>Pilih Lantai terlebih dahulu.</p>';
+            ruanganSelection.classList.add('disabled');
+        }
+    }
+    
+    // File upload display name handlers
+    document.getElementById('jadwal_event_rundown_file').addEventListener('change', function() {
+        const fileNameSpan = document.getElementById('rundown_file_name');
+        fileNameSpan.textContent = this.files.length > 0 ? this.files[0].name : 'Belum ada file dipilih';
+    });
+
+    document.getElementById('pengajuan_event_proposal_file').addEventListener('change', function() {
+        const fileNameSpan = document.getElementById('proposal_file_name');
+        fileNameSpan.textContent = this.files.length > 0 ? this.files[0].name : 'Belum ada file dipilih';
+    });
+
+
+    // --- NEW DYNAMIC HIERARCHICAL CHECKBOX LOGIC ---
+
+    const gedungSelection = document.getElementById('gedung_selection');
+    const lantaiSelection = document.getElementById('lantai_selection');
+    const ruanganSelection = document.getElementById('ruangan_selection');
+    const lantaiLoader = document.getElementById('lantai_loader');
+    const ruanganLoader = document.getElementById('ruangan_loader');
+
+    // Listener for Gedung checkboxes
+    gedungSelection.addEventListener('change', function() {
+        const selectedGedungIds = Array.from(gedungSelection.querySelectorAll('input[type=checkbox]:checked'))
+            .map(cb => cb.value);
+
+        // Reset lower levels
+        lantaiSelection.innerHTML = '<p>Pilih Gedung terlebih dahulu.</p>';
+        lantaiSelection.classList.add('disabled');
+        ruanganSelection.innerHTML = '<p>Pilih Lantai terlebih dahulu.</p>';
+        ruanganSelection.classList.add('disabled');
+
+        if (selectedGedungIds.length > 0) {
+            lantaiLoader.style.display = 'inline-block';
+            
+            // Build query string for multiple IDs
+            const queryString = selectedGedungIds.map(id => `gedung_ids[]=${id}`).join('&');
+            
+            fetch(`get_lantai.php?${queryString}`)
+                .then(response => response.json())
+                .then(data => {
+                    lantaiSelection.innerHTML = ''; // Clear
+                    if (data.length > 0) {
+                        data.forEach(lantai => {
+                            const div = document.createElement('div');
+                            div.innerHTML = `
+                                <input type="checkbox" class="lantai-checkbox" name="lantai_ids[]" value="${lantai.lantai_id}" id="lantai_${lantai.lantai_id}">
+                                <label for="lantai_${lantai.lantai_id}">Lantai ${lantai.lantai_nomor} (${lantai.gedung_nama})</label>
+                            `;
+                            lantaiSelection.appendChild(div);
+                        });
+                        lantaiSelection.classList.remove('disabled');
+                    } else {
+                        lantaiSelection.innerHTML = '<p>Tidak ada lantai ditemukan untuk gedung yang dipilih.</p>';
+                        lantaiSelection.classList.add('disabled');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching lantai:', error);
+                    lantaiSelection.innerHTML = '<p style="color: red;">Gagal memuat data lantai.</p>';
+                })
+                .finally(() => {
+                    lantaiLoader.style.display = 'none';
+                });
+        }
+    });
+
+    // Listener for Lantai checkboxes
+    lantaiSelection.addEventListener('change', function(e) {
+        // Only proceed if the change was on a checkbox, not the container
+        if (e.target.type !== 'checkbox') return;
+
+        const selectedLantaiIds = Array.from(lantaiSelection.querySelectorAll('input[type=checkbox]:checked'))
+            .map(cb => cb.value);
+            
+        // Reset ruangan
+        ruanganSelection.innerHTML = '<p>Pilih Lantai terlebih dahulu.</p>';
+        ruanganSelection.classList.add('disabled');
+
+        if (selectedLantaiIds.length > 0) {
+            ruanganLoader.style.display = 'inline-block';
+            
+            const queryString = selectedLantaiIds.map(id => `lantai_ids[]=${id}`).join('&');
+            
+            fetch(`get_ruangan.php?${queryString}`)
+                .then(response => response.json())
+                .then(data => {
+                    ruanganSelection.innerHTML = ''; // Clear
+                    if (data.length > 0) {
+                        data.forEach(ruangan => {
+                            const div = document.createElement('div');
+                            div.innerHTML = `
+                                <input type="checkbox" name="ruangan_ids[]" value="${ruangan.ruangan_id}" id="ruangan_${ruangan.ruangan_id}">
+                                <label for="ruangan_${ruangan.ruangan_id}">${ruangan.ruangan_nama} (Lantai ${ruangan.lantai_nomor}, ${ruangan.gedung_nama})</label>
+                            `;
+                            ruanganSelection.appendChild(div);
+                        });
+                        ruanganSelection.classList.remove('disabled');
+                    } else {
+                        ruanganSelection.innerHTML = '<p>Tidak ada ruangan tersedia untuk lantai yang dipilih.</p>';
+                        ruanganSelection.classList.add('disabled');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching ruangan:', error);
+                    ruanganSelection.innerHTML = '<p style="color: red;">Gagal memuat data ruangan.</p>';
+                })
+                .finally(() => {
+                    ruanganLoader.style.display = 'none';
+                });
+        }
+    });
+
+    // Initial step display
+    showStep(currentStep);
+</script>
 </body>
 </html>

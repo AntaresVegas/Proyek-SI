@@ -70,19 +70,25 @@ $year_range = range(date('Y'), date('Y') - 10);
             background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
-            min-height: 100vh;
-            padding-top: 80px;
+            /* Perubahan utama di sini untuk stick-footer */
+            display: flex; /* */
+            flex-direction: column; /* */
+            min-height: 100vh; /* */
+            padding-top: 80px; /* Jaga padding atas untuk navbar fixed */
         }   
         :root { --primary-color: #ff8c00; --danger-color: #dc3545; --success-color: #198754; --light-gray: #f8f9fa; --border-color: #dee2e6; --text-dark: #2c3e50; }     
-        .main-content { flex-grow: 1; }
+        .main-content { 
+            flex-grow: 1; /* */
+            width: 100%; /* */
+        }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
+        .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
-        .navbar-menu li a { text-decoration: none; color: #2c3e50; font-weight: 500; }
-        .navbar-menu li a:hover, .navbar-menu li a.active { color: #0056b3; }
-        .navbar-right { display: flex; align-items: center; gap: 15px; color: #2c3e50; }
+        .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
+        .navbar-menu li a:hover, .navbar-menu li a.active { color: #007bff; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
         .icon { font-size: 20px; cursor: pointer; }
         .chart-container { max-width: 1000px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }
 
@@ -102,8 +108,8 @@ $year_range = range(date('Y'), date('Y') - 10);
         .filter-group button { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .chart-wrapper { width: 100%; }
         .total-events { text-align: center; margin-top: 20px; font-size: 20px; font-weight: bold; color: #333; }
-        .page-footer { background-color: var(--primary-color); color: #fff; padding: 40px 0; }
-        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; }
+        .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
@@ -122,10 +128,10 @@ $year_range = range(date('Y'), date('Y') - 10);
     </div>
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
-        <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
+        <li><a href="ditmawa_listKegiatan.php" class="active">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
-        <li><a href="ditmawa_laporan.php" class="active">Laporan</a></li>
+        <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">
         <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
@@ -133,44 +139,45 @@ $year_range = range(date('Y'), date('Y') - 10);
     </div>
 </nav>
 
-<div class="chart-container">
-    <div class="chart-header">
-        <div class="title-group">
-            <h1>Grafik Kegiatan Unpar</h1>
-            <h2>Tahun <?php echo ($startYear === $endYear) ? $startYear : "$startYear - $endYear"; ?></h2>
+<div class="main-content">
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="title-group">
+                <h1>Grafik Kegiatan Unpar</h1>
+                <h2>Tahun <?php echo ($startYear === $endYear) ? $startYear : "$startYear - $endYear"; ?></h2>
+            </div>
+            <a href="ditmawa_listKegiatan.php" class="back-button">
+                <i class="fas fa-list-ul"></i> Kembali ke List
+            </a>
         </div>
-        <a href="ditmawa_listKegiatan.php" class="back-button">
-            <i class="fas fa-list-ul"></i> Kembali ke List
-        </a>
-    </div>
 
-    <form method="GET" class="filter-container">
-        <div class="filter-group">
-            <label for="start_year">Tahun Mulai</label>
-            <select name="start_year" id="start_year">
-                <?php foreach ($year_range as $year) { echo "<option value='$year'" . ($year == $startYear ? ' selected' : '') . ">$year</option>"; } ?>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label for="end_year">Tahun Selesai</label>
-            <select name="end_year" id="end_year">
-                <?php foreach ($year_range as $year) { echo "<option value='$year'" . ($year == $endYear ? ' selected' : '') . ">$year</option>"; } ?>
-            </select>
-        </div>
-        <div class="filter-group" style="align-self: flex-end;">
-            <button type="submit">Tampilkan</button>
-        </div>
-    </form>
+        <form method="GET" class="filter-container">
+            <div class="filter-group">
+                <label for="start_year">Tahun Mulai</label>
+                <select name="start_year" id="start_year">
+                    <?php foreach ($year_range as $year) { echo "<option value='$year'" . ($year == $startYear ? ' selected' : '') . ">$year</option>"; } ?>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="end_year">Tahun Selesai</label>
+                <select name="end_year" id="end_year">
+                    <?php foreach ($year_range as $year) { echo "<option value='$year'" . ($year == $endYear ? ' selected' : '') . ">$year</option>"; } ?>
+                </select>
+            </div>
+            <div class="filter-group" style="align-self: flex-end;">
+                <button type="submit">Tampilkan</button>
+            </div>
+        </form>
 
-    <div class="chart-wrapper">
-        <canvas id="kegiatanChart"></canvas>
-    </div>
+        <div class="chart-wrapper">
+            <canvas id="kegiatanChart"></canvas>
+        </div>
 
-    <div class="total-events">
-        Total Event <?php echo ($startYear === $endYear) ? $startYear : "$startYear - $endYear"; ?> : <?php echo $total_events; ?> Event
+        <div class="total-events">
+            Total Event <?php echo ($startYear === $endYear) ? $startYear : "$startYear - $endYear"; ?> : <?php echo $total_events; ?> Event
+        </div>
     </div>
 </div>
-
 <script>
     const ctx = document.getElementById('kegiatanChart').getContext('2d');
     const eventData = <?php echo json_encode(array_values($event_data_per_month)); ?>;

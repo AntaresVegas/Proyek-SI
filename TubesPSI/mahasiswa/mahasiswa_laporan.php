@@ -26,7 +26,16 @@ if (isset($_GET['status'])) {
 
 $events_for_lpj = [];
 if (isset($user_id)) {
-    $stmt = $conn->prepare("SELECT pengajuan_id, pengajuan_namaEvent, pengajuan_event_tanggal_mulai FROM pengajuan_event WHERE mahasiswa_id = ? AND pengajuan_status = 'Disetujui' AND (pengajuan_LPJ IS NULL OR pengajuan_LPJ = '') ORDER BY pengajuan_event_tanggal_mulai DESC");
+    // ==== PERUBAHAN 1: Memperbarui Kueri SQL ====
+    // Logika diubah untuk menampilkan event yang (belum ada LPJ) ATAU (LPJ-nya ditolak)
+    $stmt = $conn->prepare("
+        SELECT pengajuan_id, pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_statusLPJ 
+        FROM pengajuan_event 
+        WHERE mahasiswa_id = ? 
+          AND pengajuan_status = 'Disetujui' 
+          AND ((pengajuan_LPJ IS NULL OR pengajuan_LPJ = '') OR pengajuan_statusLPJ = 'Ditolak')
+        ORDER BY pengajuan_event_tanggal_mulai DESC
+    ");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -49,7 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_lpj'])) {
         $upload_path = '../' . $db_path;
         if (!is_dir(dirname($upload_path))) { mkdir(dirname($upload_path), 0777, true); }
         if (move_uploaded_file($file_tmp_name, $upload_path)) {
-            $update_stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_LPJ = ?, pengajuan_statusLPJ = 'Diterima' WHERE pengajuan_id = ? AND mahasiswa_id = ?");
+            // ==== PERUBAHAN 2: Menyesuaikan Status LPJ saat diunggah ====
+            // Status diubah menjadi 'Menunggu Persetujuan' agar masuk ke alur review Ditmawa.
+            $update_stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_LPJ = ?, pengajuan_statusLPJ = 'Menunggu Persetujuan' WHERE pengajuan_id = ? AND mahasiswa_id = ?");
             $update_stmt->bind_param("sii", $db_path, $selected_pengajuan_id, $user_id);
             if ($update_stmt->execute()) { header("Location: mahasiswa_laporan.php?status=success"); exit(); } 
             else { unlink($upload_path); header("Location: mahasiswa_laporan.php?status=error&msg=" . urlencode("Gagal menyimpan data LPJ.")); exit(); }
@@ -70,6 +81,7 @@ $conn->close();
         :root {
             --primary-color: rgb(2, 71, 25);
             --secondary-color: #0d6efd;
+            --status-rejected: #dc3545;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
@@ -116,6 +128,7 @@ $conn->close();
         .btn-download-template:hover { background-color: #0b5ed7; }
         .btn-download-template i { margin-right: 8px; }
         .template-note { font-size: 14px; color: #555; line-height: 1.5; margin: 0; text-align: center; }
+        .status-ditolak-info { font-size: 14px; color: var(--status-rejected); font-weight: 500; }
         .page-footer {
             background-color: var(--primary-color);
             color: #e9ecef;
@@ -195,10 +208,17 @@ $conn->close();
             <div class="form-group">
                 <label for="pengajuan_id">Pilih Event yang Telah Selesai</label>
                 <select id="pengajuan_id" name="pengajuan_id" required>
-                    <option value="">-- Pilih Event yang Sudah Disetujui --</option>
+                    <option value="">-- Pilih Event --</option>
                     <?php if (!empty($events_for_lpj)): ?>
                         <?php foreach ($events_for_lpj as $event): ?>
-                            <option value="<?php echo htmlspecialchars($event['pengajuan_id']); ?>"><?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?> (<?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?>)</option>
+                            <?php 
+                                $displayName = htmlspecialchars($event['pengajuan_namaEvent']);
+                                $displayDate = htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai'])));
+                                $statusInfo = ($event['pengajuan_statusLPJ'] == 'Ditolak') ? '' : '';
+                            ?>
+                            <option value="<?php echo htmlspecialchars($event['pengajuan_id']); ?>">
+                                <?php echo $displayName . ' (' . $displayDate . ')' . $statusInfo; ?>
+                            </option>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <option value="" disabled>Tidak ada event yang perlu di-LPJ-kan</option>
@@ -212,7 +232,7 @@ $conn->close();
                     <i class="fas fa-download"></i> Unduh Template LPJ
                 </a>
                 <p class="template-note">
-                    <strong>Penting:</strong> Pastikan laporan dibuat sesuai dengan template yang disediakan.
+                    <strong>Penting:</strong> Pastikan laporan dibuat sesuai dengan template yang disediakan dan berikan penamaan file dengan nama <span style="color: red;"><b>LPJ_NamaEvent</b></span>.
                 </p>
             </div>
             <div class="form-group">

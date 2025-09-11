@@ -75,7 +75,7 @@ try {
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title {
-            color: #2c3e50;
+            color:rgb(255, 255, 255);
             font-size: 14px;
             line-height: 1.2;
         }
@@ -88,7 +88,7 @@ try {
 
         .navbar-menu li a {
             text-decoration: none;
-            color: #2c3e50;
+            color:rgb(255, 255, 255);
             font-weight: 500;
             font-size: 15px;
             transition: color 0.3s;
@@ -98,7 +98,7 @@ try {
             align-items: center;
             gap: 15px;
             font-size: 15px;
-            color: #2c3e50;
+            color:rgb(255, 255, 255);
         }
 
         .user-name {
