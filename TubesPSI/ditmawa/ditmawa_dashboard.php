@@ -65,44 +65,81 @@ try {
             $pending_approvals = $result_pending->fetch_assoc()['total'];
         }
 
-        // Fetch event data for the calendar for the current month
         $stmt_calendar_events = $conn->prepare("
             SELECT 
                 pe.pengajuan_namaEvent,
                 pe.pengajuan_event_tanggal_mulai,
-                pe.pengajuan_event_tanggal_selesai
+                pe.pengajuan_event_tanggal_selesai,
+                pe.tanggal_persiapan,
+                pe.tanggal_beres
             FROM pengajuan_event pe
             WHERE pe.pengajuan_status = 'Disetujui'
               AND (
                   (MONTH(pe.pengajuan_event_tanggal_mulai) = ? AND YEAR(pe.pengajuan_event_tanggal_mulai) = ?) OR
-                  (MONTH(pe.pengajuan_event_tanggal_selesai) = ? AND YEAR(pe.pengajuan_event_tanggal_selesai) = ?)
+                  (MONTH(pe.pengajuan_event_tanggal_selesai) = ? AND YEAR(pe.pengajuan_event_tanggal_selesai) = ?) OR
+                  (MONTH(pe.tanggal_persiapan) = ? AND YEAR(pe.tanggal_persiapan) = ?) OR
+                  (MONTH(pe.tanggal_beres) = ? AND YEAR(pe.tanggal_beres) = ?)
               )
         ");
 
         if ($stmt_calendar_events) {
-            $stmt_calendar_events->bind_param("iiii", $currentMonth, $currentYear, $currentMonth, $currentYear);
+            $stmt_calendar_events->bind_param("iiiiiiii", $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear);
             $stmt_calendar_events->execute();
             $result_calendar_events = $stmt_calendar_events->get_result();
-
+            
+            // Mengumpulkan semua event unik berdasarkan nama untuk diproses
+            $events_to_process = [];
             while ($row = $result_calendar_events->fetch_assoc()) {
+                $events_to_process[$row['pengajuan_namaEvent']] = $row;
+            }
+
+            foreach ($events_to_process as $row) {
+                // Proses tanggal event utama
                 $eventStartDate = new DateTime($row['pengajuan_event_tanggal_mulai']);
                 $eventEndDate = new DateTime($row['pengajuan_event_tanggal_selesai']);
-                $interval = new DateInterval('P1D');
-                $period = new DatePeriod($eventStartDate, $interval, $eventEndDate->modify('+1 day')); 
+                $period = new DatePeriod($eventStartDate, new DateInterval('P1D'), (clone $eventEndDate)->modify('+1 day')); 
 
                 foreach ($period as $dt) {
-                    $day = (int)$dt->format('j');
                     if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                        if (!isset($calendar_events[$day])) {
-                            $calendar_events[$day] = [];
+                        $day = (int)$dt->format('j');
+                        $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
+                    }
+                }
+
+                // Logika untuk rentang waktu persiapan
+                if (!empty($row['tanggal_persiapan'])) {
+                    $prep_start_dt = new DateTime($row['tanggal_persiapan']);
+                    $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
+                    if ($prep_start_dt < $main_event_start_dt) {
+                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
+                        foreach ($prep_period as $dt) {
+                            if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
+                                $day = (int)$dt->format('j');
+                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
+                            }
                         }
-                        $calendar_events[$day][] = htmlspecialchars($row['pengajuan_namaEvent']);
+                    }
+                }
+                
+                // Logika untuk rentang waktu beres-beres
+                if (!empty($row['tanggal_beres'])) {
+                    $main_event_end_dt = new DateTime($row['pengajuan_event_tanggal_selesai']);
+                    $clear_end_dt = new DateTime($row['tanggal_beres']);
+                    if ($clear_end_dt > $main_event_end_dt) {
+                        $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
+                        $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
+                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
+                        foreach ($clear_period as $dt) {
+                            if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
+                                $day = (int)$dt->format('j');
+                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Beres-beres)', 'type' => 'clear'];
+                            }
+                        }
                     }
                 }
             }
             $stmt_calendar_events->close();
         }
-
     }
 } catch (Exception $e) {
     error_log("Error in Ditmawa Dashboard: " . $e->getMessage());
@@ -122,7 +159,6 @@ $conn->close();
         html { height: 100%; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e3c72;
             background-image: url('../img/backgroundDitmawa.jpeg');
             background-size: cover;
             background-position: center center;
@@ -139,25 +175,22 @@ $conn->close();
         .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color:rgb(250, 250, 250); font-weight: 500; }
-        .navbar-menu li a.active {
-            color: #007bff;
-        }     
+        .navbar-menu li a.active { color: #007bff; }     
         .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
         .icon { font-size: 20px; cursor: pointer; }
         .main-content { flex-grow: 1; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
         
-        /* === PERUBAHAN CSS === */
         .content-card { 
             background: rgba(255, 255, 255); 
             border-radius: 15px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
             padding: 30px;
-            margin-bottom: 30px; /* Menambahkan jarak antar kartu */
+            margin-bottom: 30px;
         }
         .welcome-section { background: linear-gradient(135deg,rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; border-radius: 10px; padding: 25px; margin-bottom: 30px; text-align: center; }
         .welcome-section h2 { font-size: 28px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; } /* Dihapus margin-bottom dari sini karena sudah ada di content-card */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .stat-card { background: white; border-left: 5px solid; border-radius: 10px; padding: 25px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .stat-card.events { border-color: #3498db; }
         .stat-card.completed { border-color: #27ae60; }
@@ -168,7 +201,7 @@ $conn->close();
         .stat-card.pending .icon { color: #f39c12; }
         .stat-card .number { font-size: 32px; font-weight: bold; }
         .stat-card .label { color: #7f8c8d; font-size: 14px; text-transform: uppercase; }
-        .calendar-wrapper { margin-top: 0; } /* Dihapus margin-top dari sini */
+        .calendar-wrapper { margin-top: 0; }
         .calendar-title { text-align: center; font-size: 1.8em; margin-bottom: 20px; font-weight: 600; color: #2c3e50;}
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-header h2 { font-size: 1.5em; }
@@ -188,68 +221,27 @@ $conn->close();
             justify-content: center;
         }
         .event-indicator { font-size: 0.9em; background-color: #ffe8cc; color: #d97706; padding: 2px 4px; border-radius: 4px; margin-top: 3px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .event-indicator.prep-day {
+            background-color: #dc3545; /* Merah */
+            color: white;
+        }
+
+        .event-indicator.clear-day {
+            background-color: #dc3545; /* Kuning */
+            color: white;            /* Teks Gelap */
+        }
+        
         .empty-day { background-color: #f9f9f9; }
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
-
-        /* ===== FOOTER STYLES ===== */
-        .page-footer {
-            background-color: #ff8c00;
-            color: #fff;
-            padding: 40px 0;
-            margin-top: 40px;
-        }
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 30px;
-        }
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .footer-logo {
-            width: 60px;
-            height: 60px;
-        }
-        .footer-left h4 {
-            font-size: 1.2em;
-            font-weight: 500;
-            line-height: 1.4;
-            color: #2c3e50;
-        }
-        .footer-right ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            color: #2c3e50;
-        }
-        .footer-right li {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .footer-right .social-icons {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-        }
-        .footer-right .social-icons a {
-            color: #2c3e50;
-            font-size: 1.5em;
-            transition: color 0.3s;
-        }
-        .footer-right .social-icons a:hover {
-            color: #fff;
-        }
-
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -320,9 +312,21 @@ $conn->close();
                     ?>
                         <div class="<?php echo $cellClass; ?>">
                             <div class="day-number"><?php echo $day; ?></div>
-                            <?php if (isset($calendar_events[$day])): ?>
-                                <?php foreach ($calendar_events[$day] as $eventName): ?>
-                                    <span class="event-indicator"><?php echo $eventName; ?></span>
+                            <?php if (isset($calendar_events[$day])): 
+                                $unique_events = [];
+                                foreach ($calendar_events[$day] as $event) {
+                                    $unique_events[$event['name']] = $event;
+                                }
+
+                                foreach ($unique_events as $event): 
+                                    $eventTypeClass = ''; // Default class
+                                    if ($event['type'] === 'prep') {
+                                        $eventTypeClass = 'prep-day';
+                                    } elseif ($event['type'] === 'clear') {
+                                        $eventTypeClass = 'clear-day';
+                                    }
+                                ?>
+                                    <span class="event-indicator <?php echo $eventTypeClass; ?>"><?php echo htmlspecialchars($event['name']); ?></span>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
@@ -355,12 +359,6 @@ $conn->close();
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
                 <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
             </ul>
-            <div class="social-icons">
-                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-            </div>
         </div>
     </div>
 </footer>

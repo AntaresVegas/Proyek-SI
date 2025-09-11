@@ -36,19 +36,65 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 try {
     if (isset($conn) && $conn->ping()) {
         
-        // Data Kalender
-        $stmt_calendar = $conn->prepare("SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai FROM pengajuan_event WHERE pengajuan_status = 'Disetujui' AND ((MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?) OR (MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ?) OR (pengajuan_event_tanggal_mulai <= ? AND pengajuan_event_tanggal_selesai >= ?))");
-        $startOfMonthForQuery = "$currentYear-$currentMonth-01";
-        $endOfMonthForQuery = "$currentYear-$currentMonth-$daysInMonth";
+        $stmt_calendar = $conn->prepare("
+            SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, tanggal_persiapan, tanggal_beres 
+            FROM pengajuan_event 
+            WHERE pengajuan_status = 'Disetujui' 
+            AND (
+                (MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?) OR
+                (MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ?) OR
+                (MONTH(tanggal_persiapan) = ? AND YEAR(tanggal_persiapan) = ?) OR
+                (MONTH(tanggal_beres) = ? AND YEAR(tanggal_beres) = ?)
+            )
+        ");
         if ($stmt_calendar) {
-            $stmt_calendar->bind_param("iissss", $currentMonth, $currentYear, $currentMonth, $currentYear, $endOfMonthForQuery, $startOfMonthForQuery);
+            $stmt_calendar->bind_param("iiiiiiii", $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear);
             $stmt_calendar->execute();
             $result = $stmt_calendar->get_result();
+            
+            $events_to_process = [];
             while ($row = $result->fetch_assoc()) {
+                $events_to_process[$row['pengajuan_namaEvent']] = $row;
+            }
+            
+            foreach ($events_to_process as $row) {
+                // Proses Tanggal Event Utama
                 $period = new DatePeriod(new DateTime($row['pengajuan_event_tanggal_mulai']), new DateInterval('P1D'), (new DateTime($row['pengajuan_event_tanggal_selesai']))->modify('+1 day'));
                 foreach ($period as $day) {
                     if ($day->format('n') == $currentMonth && $day->format('Y') == $currentYear) {
-                        $calendar_events[$day->format('j')][] = htmlspecialchars($row['pengajuan_namaEvent']);
+                        $calendar_events[$day->format('j')][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
+                    }
+                }
+                
+                // Logika untuk rentang waktu persiapan
+                if (!empty($row['tanggal_persiapan'])) {
+                    $prep_start_dt = new DateTime($row['tanggal_persiapan']);
+                    $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
+                    if ($prep_start_dt < $main_event_start_dt) {
+                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
+                        foreach ($prep_period as $dt) {
+                            if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
+                                $day = (int)$dt->format('j');
+                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
+                            }
+                        }
+                    }
+                }
+
+                // Logika untuk rentang waktu beres-beres
+                if (!empty($row['tanggal_beres'])) {
+                    $main_event_end_dt = new DateTime($row['pengajuan_event_tanggal_selesai']);
+                    $clear_end_dt = new DateTime($row['tanggal_beres']);
+                    if ($clear_end_dt > $main_event_end_dt) {
+                        $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
+                        $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
+                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
+                        foreach ($clear_period as $dt) {
+                            if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
+                                $day = (int)$dt->format('j');
+                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Beres-beres)', 'type' => 'clear'];
+                            }
+                        }
                     }
                 }
             }
@@ -125,12 +171,12 @@ try {
         .event-card-info p { font-size: 0.9em; color: var(--text-light); }
         .submission-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; position: relative; border-left: 5px solid; }
         .submission-card:not(:last-child) { margin-bottom: 15px; }
-        .submission-card-title { font-size: 1.1em; color: white; margin-bottom: 8px; padding-right: 90px; }
-        .submission-card-date { font-size: 0.9em; color: white; }
+        .submission-card-title { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; padding-right: 90px; }
+        .submission-card-date { font-size: 0.9em; color: var(--text-light); }
         .status-badge { position: absolute; top: 20px; right: 20px; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: 600; color: white; }
-        .status-Disetujui { background-color: var(--status-green); border-color: var(--status-green); }
-        .status-Ditolak { background-color: var(--status-red); border-color: var(--status-red); }
-        .status-Diajukan { background-color: var(--status-yellow); color: #333 !important; border-color: var(--status-yellow); }
+        .status-Disetujui { border-color: var(--status-green); } .status-Disetujui .status-badge { background-color: var(--status-green); }
+        .status-Ditolak { border-color: var(--status-red); } .status-Ditolak .status-badge { background-color: var(--status-red); }
+        .status-Diajukan { border-color: var(--status-yellow); } .status-Diajukan .status-badge { background-color: var(--status-yellow); color: #333; }
         .calendar-wrapper { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .calendar-title { text-align: center; color: var(--text-dark); font-size: 1.8em; margin-bottom: 20px; font-weight: 600; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -141,7 +187,6 @@ try {
         .day-cell { background-color: #fff; padding: 8px; min-height: 100px; position: relative; }
         .day-number { font-weight: bold; }
         
-        /* ===== CSS BARU UNTUK TANDA HARI INI ===== */
         .day-cell.today .day-number {
             background-color: var(--secondary-color);
             color: white;
@@ -155,26 +200,24 @@ try {
         }
 
         .event-indicator { font-size: 0.8em; background: var(--status-green); color: white; padding: 3px 5px; border-radius: 4px; margin-top: 5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .event-indicator.prep-clear { background: var(--status-yellow); color: var(--text-dark); }
+
         .empty-day { background-color: var(--light-gray); }
-        .notification-container { position: relative; }
-        .notification-badge { position: absolute; top: -5px; right: -8px; background-color: var(--status-red); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 1px solid white; }
-        .notifications-dropdown { display: none; position: absolute; top: 50px; right: 0; background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); width: 380px; z-index: 1001; }
-        .notifications-dropdown.show { display: block; }
-        .notifications-header { padding: 12px 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .notifications-header h4 { margin: 0; color: var(--text-dark); font-size: 1em; }
-        #markAsRead { cursor:pointer; font-size:12px; color:var(--secondary-color); font-weight: 500; }
-        #notificationList { list-style: none; padding: 8px; margin: 0; max-height: 320px; overflow-y: auto; }
-        .notification-list-item { background: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); list-style: none; }
-        .notification-list-item a { text-decoration: none; color: inherit; display: flex; align-items: center; padding: 12px 15px; }
-        .notification-list-item.unread { background-color: #fff8f8; }
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; flex-shrink: 0; margin-right: 12px; }
-        .status-dot.unread { background-color: var(--status-red); }
-        .status-dot.read { background-color: var(--secondary-color); }
-        .notification-message { margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark); line-height: 1.4; }
-        .notification-time { font-size: 12px; color: var(--text-light); }
-        .no-notifications { padding: 20px; text-align: center; color: #777; }
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
+        .service-flow-container { background: #fff; border-radius: 12px; padding: 25px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .service-flow-container h2 { text-align: center; font-size: 1.8em; color: var(--text-dark); margin-bottom: 30px; }
+        .timeline { position: relative; max-width: 800px; margin: 0 auto; list-style: none; }
+        .timeline::before { content: ''; position: absolute; top: 0; left: 20px; height: 100%; width: 3px; background: #e9ecef; }
+        .timeline-item { position: relative; padding-left: 60px; margin-bottom: 30px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-step { position: absolute; left: 0; top: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2em; border: 3px solid #fff; box-shadow: 0 0 0 3px var(--primary-color); }
+        .timeline-content { background: #f8f9fa; border-radius: 8px; padding: 20px; border: 1px solid #e9ecef; }
+        .timeline-content h4 { font-size: 1.2em; margin-bottom: 8px; color: var(--text-dark); }
+        .timeline-content p { font-size: 0.95em; line-height: 1.6; color: var(--text-light); }
+        .timeline-content a { color: var(--secondary-color); font-weight: bold; text-decoration: none; }
+        .timeline-content a:hover { text-decoration: underline; }
+
         .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
         .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
@@ -182,96 +225,6 @@ try {
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
-        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
-        .footer-right .social-icons a:hover { color: #fff; }
-
-        /* ===== CSS UNTUK ALUR LAYANAN BARU ===== */
-        .service-flow-container {
-            background: #fff;
-            border-radius: 12px;
-            padding: 25px 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
-        }
-        .service-flow-container h2 {
-            text-align: center;
-            font-size: 1.8em;
-            color: var(--text-dark);
-            margin-bottom: 30px;
-        }
-        .timeline {
-            position: relative;
-            max-width: 800px;
-            margin: 0 auto;
-            list-style: none;
-        }
-        .timeline::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 20px;
-            height: 100%;
-            width: 3px;
-            background: #e9ecef;
-        }
-        .timeline-item {
-            position: relative;
-            padding-left: 60px;
-            margin-bottom: 30px;
-        }
-        .timeline-item:last-child {
-            margin-bottom: 0;
-        }
-        .timeline-step {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2em;
-            border: 3px solid #fff;
-            box-shadow: 0 0 0 3px var(--primary-color);
-        }
-        .timeline-content {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .timeline-content .icon-container {
-            font-size: 2.5em;
-            color: var(--primary-color);
-        }
-        .timeline-content h4 {
-            font-size: 1.2em;
-            margin-bottom: 8px;
-            color: var(--text-dark);
-        }
-        .timeline-content p {
-            font-size: 0.95em;
-            line-height: 1.6;
-            color: var(--text-light);
-        }
-        .timeline-content a {
-            color: var(--secondary-color);
-            font-weight: bold;
-            text-decoration: none;
-        }
-        .timeline-content a:hover {
-            text-decoration: underline;
-        }
-
     </style>
 </head>
 <body>
@@ -293,18 +246,6 @@ try {
         <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
             <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
         </a>
-        <div class="notification-container">
-            <i class="fas fa-bell icon" id="notificationBell"></i>
-            <span class="notification-badge" id="notificationBadge"></span>
-            <div class="notifications-dropdown" id="notificationsDropdown">
-                <div class="notifications-header">
-                    <h4>Notifikasi</h4>
-                    <span id="markAsRead">Tandai semua dibaca</span>
-                </div>
-                <ul id="notificationList">
-                    </ul>
-            </div>
-        </div>
         <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
@@ -368,7 +309,6 @@ try {
         <div class="calendar-grid">
                 <div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>
             <?php 
-            // ----- PERUBAHAN PHP UNTUK TANDA HARI INI -----
             $today_day = date('j');
             $today_month = date('n');
             $today_year = date('Y');
@@ -381,9 +321,16 @@ try {
 
                 echo '<div class="' . $cellClass . '">';
                 echo '<div class="day-number">' . $day . '</div>';
+                
                 if (isset($calendar_events[$day])) {
-                    foreach ($calendar_events[$day] as $eventName) {
-                        echo '<div class="event-indicator" title="' . htmlspecialchars($eventName) . '">' . htmlspecialchars($eventName) . '</div>';
+                    $unique_events = [];
+                    foreach ($calendar_events[$day] as $event) {
+                        $unique_events[$event['name']] = $event;
+                    }
+
+                    foreach ($unique_events as $event) {
+                        $eventTypeClass = ($event['type'] === 'main') ? '' : ' prep-clear';
+                        echo '<div class="event-indicator' . $eventTypeClass . '" title="' . htmlspecialchars($event['name']) . '">' . htmlspecialchars($event['name']) . '</div>';
                     }
                 }
                 echo '</div>';
@@ -410,7 +357,6 @@ try {
             <li class="timeline-item">
                 <div class="timeline-step">1</div>
                 <div class="timeline-content">
-                    <div class="icon-container"><i class="fas fa-book-open"></i></div>
                     <div>
                         <h4>Baca Peraturan & Ketentuan</h4>
                         <p>Pahami semua persyaratan yang tercantum di halaman <a href="mahasiswa_rules.php">Rules</a> sebelum memulai proses pengajuan.</p>
@@ -420,7 +366,6 @@ try {
             <li class="timeline-item">
                 <div class="timeline-step">2</div>
                 <div class="timeline-content">
-                    <div class="icon-container"><i class="fas fa-building"></i></div>
                     <div>
                         <h4>Cek Ketersediaan Ruangan</h4>
                         <p>Hubungi Administrasi Sarana & Prasarana (ASP) untuk memastikan ruangan yang Anda inginkan tersedia pada tanggal acara.</p>
@@ -430,7 +375,6 @@ try {
             <li class="timeline-item">
                 <div class="timeline-step">3</div>
                 <div class="timeline-content">
-                    <div class="icon-container"><i class="fas fa-file-alt"></i></div>
                     <div>
                         <h4>Isi Formulir Pengajuan</h4>
                         <p>Setelah ruangan terkonfirmasi, isi formulir pengajuan secara lengkap dan akurat melalui halaman <a href="mahasiswa_pengajuan.php">Form</a>.</p>
@@ -440,7 +384,6 @@ try {
             <li class="timeline-item">
                 <div class="timeline-step">4</div>
                 <div class="timeline-content">
-                    <div class="icon-container"><i class="fas fa-tasks"></i></div>
                     <div>
                         <h4>Tunggu Persetujuan Ditmawa</h4>
                         <p>Pengajuan Anda akan direview oleh Ditmawa. Anda bisa memantau status pengajuan di halaman <a href="mahasiswa_history.php">History</a>.</p>
@@ -450,7 +393,6 @@ try {
             <li class="timeline-item">
                 <div class="timeline-step">5</div>
                 <div class="timeline-content">
-                    <div class="icon-container"><i class="fas fa-file-upload"></i></div>
                     <div>
                         <h4>Unggah Laporan (LPJ)</h4>
                         <p>Setelah acara Anda disetujui dan selesai dilaksanakan, segera unggah Laporan Pertanggungjawaban (LPJ) melalui halaman <a href="mahasiswa_laporan.php">Laporan</a>.</p>
@@ -460,7 +402,9 @@ try {
         </ul>
     </div>
 </div>
+
 <script>
+// Script notifikasi tidak diubah, tetap sama
 document.addEventListener('DOMContentLoaded', function() {
     const notificationBell = document.getElementById('notificationBell');
     const notificationsDropdown = document.getElementById('notificationsDropdown');
