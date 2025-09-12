@@ -13,6 +13,10 @@ $user_id = $_SESSION['user_id'];
 $laporan_pertanggungjawaban = [];
 
 if ($user_id !== 'No ID') {
+    // ================================================
+    // ## KODE DIPERBAIKI: Menggunakan skema database baru ##
+    // Query disesuaikan untuk menggunakan pengaju_id dan pengaju_tipe.
+    // ================================================
     $stmt = $conn->prepare("
         SELECT
             pe.pengajuan_id,
@@ -24,7 +28,8 @@ if ($user_id !== 'No ID') {
         FROM
             pengajuan_event pe
         WHERE
-            pe.mahasiswa_id = ? AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
+            pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa' 
+            AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
         ORDER BY
             pe.pengajuan_event_tanggal_selesai DESC
     ");
@@ -162,7 +167,7 @@ $conn->close();
                             </td>
                             <td>
                                 <?php if (!empty($laporan['pengajuan_LPJ'])): ?>
-                                    <a href="../<?php echo urlencode($laporan['pengajuan_LPJ']); ?>" class="download-button" download>
+                                    <a href="../<?php echo htmlspecialchars($laporan['pengajuan_LPJ']); ?>" class="download-button" download>
                                         <i class="fas fa-download"></i> Download
                                     </a>
                                 <?php else: ?>

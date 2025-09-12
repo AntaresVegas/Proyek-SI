@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 
@@ -15,7 +16,31 @@ $kegiatan_data = [];
 
 try {
     if (isset($conn)) {
-        $sql = "SELECT pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_event_tanggal_mulai, pe.pengajuan_status, m.mahasiswa_nama, m.mahasiswa_npm FROM pengajuan_event pe JOIN mahasiswa m ON pe.mahasiswa_id = m.mahasiswa_id";
+        // =================================================================
+        // ## QUERY DIUBAH ##
+        // Menggunakan LEFT JOIN ke tabel mahasiswa dan ditmawa
+        // Menggunakan CASE untuk memilih nama dan identitas pengaju
+        // =================================================================
+        $sql = "
+            SELECT 
+                pe.pengajuan_id, 
+                pe.pengajuan_namaEvent, 
+                pe.pengajuan_event_tanggal_mulai, 
+                pe.pengajuan_status,
+                CASE
+                    WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_nama
+                    WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_nama
+                    ELSE 'Tidak Diketahui'
+                END AS nama_pengaju,
+                CASE
+                    WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_npm
+                    ELSE 'STAFF DITMAWA'
+                END AS identitas_pengaju
+            FROM pengajuan_event pe
+            LEFT JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id AND pe.pengaju_tipe = 'mahasiswa'
+            LEFT JOIN ditmawa d ON pe.pengaju_id = d.ditmawa_id AND pe.pengaju_tipe = 'ditmawa'
+        ";
+        
         $conditions = [];
         $params = [];
         $types = "";
@@ -52,19 +77,10 @@ $years = range($current_year, $current_year - 5);
     <title>List Kegiatan - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        /* CSS tidak perlu diubah, tetap sama */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-image: url('../img/backgroundDitmawa.jpeg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            min-height: 100%;
-            padding-top: 80px;
-            display: flex;
-            flex-direction: column;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; min-height: 100%; padding-top: 80px; display: flex; flex-direction: column; }
         .main-content { flex-grow: 1; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
@@ -85,14 +101,14 @@ $years = range($current_year, $current_year - 5);
         .filter-form button { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .kegiatan-table-container { overflow-x: auto; }
         .kegiatan-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .kegiatan-table th, .kegiatan-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; }
+        .kegiatan-table th, .kegiatan-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; }
         .kegiatan-table th { background-color: #f2f2f2; }
         .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 12px; }
         .status-badge.disetujui { background-color: #28a745; }
         .status-badge.ditolak { background-color: #dc3545; }
         .status-badge.diajukan { background-color: #ffc107; color: #333; }
         .view-form-button { background-color: #007bff; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: auto; }
         .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
@@ -105,7 +121,6 @@ $years = range($current_year, $current_year - 5);
     </style>
 </head>
 <body>
-
 <nav class="navbar">
     <div class="navbar-left">
         <img src="../img/logoDitmawa.png" alt="Logo Ditmawa" class="navbar-logo">
@@ -113,6 +128,7 @@ $years = range($current_year, $current_year - 5);
     </div>
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
+        <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php" class="active">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
@@ -132,7 +148,6 @@ $years = range($current_year, $current_year - 5);
                 <i class="fas fa-chart-bar"></i> Lihat Grafik
             </a>
         </div>
-
         <form method="GET" class="filter-form">
             <label for="bulan">Bulan:</label>
             <select name="bulan" id="bulan">
@@ -147,14 +162,13 @@ $years = range($current_year, $current_year - 5);
             </select>
             <button type="submit">Filter</button>
         </form>
-
         <div class="kegiatan-table-container">
             <table class="kegiatan-table">
                 <thead>
                     <tr>
                         <th>Tanggal Event</th>
                         <th>Nama Pengaju</th>
-                        <th>NPM</th>
+                        <th>NPM / Identitas</th>
                         <th>Nama Acara</th>
                         <th>Status</th>
                         <th>Form Pengajuan</th>
@@ -165,8 +179,8 @@ $years = range($current_year, $current_year - 5);
                         <?php foreach ($kegiatan_data as $row): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars(date('d F Y', strtotime($row['pengajuan_event_tanggal_mulai']))); ?></td>
-                                <td><?php echo htmlspecialchars($row['mahasiswa_nama']); ?></td>
-                                <td><?php echo htmlspecialchars($row['mahasiswa_npm']); ?></td>
+                                <td><?php echo htmlspecialchars($row['nama_pengaju']); ?></td>
+                                <td><?php echo htmlspecialchars($row['identitas_pengaju']); ?></td>
                                 <td><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></td>
                                 <td><span class="status-badge <?php echo strtolower(htmlspecialchars($row['pengajuan_status'])); ?>"><?php echo htmlspecialchars($row['pengajuan_status']); ?></span></td>
                                 <td><a href="ditmawa_editForm.php?id=<?php echo $row['pengajuan_id']; ?>" class="view-form-button"><i class="fas fa-file-alt"></i> Lihat Form</a></td>
@@ -180,7 +194,6 @@ $years = range($current_year, $current_year - 5);
         </div>
     </div>
 </div>
-
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
@@ -205,6 +218,5 @@ $years = range($current_year, $current_year - 5);
         </div>
     </div>
 </footer>
-
 </body>
 </html>

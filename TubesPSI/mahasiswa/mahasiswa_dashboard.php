@@ -92,7 +92,7 @@ try {
                         foreach ($clear_period as $dt) {
                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
                                 $day = (int)$dt->format('j');
-                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Beres-beres)', 'type' => 'clear'];
+                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
                             }
                         }
                     }
@@ -102,7 +102,16 @@ try {
         }
 
         // Data Event Mahasiswa Mendatang (Hanya 1 Terdekat)
-        $stmt_events = $conn->prepare("SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai FROM pengajuan_event WHERE pengajuan_status = 'Disetujui' AND pengajuan_event_tanggal_selesai >= CURDATE() ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC LIMIT 1");
+        // Data Event Mahasiswa Mendatang (3 Terdekat)
+        $stmt_events = $conn->prepare(
+            "SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai 
+            FROM pengajuan_event 
+            WHERE pengajuan_status = 'Disetujui' 
+            AND pengaju_tipe = 'mahasiswa'  -- Tambahkan filter ini!
+            AND pengajuan_event_tanggal_selesai >= CURDATE() 
+            ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC 
+            LIMIT 3"  
+        );
         if ($stmt_events) {
             $stmt_events->execute();
             $upcoming_events = $stmt_events->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -110,7 +119,13 @@ try {
         }
 
         // Data Aktivitas Pengajuan Terbaru (Hanya 1 terbaru)
-        $stmt_submissions = $conn->prepare("SELECT pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit FROM pengajuan_event WHERE mahasiswa_id = ? ORDER BY pengajuan_tanggalEdit DESC LIMIT 1");
+        $stmt_submissions = $conn->prepare(
+            "SELECT pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit 
+            FROM pengajuan_event 
+            WHERE pengaju_id = ? AND pengaju_tipe = 'mahasiswa' 
+            ORDER BY pengajuan_tanggalEdit DESC LIMIT 1"
+        );
+        // Bind param tetap sama karena user_id mahasiswa yang login
         if ($stmt_submissions && $user_id !== null) {
             $stmt_submissions->bind_param("i", $user_id);
             $stmt_submissions->execute();
@@ -169,6 +184,10 @@ try {
         .event-card-info { padding: 15px 20px; }
         .event-card-info h4 { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; }
         .event-card-info p { font-size: 0.9em; color: var(--text-light); }
+        /* Tambahkan ini di dalam tag <style> di mahasiswa_dashboard.php */
+        .event-card:not(:last-child) {
+            margin-bottom: 15px; /* Memberi jarak antar kartu */
+        }
         .submission-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; position: relative; border-left: 5px solid; }
         .submission-card:not(:last-child) { margin-bottom: 15px; }
         .submission-card-title { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; padding-right: 90px; }

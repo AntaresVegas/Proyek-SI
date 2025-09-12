@@ -127,7 +127,7 @@ try {
                 foreach ($clear_period as $dt) {
                     if ($dt->format('n') == $currentMonth) {
                         $day = (int)$dt->format('j');
-                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Beres-beres)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Pembongkaran)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
                     }
                 }
             }

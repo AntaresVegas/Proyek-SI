@@ -222,6 +222,7 @@ $conn->close();
     </div>
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
+        <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php" class="active">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>

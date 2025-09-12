@@ -126,7 +126,7 @@ try {
                 foreach ($clear_period as $dt) {
                     if ($dt->format('n') == $currentMonth) {
                         $day = (int)$dt->format('j');
-                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Beres-beres)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Pembongkaran)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
                     }
                 }
             }
@@ -212,6 +212,7 @@ $calendar_events_json = json_encode($calendar_events);
     </div>
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
+        <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php" class="active">Kalender Event</a></li>

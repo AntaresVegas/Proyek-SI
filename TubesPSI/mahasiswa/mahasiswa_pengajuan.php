@@ -45,7 +45,16 @@ $message_type = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POST['form_step'] == 'step2') {
     // Process Step 2 data
     $pengajuan_namaEvent = $_POST['pengajuan_namaEvent'];
-    $pengajuan_TypeKegiatan = $_POST['pengajuan_TypeKegiatan'];
+    
+    // --- PERUBAHAN PHP: Handle Tipe Kegiatan 'Lainnya' ---
+    $pengajuan_TypeKegiatan_raw = $_POST['pengajuan_TypeKegiatan'];
+    if ($pengajuan_TypeKegiatan_raw === 'Lainnya') {
+        $pengajuan_TypeKegiatan = $_POST['pengajuan_TypeKegiatan_Lainnya'];
+    } else {
+        $pengajuan_TypeKegiatan = $pengajuan_TypeKegiatan_raw;
+    }
+    // --- AKHIR PERUBAHAN PHP ---
+
     $pengajuan_event_jam_mulai = $_POST['pengajuan_event_jam_mulai'];
     $pengajuan_event_jam_selesai = $_POST['pengajuan_event_jam_selesai'];
     $pengajuan_event_tanggal_mulai = $_POST['pengajuan_event_tanggal_mulai'];
@@ -140,7 +149,7 @@ $conn->close();
     <title>Form Pengajuan Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* CSS Umum dan Layout */
+        /* CSS Umum dan Layout (Tidak ada perubahan di sini) */
         * {
             margin: 0;
             padding: 0;
@@ -600,7 +609,18 @@ $conn->close();
                     </div>
                     <div class="form-group">
                         <label for="pengajuan_TypeKegiatan">Tipe Kegiatan</label>
-                        <input type="text" id="pengajuan_TypeKegiatan" name="pengajuan_TypeKegiatan" placeholder="Contoh: Seminar, Workshop, Lomba" required>
+                        <select id="pengajuan_TypeKegiatan" name="pengajuan_TypeKegiatan" required>
+                            <option value="">-- Pilih Tipe --</option>
+                            <option value="Seminar">Seminar</option>
+                            <option value="Workshop">Workshop</option>
+                            <option value="Lomba">Lomba</option>
+                            <option value="Pameran">Pameran</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="type_kegiatan_lainnya_container" style="display:none;">
+                        <label for="pengajuan_TypeKegiatan_Lainnya">Sebutkan Tipe Kegiatan Lainnya</label>
+                        <input type="text" id="pengajuan_TypeKegiatan_Lainnya" name="pengajuan_TypeKegiatan_Lainnya" placeholder="Tuliskan tipe kegiatan Anda di sini">
                     </div>
                     <div class="button-group">
                         <button type="button" class="clear" onclick="clearForm('step1')">Clear</button>
@@ -739,16 +759,68 @@ $conn->close();
         formStepInput.value = `step${step}`;
     }
 
+// --- PERUBAHAN JAVASCRIPT: Fungsi nextStep dengan validasi berurutan dan spesifik ---
     function nextStep() {
-        const namaEvent = document.getElementById('pengajuan_namaEvent').value;
-        const typeKegiatan = document.getElementById('pengajuan_TypeKegiatan').value;
-        if (namaEvent.trim() === '' || typeKegiatan.trim() === '') {
-            alert('Harap isi semua kolom Nama Event dan Tipe Kegiatan pada langkah ini.');
+        // Ambil semua elemen input dan nilainya
+        const namaUnitInput = document.getElementById('nama_unit');
+        const organisasiInput = document.getElementById('organisasi_penyelenggara');
+        const namaEventInput = document.getElementById('pengajuan_namaEvent');
+        const typeKegiatanSelect = document.getElementById('pengajuan_TypeKegiatan');
+        const typeLainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
+
+        const namaUnitValue = namaUnitInput.value.trim();
+        const organisasiValue = organisasiInput.value.trim();
+        const namaEventValue = namaEventInput.value.trim();
+        const typeKegiatanValue = typeKegiatanSelect.value;
+        const typeLainnyaValue = typeLainnyaInput.value.trim();
+
+        // Pengecekan berurutan untuk setiap input
+        if (namaUnitValue === '' && organisasiValue === '' && namaEventValue === '' && typeKegiatanValue === '' && (typeKegiatanValue === 'Lainnya' && typeLainnyaValue === '')) {
+            alert('Harap lengkapi semua data yang wajib diisi pada Langkah 1.');
+            return; // Hentikan fungsi jika ada yang kosong
+        }
+        else if (namaUnitValue === '') {
+            alert('Nama Unit wajib diisi.');
+            namaUnitInput.focus();
+            return;
+        } 
+        
+        else if (organisasiValue === '') {
+            alert('Organisasi Penyelenggara wajib diisi.');
+            organisasiInput.focus();
+            return;
+        } 
+        
+        else if (namaEventValue === '') {
+            alert('Nama Event wajib diisi.');
+            namaEventInput.focus();
+            return;
+        } 
+        
+        else if (typeKegiatanValue === '') {
+            alert('Harap pilih Tipe Kegiatan.');
+            typeKegiatanSelect.focus();
+            return;
+        } 
+        
+        else if (typeKegiatanValue === 'Lainnya' && typeLainnyaValue === '') {
+            alert('Harap sebutkan tipe kegiatan lainnya.');
+            typeLainnyaInput.focus();
+            return;
+        } 
+        
+        // TERAKHIR: Cek panjang Nama Event (hanya jika semua kolom sudah terisi)
+        else if (namaEventValue.length < 5) {
+            alert('Nama Event harus memiliki minimal 5 karakter.');
+            namaEventInput.focus();
             return;
         }
+
+        // Jika semua pengecekan di atas lolos, lanjutkan ke langkah berikutnya
         currentStep++;
         showStep(currentStep);
     }
+    // --- AKHIR PERUBAHAN JAVASCRIPT ---
 
     function prevStep() {
         currentStep--;
@@ -775,6 +847,12 @@ $conn->close();
             }
         });
         
+        if (stepId === 'step1') {
+            // Sembunyikan lagi field 'lainnya' jika form di-clear
+            document.getElementById('type_kegiatan_lainnya_container').style.display = 'none';
+            document.getElementById('pengajuan_TypeKegiatan_Lainnya').removeAttribute('required');
+        }
+
         if (stepId === 'step2') {
             document.getElementById('lantai_selection_container').innerHTML = '<div class="checkbox-placeholder"><p>Pilih Gedung terlebih dahulu.</p></div>';
             document.getElementById('ruangan_selection_container').innerHTML = '<div class="checkbox-placeholder"><p>Pilih Lantai terlebih dahulu.</p></div>';
@@ -791,8 +869,85 @@ $conn->close();
         const fileNameSpan = document.getElementById('proposal_file_name');
         fileNameSpan.textContent = this.files.length > 0 ? this.files[0].name : 'Belum ada file dipilih';
     });
+    
+    // --- PENAMBAHAN JAVASCRIPT: Logika untuk Dropdown 'Lainnya' ---
+    document.getElementById('pengajuan_TypeKegiatan').addEventListener('change', function() {
+        const lainnyaContainer = document.getElementById('type_kegiatan_lainnya_container');
+        const lainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
+        if (this.value === 'Lainnya') {
+            lainnyaContainer.style.display = 'block';
+            lainnyaInput.setAttribute('required', 'required');
+        } else {
+            lainnyaContainer.style.display = 'none';
+            lainnyaInput.removeAttribute('required');
+            lainnyaInput.value = ''; // Kosongkan nilainya jika pilihan diubah
+        }
+    });
+    // --- AKHIR PENAMBAHAN JAVASCRIPT ---
 
-    // --- DYNAMIC HIERARCHICAL CHECKBOX LOGIC ---
+    // --- PENAMBAHAN JAVASCRIPT: Validasi Tanggal dan Lokasi Sebelum Submit ---
+    document.getElementById('eventForm').addEventListener('submit', function(event) {
+        // 1. Validasi Tanggal
+        const tglMulai = document.getElementById('pengajuan_event_tanggal_mulai').value;
+        const tglSelesai = document.getElementById('pengajuan_event_tanggal_selesai').value;
+        const tglPersiapan = document.getElementById('tanggal_persiapan').value;
+        const tglBeres = document.getElementById('tanggal_beres').value;
+
+        if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
+            alert('Error: Tanggal Selesai Acara tidak boleh mendahului Tanggal Mulai Acara.');
+            event.preventDefault(); // Mencegah form untuk submit
+            return;
+        }
+
+        if (tglBeres) {
+            if (tglSelesai && tglBeres < tglSelesai) {
+                alert('Error: Tanggal Beres-Beres tidak boleh mendahului Tanggal Selesai Acara.');
+                event.preventDefault();
+                return;
+            }
+            if (tglMulai && tglBeres < tglMulai) {
+                 alert('Error: Tanggal Beres-Beres tidak boleh mendahului Tanggal Mulai Acara.');
+                event.preventDefault();
+                return;
+            }
+        }
+        
+        // Permintaan: "kalau tanggal persiapan mendahului tanggal mulai acara maka akan error"
+        // Interpretasi logis: Tanggal persiapan tidak boleh SETELAH tanggal mulai acara. 
+        // Persiapan harus sebelum atau pada hari H.
+        if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) {
+            alert('Error: Tanggal Persiapan tidak boleh setelah Tanggal Mulai Acara.');
+            event.preventDefault();
+            return;
+        }
+
+        // 2. Validasi Pemilihan Lokasi
+        const gedungChecked = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
+        if (gedungChecked === 0) {
+            alert('Error: Anda harus memilih minimal satu Gedung.');
+            event.preventDefault();
+            return;
+        }
+
+        const lantaiChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length;
+        // Hanya validasi jika container lantai sudah ada isinya (bukan placeholder)
+        if (document.getElementById('lantai_selection') && lantaiChecked === 0) {
+            alert('Error: Anda harus memilih minimal satu Lantai.');
+            event.preventDefault();
+            return;
+        }
+        
+        const ruanganChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length;
+        // Hanya validasi jika container ruangan sudah ada isinya
+        if (document.getElementById('ruangan_selection') && ruanganChecked === 0) {
+            alert('Error: Anda harus memilih minimal satu Ruangan.');
+            event.preventDefault();
+            return;
+        }
+    });
+    // --- AKHIR PENAMBAHAN JAVASCRIPT ---
+
+    // --- DYNAMIC HIERARCHICAL CHECKBOX LOGIC (Tidak ada perubahan) ---
     const gedungSelection = document.getElementById('gedung_selection');
     const lantaiContainer = document.getElementById('lantai_selection_container');
     const ruanganContainer = document.getElementById('ruangan_selection_container');
