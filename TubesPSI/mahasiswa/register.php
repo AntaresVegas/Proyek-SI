@@ -5,19 +5,20 @@ require_once(__DIR__ . '/../config/db_connection.php');
 
 // Daftar jurusan untuk dropdown
 $daftar_jurusan = [
-    "D-3 Manajemen Perusahaan", "D-4 Teknologi Rekayasa Pangan", "D-4 Bisnis Kreatif",
-    "D-4 Agribisnis Pangan", "Ekonomi Pembangunan", "Manajemen", "Akuntansi", "Hukum",
-    "Administrasi Publik", "Administrasi Bisnis", "Hubungan Internasional", "Teknik Sipil",
-    "Arsitektur", "Filsafat", "Studi Humanitas", "Teknik Industri", "Teknik Kimia",
-    "Teknik Mekatronika", "Matematika", "Fisika", "Informatika", "Kedokteran",
-    "Pendidikan Kimia", "Pendidikan Fisika", "Pendidikan Matematika",
-    "Pendidikan Teknik Informatika & Komputer", "Pendidikan Bahasa Inggris",
-    "Pendidikan Guru Sekolah Dasar", "Magister Manajemen", "Magister Hukum",
-    "Magister Studi Pembangunan", "Magister Hubungan Internasional", "Magister Administrasi Bisnis",
-    "Magister Teknik Sipil", "Magister Arsitektur", "Magister Filsafat Keilahian",
-    "Magister Teknik Industri", "Magister Teknik Kimia", "Magister Pendidikan Ilmu Pengetahuan Alam",
-    "Doktor Ekonomi", "Doktor Hukum", "Doktor Teknik Sipil", "Doktor Arsitektur",
-    "Profesi Insinyur", "Profesi Dokter", "Profesi Arsitek"
+    "Administrasi Bisnis", "Administrasi Publik", "Akuntansi", "Arsitektur",
+    "D-3 Manajemen Perusahaan", "D-4 Agribisnis Pangan", "D-4 Bisnis Kreatif",
+    "D-4 Teknologi Rekayasa Pangan", "Doktor Arsitektur", "Doktor Ekonomi",
+    "Doktor Hukum", "Doktor Teknik Sipil", "Ekonomi Pembangunan", "Filsafat",
+    "Fisika", "Hubungan Internasional", "Hukum", "Informatika", "Kedokteran",
+    "Magister Administrasi Bisnis", "Magister Arsitektur", "Magister Filsafat Keilahian",
+    "Magister Hubungan Internasional", "Magister Hukum", "Magister Manajemen",
+    "Magister Pendidikan Ilmu Pengetahuan Alam", "Magister Studi Pembangunan",
+    "Magister Teknik Industri", "Magister Teknik Kimia", "Magister Teknik Sipil",
+    "Manajemen", "Matematika", "Pendidikan Bahasa Inggris", "Pendidikan Fisika",
+    "Pendidikan Guru Sekolah Dasar", "Pendidikan Kimia", "Pendidikan Matematika",
+    "Pendidikan Teknik Informatika & Komputer", "Profesi Arsitek", "Profesi Dokter",
+    "Profesi Insinyur", "Studi Humanitas", "Teknik Industri", "Teknik Kimia",
+    "Teknik Mekatronika", "Teknik Sipil"
 ];
 
 $errors = [];

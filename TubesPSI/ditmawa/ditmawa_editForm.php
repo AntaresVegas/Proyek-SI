@@ -2,23 +2,20 @@
 session_start();
 
 // 1. OTENTIKASI & OTORISASI
-// Pastikan user sudah login dan merupakan 'ditmawa'
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
-    header("Location: ../index.php"); // Redirect ke halaman login jika tidak sah
+    header("Location: ../index.php");
     exit();
 }
 
-// Include koneksi database
 require_once('../config/db_connection.php');
 
-// Ambil data Ditmawa dari session untuk digunakan nanti
 $ditmawa_id = $_SESSION['user_id'];
 $nama_ditmawa = $_SESSION['nama'] ?? 'Staff Ditmawa';
 $error_message = '';
 $success_message = '';
 $event_data = null;
 
-// 2. PROSES FORM SUBMISSION (SAAT TOMBOL SETUJUI/TOLAK DIKLIK)
+// 2. PROSES FORM SUBMISSION
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['pengajuan_id'], $_POST['action'])) {
         $pengajuan_id = $_POST['pengajuan_id'];
@@ -26,82 +23,87 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $status_baru = ($_POST['action'] === 'setujui') ? 'Disetujui' : 'Ditolak';
         $tanggal_approve = date('Y-m-d H:i:s');
 
-        // Mulai transaksi untuk memastikan semua query berhasil atau tidak sama sekali
         $conn->begin_transaction();
         
         try {
-            // Query UPDATE untuk mengubah status event
-            $update_sql = "UPDATE pengajuan_event SET pengajuan_status = ?, ditmawa_id = ?, pengajuan_komentarDitmawa = ?, pengajuan_tanggalApprove = ? WHERE pengajuan_id = ?";
+            // Query UPDATE sudah benar, tidak perlu diubah.
+            // Namun, kita asumsikan kolom 'ditmawa_id' juga sudah ada di tabel pengajuan_event.
+            $update_sql = "UPDATE pengajuan_event SET pengajuan_status = ?, pengajuan_komentarDitmawa = ?, pengajuan_tanggalApprove = ? WHERE pengajuan_id = ?";
             $stmt = $conn->prepare($update_sql);
             if (!$stmt) {
                 throw new Exception("Prepare statement gagal (update): " . $conn->error);
             }
-            $stmt->bind_param("sissi", $status_baru, $ditmawa_id, $komentar, $tanggal_approve, $pengajuan_id);
+            $stmt->bind_param("sssi", $status_baru, $komentar, $tanggal_approve, $pengajuan_id);
             $stmt->execute();
             $stmt->close();
 
-            // BAGIAN UNTUK MEMBUAT NOTIFIKASI
-            // 1. Ambil info event untuk notifikasi (mahasiswa_id dan nama event)
-            $info_stmt = $conn->prepare("SELECT mahasiswa_id, pengajuan_namaEvent FROM pengajuan_event WHERE pengajuan_id = ?");
+            // =================================================================
+            // ## PERBAIKAN 1: Query untuk Notifikasi ##
+            // Mengambil 'pengaju_id' bukan 'mahasiswa_id'
+            // =================================================================
+            $info_stmt = $conn->prepare("SELECT pengaju_id, pengajuan_namaEvent FROM pengajuan_event WHERE pengajuan_id = ? AND pengaju_tipe = 'mahasiswa'");
             if (!$info_stmt) {
                  throw new Exception("Prepare statement gagal (fetch info): " . $conn->error);
             }
             $info_stmt->bind_param("i", $pengajuan_id);
             $info_stmt->execute();
             $info_result = $info_stmt->get_result()->fetch_assoc();
-            $target_user_id = $info_result['mahasiswa_id'];
-            $nama_event = $info_result['pengajuan_namaEvent'];
-            $info_stmt->close();
 
-            // 2. Buat pesan dan link notifikasi
-            $link = "mahasiswa/mahasiswa_detail_pengajuan.php?id=" . $pengajuan_id;
-            if ($status_baru === 'Disetujui') {
-                $message = "Selamat! Pengajuan event '{$nama_event}' Anda telah disetujui.";
+            // Hanya kirim notifikasi jika pengaju adalah mahasiswa
+            if ($info_result) {
+                $target_user_id = $info_result['pengaju_id']; // Menggunakan 'pengaju_id'
+                $nama_event = $info_result['pengajuan_namaEvent'];
+                $info_stmt->close();
+
+                $link = "mahasiswa/mahasiswa_detail_pengajuan.php?id=" . $pengajuan_id;
+                if ($status_baru === 'Disetujui') {
+                    $message = "Selamat! Pengajuan event '{$nama_event}' Anda telah disetujui.";
+                } else {
+                    $message = "Mohon maaf, pengajuan event '{$nama_event}' Anda ditolak. Silakan cek detail.";
+                }
+
+                $notif_sql = "INSERT INTO notifications (user_id, message, link, is_read, created_at) VALUES (?, ?, ?, 0, NOW())";
+                $notif_stmt = $conn->prepare($notif_sql);
+                if (!$notif_stmt) {
+                    throw new Exception("Prepare statement gagal (insert notif): " . $conn->error);
+                }
+                $notif_stmt->bind_param("iss", $target_user_id, $message, $link);
+                $notif_stmt->execute();
+                $notif_stmt->close();
             } else {
-                $message = "Mohon maaf, pengajuan event '{$nama_event}' Anda ditolak. Silakan cek detail.";
+                 $info_stmt->close();
             }
-
-            // 3. Masukkan notifikasi ke database
-            $notif_sql = "INSERT INTO notifications (user_id, message, link, is_read, created_at) VALUES (?, ?, ?, 0, NOW())";
-            $notif_stmt = $conn->prepare($notif_sql);
-             if (!$notif_stmt) {
-                throw new Exception("Prepare statement gagal (insert notif): " . $conn->error);
-            }
-            $notif_stmt->bind_param("iss", $target_user_id, $message, $link);
-            $notif_stmt->execute();
-            $notif_stmt->close();
             
-            // Jika semua berhasil, commit transaksi
             $conn->commit();
 
             $_SESSION['success_message'] = "Status event berhasil diperbarui dan notifikasi telah dikirim!";
-            header("Location: ditmawa_dashboard.php");
+            header("Location: ditmawa_listKegiatan.php"); // Redirect ke list kegiatan agar lebih relevan
             exit();
 
         } catch (Exception $e) {
-            // Jika ada error, rollback semua perubahan
             $conn->rollback();
             $error_message = "Terjadi kesalahan: " . $e->getMessage();
         }
     }
 }
 
-
-// 3. PENGAMBILAN DATA EVENT DARI DATABASE (SAAT HALAMAN DIBUKA)
-// Ambil ID pengajuan dari URL
+// 3. PENGAMBILAN DATA EVENT DARI DATABASE
 $pengajuan_id = $_GET['id'] ?? null;
 if ($pengajuan_id) {
-    // Query kompleks untuk mengambil semua data yang diperlukan
+    // =================================================================
+    // ## PERBAIKAN 2: Query Utama untuk Menampilkan Detail ##
+    // Menggunakan 'pengaju_id' dan 'pengaju_tipe' untuk JOIN
+    // =================================================================
     $sql = "SELECT 
                 pe.*, 
                 m.mahasiswa_nama, 
                 m.mahasiswa_email, 
                 m.mahasiswa_npm, 
                 m.mahasiswa_jurusan,
-                GROUP_CONCAT(r.ruangan_nama SEPARATOR ', ') AS nama_ruangan,
-                g.gedung_nama
+                GROUP_CONCAT(DISTINCT r.ruangan_nama SEPARATOR ', ') AS nama_ruangan,
+                GROUP_CONCAT(DISTINCT g.gedung_nama SEPARATOR ', ') AS nama_gedung
             FROM pengajuan_event pe
-            JOIN mahasiswa m ON pe.mahasiswa_id = m.mahasiswa_id
+            LEFT JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id AND pe.pengaju_tipe = 'mahasiswa'
             LEFT JOIN peminjaman_ruangan pr ON pe.pengajuan_id = pr.pengajuan_id
             LEFT JOIN ruangan r ON pr.ruangan_id = r.ruangan_id
             LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
@@ -149,14 +151,15 @@ $conn->close();
             background-attachment: fixed;
             min-height: 100vh;
             padding-top: 80px;
-        }        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+        }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; object-fit: cover; }
-        .navbar-title { color: #2c3e50; font-size: 14px; line-height: 1.2; }
+        .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
-        .navbar-menu li a { text-decoration: none; color: #2c3e50; font-weight: 500; font-size: 15px; }
+        .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; font-size: 15px; }
         .navbar-menu li a:hover, .navbar-menu li a.active { color: #007bff; }
-        .navbar-right { display: flex; align-items: center; gap: 15px; font-size: 15px; color: #2c3e50; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; font-size: 15px; color:rgb(255, 255, 255); }
         .user-name { font-weight: 500; }
         .icon { font-size: 20px; cursor: pointer; }
         .form-container { max-width: 800px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); padding: 30px 40px; }
@@ -177,6 +180,10 @@ $conn->close();
         .btn-approve { background-color: #28a745; }
         .btn-reject { background-color: #dc3545; }
         .error-message { color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; text-align: center; font-size: 16px; }
+        .status-badge { padding: 5px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 14px; }
+        .status-badge.disetujui { background-color: #28a745; }
+        .status-badge.ditolak { background-color: #dc3545; }
+        .status-badge.diajukan { background-color: #ffc107; color: #333; }
     </style>
 </head>
 <body>
@@ -189,7 +196,7 @@ $conn->close();
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
         <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
-        <li><a href="ditmawa_ListKegiatan.php">Data Event</a></li>
+        <li><a href="ditmawa_listKegiatan.php"class="active">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
@@ -205,70 +212,92 @@ $conn->close();
 
 <div class="form-container">
     <div class="form-header">
-        <h1>Form Pengajuan Event Mahasiswa</h1>
+        <h1>Detail Pengajuan Event</h1>
     </div>
 
     <?php if ($error_message): ?>
         <p class="error-message"><?php echo htmlspecialchars($error_message); ?></p>
     <?php elseif ($event_data): ?>
         <dl class="detail-grid">
-            <dt>Nama</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_nama']); ?></dd>
+            <dt>Status Saat Ini</dt>
+            <dd><span class="status-badge <?php echo strtolower(htmlspecialchars($event_data['pengajuan_status'])); ?>"><?php echo htmlspecialchars($event_data['pengajuan_status']); ?></span></dd>
+            
+            <dt>Nama Pengaju</dt>
+            <dd><?php echo htmlspecialchars($event_data['mahasiswa_nama'] ?? 'N/A'); ?></dd>
 
             <dt>Email</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_email']); ?></dd>
+            <dd><?php echo htmlspecialchars($event_data['mahasiswa_email'] ?? 'N/A'); ?></dd>
 
             <dt>NPM</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_npm']); ?></dd>
+            <dd><?php echo htmlspecialchars($event_data['mahasiswa_npm'] ?? 'N/A'); ?></dd>
 
-            <dt>Organisasi Penyelenggara</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_jurusan']); ?></dd>
+            <dt>Jurusan</dt>
+            <dd><?php echo htmlspecialchars($event_data['mahasiswa_jurusan'] ?? 'N/A'); ?></dd>
 
             <dt>Nama Event</dt>
             <dd><?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?></dd>
+            
+            <dt>Tipe Kegiatan</dt>
+            <dd><?php echo htmlspecialchars($event_data['pengajuan_TypeKegiatan']); ?></dd>
 
-            <dt>Tempat</dt>
-            <dd><?php echo htmlspecialchars($event_data['gedung_nama'] . ' (' . $event_data['nama_ruangan'] . ')'); ?></dd>
+            <dt>Lokasi</dt>
+            <dd><?php echo htmlspecialchars($event_data['nama_gedung'] . ' (' . $event_data['nama_ruangan'] . ')'); ?></dd>
 
-            <dt>Jam Mulai</dt>
-            <dd><?php echo htmlspecialchars(date('H:i', strtotime($event_data['pengajuan_event_jam_mulai']))); ?> WIB</dd>
+            <dt>Waktu Acara</dt>
+            <dd>
+                <?php 
+                    echo htmlspecialchars(date('d F Y', strtotime($event_data['pengajuan_event_tanggal_mulai']))) . " - " .
+                         htmlspecialchars(date('d F Y', strtotime($event_data['pengajuan_event_tanggal_selesai'])));
+                ?>
+            </dd>
 
-            <dt>Jam Selesai</dt>
-            <dd><?php echo htmlspecialchars(date('H:i', strtotime($event_data['pengajuan_event_jam_selesai']))); ?> WIB</dd>
-
-            <dt>Tanggal</dt>
-            <dd><?php echo htmlspecialchars(date('d F Y', strtotime($event_data['pengajuan_event_tanggal_mulai']))); ?></dd>
+            <dt>Jam Acara</dt>
+            <dd>
+                <?php
+                    echo htmlspecialchars(date('H:i', strtotime($event_data['pengajuan_event_jam_mulai']))) . " - " .
+                         htmlspecialchars(date('H:i', strtotime($event_data['pengajuan_event_jam_selesai']))) . " WIB";
+                ?>
+            </dd>
 
             <dt>Rundown Acara</dt>
             <dd>
-                <span>Rundown Acara <?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?></span>
-                <a href="../<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" class="download-link" download>
-                    <i class="fas fa-download"></i>
+                <a href="../mahasiswa/<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" class="download-link" download>
+                    <i class="fas fa-download"></i> Unduh File Rundown
                 </a>
             </dd>
 
             <dt>Proposal Kegiatan</dt>
             <dd>
-                <span>Proposal Acara <?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?></span>
-                 <a href="../<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" class="download-link" download>
-                    <i class="fas fa-download"></i>
+                 <a href="../mahasiswa/<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" class="download-link" download>
+                    <i class="fas fa-download"></i> Unduh File Proposal
                 </a>
             </dd>
         </dl>
-
-        <form method="POST" action="" class="action-form">
+        
+        <?php if ($event_data['pengajuan_status'] == 'Diajukan'): ?>
+            <form method="POST" action="" class="action-form">
+                <hr>
+                <h2>Tindakan Persetujuan</h2>
+                <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
+                
+                <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Komentar/Alasan (Wajib diisi jika menolak):</label>
+                <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan persetujuan/penolakan..."></textarea>
+                
+                <div class="button-group">
+                    <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
+                    <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>
+                </div>
+            </form>
+        <?php else: ?>
             <hr>
-            <h2>Status & Komentar</h2>
-            <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
-            
-            <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Alasan Status (Opsional, diisi jika menolak):</label>
-            <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan jika event ditolak..."></textarea>
-            
-            <div class="button-group">
-                <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
-                <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>
-            </div>
-        </form>
+            <h2>Detail Persetujuan</h2>
+            <dl class="detail-grid">
+                <dt>Komentar</dt>
+                <dd><?php echo !empty($event_data['pengajuan_komentarDitmawa']) ? htmlspecialchars($event_data['pengajuan_komentarDitmawa']) : 'Tidak ada komentar.'; ?></dd>
+                <dt>Tanggal Keputusan</dt>
+                <dd><?php echo htmlspecialchars(date('d F Y H:i', strtotime($event_data['pengajuan_tanggalApprove']))); ?></dd>
+            </dl>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 

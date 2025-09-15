@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -14,18 +13,46 @@ $selected_bulan = $_GET['bulan'] ?? '';
 $selected_tahun = $_GET['tahun'] ?? '';
 $kegiatan_data = [];
 
+// =================================================================
+// ## LOGIKA SORTING DINAMIS YANG SUDAH DIPERBAIKI ##
+// =================================================================
+$sort_by = $_GET['sort'] ?? 'pengajuan'; // Default: 'pengajuan', atau 'event' jika ada di URL
+
+// Tentukan teks tombol dan klausa ORDER BY berdasarkan kondisi saat ini
+if ($sort_by === 'event') {
+    // Jika saat ini diurutkan berdasarkan TANGGAL EVENT
+    $order_by_clause = "pe.pengajuan_event_tanggal_mulai DESC";
+    $sort_button_text = "Urutkan Berdasarkan Tgl Pengajuan";
+} else {
+    // Jika saat ini diurutkan berdasarkan TANGGAL PENGAJUAN (default)
+    $order_by_clause = "pe.pengajuan_tanggalEdit DESC";
+    $sort_button_text = "Urutkan Berdasarkan Tgl Event";
+}
+
+// Logika untuk membuat URL tombol agar bisa kembali (toggle)
+$query_params = $_GET; // Ambil semua parameter URL yang ada (misal: bulan, tahun)
+if ($sort_by === 'event') {
+    // Jika kondisi saat ini adalah 'event', tombol harus kembali ke default.
+    // Caranya adalah dengan MENGHAPUS parameter 'sort' dari URL.
+    unset($query_params['sort']);
+} else {
+    // Jika kondisi saat ini adalah default, tombol harus menuju ke kondisi 'event'.
+    // Caranya adalah dengan MENAMBAHKAN parameter 'sort=event' ke URL.
+    $query_params['sort'] = 'event';
+}
+$sort_button_url = 'ditmawa_listKegiatan.php?' . http_build_query($query_params);
+// =================================================================
+// ## AKHIR BLOK LOGIKA SORTING ##
+// =================================================================
+
 try {
     if (isset($conn)) {
-        // =================================================================
-        // ## QUERY DIUBAH ##
-        // Menggunakan LEFT JOIN ke tabel mahasiswa dan ditmawa
-        // Menggunakan CASE untuk memilih nama dan identitas pengaju
-        // =================================================================
         $sql = "
             SELECT 
                 pe.pengajuan_id, 
                 pe.pengajuan_namaEvent, 
-                pe.pengajuan_event_tanggal_mulai, 
+                pe.pengajuan_event_tanggal_mulai,
+                pe.pengajuan_tanggalEdit,
                 pe.pengajuan_status,
                 CASE
                     WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_nama
@@ -49,7 +76,9 @@ try {
         if (!empty($selected_tahun)) { $conditions[] = "YEAR(pe.pengajuan_event_tanggal_mulai) = ?"; $params[] = $selected_tahun; $types .= "i"; }
 
         if (count($conditions) > 0) { $sql .= " WHERE " . implode(' AND ', $conditions); }
-        $sql .= " ORDER BY pe.pengajuan_event_tanggal_mulai DESC";
+        
+        // Menggunakan klausa ORDER BY yang sudah dinamis
+        $sql .= " ORDER BY " . $order_by_clause;
 
         $stmt = $conn->prepare($sql);
         if ($stmt) {
@@ -77,7 +106,6 @@ $years = range($current_year, $current_year - 5);
     <title>List Kegiatan - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* CSS tidak perlu diubah, tetap sama */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; min-height: 100%; padding-top: 80px; display: flex; flex-direction: column; }
@@ -91,17 +119,21 @@ $years = range($current_year, $current_year - 5);
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }
         .icon { font-size: 20px; cursor: pointer; }
-        .kegiatan-container { max-width: 1100px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
-        .kegiatan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .kegiatan-container { max-width: 1200px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
+        .kegiatan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;}
         .kegiatan-header h1 { font-size: 32px; color: #2c3e50; margin: 0; }
-        .view-graph-button { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; transition: background-color 0.3s; }
+        .header-buttons { display: flex; gap: 10px; align-items: center; }
+        .view-graph-button, .view-sort-button { color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; transition: background-color 0.3s; }
+        .view-graph-button { background-color: #28a745; }
         .view-graph-button:hover { background-color: #218838; }
+        .view-sort-button { background-color: #17a2b8; }
+        .view-sort-button:hover { background-color: #138496; }
         .filter-form { display: flex; gap: 15px; margin-bottom: 25px; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
         .filter-form select, .filter-form button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ced4da; }
         .filter-form button { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .kegiatan-table-container { overflow-x: auto; }
         .kegiatan-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .kegiatan-table th, .kegiatan-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; }
+        .kegiatan-table th, .kegiatan-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; white-space: nowrap; }
         .kegiatan-table th { background-color: #f2f2f2; }
         .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 12px; }
         .status-badge.disetujui { background-color: #28a745; }
@@ -109,7 +141,7 @@ $years = range($current_year, $current_year - 5);
         .status-badge.diajukan { background-color: #ffc107; color: #333; }
         .view-form-button { background-color: #007bff; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
         .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: auto; }
-        .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
@@ -144,10 +176,16 @@ $years = range($current_year, $current_year - 5);
     <div class="kegiatan-container">
         <div class="kegiatan-header">
             <h1>List Data Pengajuan Event</h1>
-            <a href="ditmawa_grafikKegiatan.php" class="view-graph-button">
-                <i class="fas fa-chart-bar"></i> Lihat Grafik
-            </a>
+            <div class="header-buttons">
+                <a href="<?php echo $sort_button_url; ?>" class="view-sort-button">
+                    <i class="fas fa-sort-amount-down"></i> <?php echo $sort_button_text; ?>
+                </a>
+                <a href="ditmawa_grafikKegiatan.php" class="view-graph-button">
+                    <i class="fas fa-chart-bar"></i> Lihat Grafik
+                </a>
+            </div>
         </div>
+
         <form method="GET" class="filter-form">
             <label for="bulan">Bulan:</label>
             <select name="bulan" id="bulan">
@@ -160,13 +198,17 @@ $years = range($current_year, $current_year - 5);
                 <option value="">Semua Tahun</option>
                 <?php foreach ($years as $year) { echo '<option value="' . $year . '" ' . ($selected_tahun == $year ? 'selected' : '') . '>' . $year . '</option>'; } ?>
             </select>
+            <?php if (isset($_GET['sort'])): ?>
+                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($_GET['sort']); ?>">
+            <?php endif; ?>
             <button type="submit">Filter</button>
         </form>
         <div class="kegiatan-table-container">
             <table class="kegiatan-table">
                 <thead>
                     <tr>
-                        <th>Tanggal Event</th>
+                        <th>Tgl Diajukan</th>
+                        <th>Tgl Event</th>
                         <th>Nama Pengaju</th>
                         <th>NPM / Identitas</th>
                         <th>Nama Acara</th>
@@ -178,6 +220,7 @@ $years = range($current_year, $current_year - 5);
                     <?php if (!empty($kegiatan_data)): ?>
                         <?php foreach ($kegiatan_data as $row): ?>
                             <tr>
+                                <td><?php echo htmlspecialchars(date('d F Y H:i', strtotime($row['pengajuan_tanggalEdit']))); ?></td>
                                 <td><?php echo htmlspecialchars(date('d F Y', strtotime($row['pengajuan_event_tanggal_mulai']))); ?></td>
                                 <td><?php echo htmlspecialchars($row['nama_pengaju']); ?></td>
                                 <td><?php echo htmlspecialchars($row['identitas_pengaju']); ?></td>
@@ -187,7 +230,7 @@ $years = range($current_year, $current_year - 5);
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="6" style="text-align:center; padding: 20px;">Tidak ada data kegiatan event untuk filter ini.</td></tr>
+                        <tr><td colspan="7" style="text-align:center; padding: 20px;">Tidak ada data kegiatan event untuk filter ini.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>

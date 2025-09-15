@@ -156,7 +156,7 @@ $conn->close();
             </div>
             <ul class="navbar-menu">
                 <li><a href="ditmawa_dashboard.php">Home</a></li>
-                <li><a href="ditmawa_pengajuan.php" class="active">Ajukan Event</a></li>
+                <li><a href="ditmawa_pengajuan.php" class="active">Form Pengajuan</a></li>
                 <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
                 <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
                 <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
@@ -310,17 +310,30 @@ $conn->close();
             return;
         }
 
-        // --- 2. Validasi Tanggal ---
+        // --- 2. Validasi Tanggal dan Jam ---
         const tglMulai = document.getElementById('tanggal_mulai').value;
         const tglSelesai = document.getElementById('tanggal_selesai').value;
         const tglPersiapan = document.getElementById('tanggal_persiapan').value;
         const tglBeres = document.getElementById('tanggal_beres').value;
+        const jamMulai = document.getElementById('jam_mulai').value;
+        const jamSelesai = document.getElementById('jam_selesai').value;
 
         if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
             alert('Validasi Gagal: Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.');
             event.preventDefault();
             return;
         }
+
+        // --- PENAMBAHAN BARU: Validasi Jam Mulai vs Jam Selesai ---
+        if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
+            if (jamMulai && jamSelesai && jamSelesai < jamMulai) {
+                alert('Validasi Gagal: Untuk event di hari yang sama, Jam Selesai tidak boleh lebih awal dari Jam Mulai.');
+                event.preventDefault();
+                document.getElementById('jam_selesai').focus();
+                return;
+            }
+        }
+        // --- AKHIR PENAMBAHAN BARU ---
         
         // Cek tanggal beres-beres
         if (tglBeres) {

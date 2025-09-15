@@ -89,25 +89,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
         }
     }
 
+    $pengaju_tipe = 'mahasiswa'; // Tentukan tipe pengaju karena ini form mahasiswa
+
     if ($message_type !== 'error') {
         $stmt = $conn->prepare("
-            INSERT INTO pengajuan_event (
-                pengajuan_namaEvent, mahasiswa_id, pengajuan_TypeKegiatan,
-                pengajuan_event_jam_mulai, pengajuan_event_jam_selesai,
-                pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai,
-                tanggal_persiapan, tanggal_beres,
-                jadwal_event_rundown_file, pengajuan_event_proposal_file,
-                pengajuan_status, pengajuan_tanggalEdit
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
-        ");
+        INSERT INTO pengajuan_event (
+            pengajuan_namaEvent, pengaju_tipe, pengaju_id, pengajuan_TypeKegiatan,
+            pengajuan_event_jam_mulai, pengajuan_event_jam_selesai,
+            pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai,
+            tanggal_persiapan, tanggal_beres,
+            jadwal_event_rundown_file, pengajuan_event_proposal_file,
+            pengajuan_status, pengajuan_tanggalEdit
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
+    ");
 
-        $stmt->bind_param("sisssssssss",
-            $pengajuan_namaEvent, $user_id, $pengajuan_TypeKegiatan,
-            $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai,
-            $pengajuan_event_tanggal_mulai, $pengajuan_event_tanggal_selesai,
-            $tanggal_persiapan, $tanggal_beres,
-            $rundown_file_path, $proposal_file_path
-        );
+        $stmt->bind_param("ssisssssssss",
+        $pengajuan_namaEvent, $pengaju_tipe, $user_id, $pengajuan_TypeKegiatan,
+        $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai,
+        $pengajuan_event_tanggal_mulai, $pengajuan_event_tanggal_selesai,
+        $tanggal_persiapan, $tanggal_beres,
+        $rundown_file_path, $proposal_file_path
+    );
 
         if ($stmt->execute()) {
             $pengajuan_id = $stmt->insert_id;

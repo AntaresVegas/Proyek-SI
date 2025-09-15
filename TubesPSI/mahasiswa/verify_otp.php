@@ -20,7 +20,7 @@ if (!isset($_SESSION['reset_email'])) {
         h1 { text-align: center; margin-bottom: 25px; color: #333; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         .btn { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
         .btn:hover { background: #218838; }
         .message { padding: 10px; margin-bottom: 15px; border-radius: 5px; text-align: center; }
@@ -30,11 +30,16 @@ if (!isset($_SESSION['reset_email'])) {
         .password-container input { padding-right: 40px; }
         .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; }
         
-        /* CSS untuk Automatic Checker */
+        /* CSS untuk Automatic Checker (SUDAH DIPERBAIKI) */
         #password-criteria {
             font-size: 14px;
-            margin-top: 10px;
-            margin-bottom: 15px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #e74c3c; /* Mulai dengan border merah */
+            border-radius: 5px;
+            transition: border-left-color 0.3s ease;
         }
         #password-criteria p {
             margin: 5px 0;
@@ -96,28 +101,43 @@ if (!isset($_SESSION['reset_email'])) {
             const confirmPassword = document.getElementById('confirm_password');
             const lengthCheck = document.getElementById('length-check');
             const matchCheck = document.getElementById('match-check');
+            const criteriaContainer = document.getElementById('password-criteria');
 
             function updatePasswordCriteria() {
+                let isLengthValid = false;
+                let isMatchValid = false;
+
                 // 1. Cek Panjang Karakter
                 if (newPassword.value.length >= 8) {
                     lengthCheck.classList.remove('invalid');
                     lengthCheck.classList.add('valid');
                     lengthCheck.textContent = '✅ Password minimal 8 karakter.';
+                    isLengthValid = true;
                 } else {
                     lengthCheck.classList.remove('valid');
                     lengthCheck.classList.add('invalid');
                     lengthCheck.textContent = '❌ Password minimal 8 karakter.';
+                    isLengthValid = false;
                 }
 
                 // 2. Cek Kecocokan Password
-                if (confirmPassword.value.length > 0 && newPassword.value === confirmPassword.value) {
+                if (newPassword.value && confirmPassword.value && newPassword.value === confirmPassword.value) {
                     matchCheck.classList.remove('invalid');
                     matchCheck.classList.add('valid');
                     matchCheck.textContent = '✅ Password sama.';
+                    isMatchValid = true;
                 } else {
                     matchCheck.classList.remove('valid');
                     matchCheck.classList.add('invalid');
                     matchCheck.textContent = '❌ Password harus sama.';
+                    isMatchValid = false;
+                }
+
+                // 3. Update warna border kontainer
+                if (isLengthValid && isMatchValid) {
+                    criteriaContainer.style.borderLeftColor = '#2ecc71'; // Hijau
+                } else {
+                    criteriaContainer.style.borderLeftColor = '#e74c3c'; // Merah
                 }
             }
 
