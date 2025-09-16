@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com'; // Ganti dengan host SMTP Anda
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'email.anda@gmail.com'; // GANTI DENGAN USERNAME SMTP ANDA
-        $mail->Password   = 'password_aplikasi_anda'; // GANTI DENGAN PASSWORD/APP PASSWORD ANDA
+        $mail->Username   = 'audricaurelius.aa@gmail.com'; // GANTI DENGAN USERNAME SMTP ANDA
+        $mail->Password   = 'leyp iuwc jxfs emlm'; // GANTI DENGAN PASSWORD/APP PASSWORD ANDA
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
         // ==========================================================
