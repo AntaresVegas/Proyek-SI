@@ -87,10 +87,10 @@ $conn->close();
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding-top: 80px; background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; min-height: 100%; }
         .content-wrapper { flex-grow: 1; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background:var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
-        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
-        .navbar-menu { list-style: none; }
+        .navbar-menu { list-style: none; gap: 25px;}
         .navbar-menu li a { text-decoration: none; color:white; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { color:white; }

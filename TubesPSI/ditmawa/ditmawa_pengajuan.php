@@ -119,9 +119,9 @@ $conn->close();
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--ditmawa-primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; margin-left: 10px; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .navbar { display: flex; justify-content: space-between; align-items: center; background: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left { display: flex; align-items: center; gap: 10px; }
+        .navbar-left { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color: white; line-height: 1.2; }
+        .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: var(--text-dark); }

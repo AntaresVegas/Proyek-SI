@@ -170,7 +170,7 @@
                 flex-direction: column;
             }
             .navbar { display: flex; justify-content: space-between; align-items: center; background: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-            .navbar-left { display: flex; align-items: center; gap: 10px; }
+            .navbar-left { display: flex; align-items: center; gap: 25px; }
             .navbar-logo { width: 50px; height: 50px; }
             .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
             .navbar-menu { display: flex; list-style: none; gap: 25px; }
