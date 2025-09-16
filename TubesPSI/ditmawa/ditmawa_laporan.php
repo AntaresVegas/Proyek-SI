@@ -40,10 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
 
 $laporan_data = [];
 try {
-    // =================================================================
-    // ## QUERY DIUBAH ##
-    // Menggunakan JOIN dan WHERE yang sesuai dengan struktur database baru
-    // =================================================================
     $sql = "
         SELECT 
             pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_LPJ, pe.pengajuan_statusLPJ,
@@ -76,7 +72,6 @@ $conn->close();
     <title>Kelola Laporan - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* CSS tidak perlu diubah, tetap sama */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
         body { font-family: 'Segoe UI', sans-serif; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; padding-top: 80px; display: flex; flex-direction: column; min-height: 100%; }
@@ -198,11 +193,52 @@ $conn->close();
         </table>
     </div>
 </div>
+
 <div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Alasan Penolakan LPJ</h2>
+            <span class="close-button" onclick="closeRejectModal()">&times;</span>
+        </div>
+        <form id="rejectForm" method="POST" action="ditmawa_laporan.php">
+            <div class="modal-body">
+                <input type="hidden" id="reject_pengajuan_id" name="pengajuan_id">
+                <label for="alasan_penolakan">Mohon berikan alasan penolakan:</label>
+                <textarea id="alasan_penolakan" name="alasan_penolakan" required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="tolak_lpj" class="btn btn-reject">Kirim Penolakan</button>
+            </div>
+        </form>
     </div>
+</div>
+
 <script>
-    // JavaScript tidak perlu diubah
+    // Mengambil elemen modal dari halaman
+    var modal = document.getElementById('rejectModal');
+    var rejectPengajuanIdInput = document.getElementById('reject_pengajuan_id');
+
+    // Fungsi untuk MEMBUKA modal
+    function openRejectModal(pengajuan_id) {
+        // Mengisi ID pengajuan ke dalam form di modal
+        rejectPengajuanIdInput.value = pengajuan_id;
+        // Menampilkan modal
+        modal.style.display = "block";
+    }
+
+    // Fungsi untuk MENUTUP modal
+    function closeRejectModal() {
+        modal.style.display = "none";
+    }
+
+    // Menutup modal jika pengguna mengklik di luar area konten modal
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeRejectModal();
+        }
+    }
 </script>
+
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
