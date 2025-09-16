@@ -72,27 +72,9 @@ $isLoggedIn = isset($_SESSION['user_id']);
             line-height: 1.2;
         }
 
-        .navbar-menu {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .navbar-menu li a {
-            text-decoration: none;
-            color:rgb(253, 253, 253);
-            font-weight: 500;
-            font-size: 15px;
-            transition: color 0.3s;
-        }
-
-        .navbar-menu li a:hover {
-            color: #007bff;
-        }
-        .navbar-menu li a:hover,
-        .navbar-menu li a.active { /* Added active class style */
-            color: #007bff;
-        }
+        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right {
             display: flex;
             align-items: center;

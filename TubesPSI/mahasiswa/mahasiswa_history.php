@@ -87,24 +87,9 @@ $conn->close();
             line-height: 1.2;
         }
 
-        .navbar-menu {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .navbar-menu li a {
-            text-decoration: none;
-            color: white;
-            font-weight: 500;
-            font-size: 15px;
-            transition: color 0.3s;
-        }
-
-        .navbar-menu li a:hover,
-        .navbar-menu li a.active {
-            color: #007bff;
-        }
+        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
 
         .navbar-right {
             display: flex;
