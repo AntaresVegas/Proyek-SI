@@ -320,17 +320,17 @@ $conn->close();
 
         if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
             alert('Validasi Gagal: Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.');
-            event.preventDefault();
-            return;
-        }
-
-        // --- PENAMBAHAN BARU: Validasi Jam Mulai vs Jam Selesai ---
+            event.preventDefault(); vs Jam Selesai ---
         if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
             if (jamMulai && jamSelesai && jamSelesai < jamMulai) {
                 alert('Validasi Gagal: Untuk event di hari yang sama, Jam Selesai tidak boleh lebih awal dari Jam Mulai.');
                 event.preventDefault();
                 document.getElementById('jam_selesai').focus();
                 return;
+            return;
+        }
+
+        // --- PENAMBAHAN BARU: Validasi Jam Mulai
             }
         }
         // --- AKHIR PENAMBAHAN BARU ---
