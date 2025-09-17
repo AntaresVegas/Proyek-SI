@@ -14,6 +14,11 @@ $user_id = $_SESSION['user_id'] ?? 'No ID';
 $pengajuan_events = [];
 
 if ($user_id !== 'No ID') {
+    // ================================================
+    // ## KODE DIPERBAIKI: Menggunakan skema database baru ##
+    // Query disesuaikan untuk menggunakan pengaju_id dan pengaju_tipe.
+    // Kolom validator (ditmawa_id) sudah tidak ada di tabel pengajuan_event, sehingga join dan kolomnya dihapus.
+    // ================================================
     $stmt = $conn->prepare("
         SELECT
             pe.pengajuan_id,
@@ -21,11 +26,9 @@ if ($user_id !== 'No ID') {
             pe.pengajuan_namaEvent,
             pe.pengajuan_status,
             pe.pengajuan_komentarDitmawa,
-            pe.pengajuan_tanggalEdit, -- Menggunakan kolom ini untuk tanggal edit mahasiswa
-            d.ditmawa_nama AS validator_nama
+            pe.pengajuan_tanggalEdit
         FROM pengajuan_event pe
-        LEFT JOIN ditmawa d ON pe.ditmawa_id = d.ditmawa_id
-        WHERE pe.mahasiswa_id = ?
+        WHERE pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'
         ORDER BY pe.pengajuan_id DESC
     ");
     $stmt->bind_param("i", $user_id);
@@ -141,8 +144,8 @@ $conn->close();
                     <th>TANGGAL EVENT</th>
                     <th>NAMA EVENT</th>
                     <th>STATUS</th>
-                    <th>VALIDATOR</th>
-                    <th>LAST MODIFIED (Mahasiswa)</th> <th>ACTION</th>
+                    <th>LAST MODIFIED</th>
+                    <th>ACTION</th>
                 </tr>
             </thead>
             <tbody>
@@ -152,6 +155,11 @@ $conn->close();
                             <td><?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?></td>
                             <td>
                                 <?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?>
+                                 <?php if ($event['pengajuan_status'] == 'Ditolak' && !empty($event['pengajuan_komentarDitmawa'])): ?>
+                                    <div class="alasan-ditolak">
+                                        <strong>Alasan:</strong> <?php echo htmlspecialchars($event['pengajuan_komentarDitmawa']); ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status'])); ?>">
@@ -159,22 +167,9 @@ $conn->close();
                                 </span>
                             </td>
                             <td>
-                                <?php
-                                    // Tampilkan nama validator jika ada
-                                    if (!empty($event['validator_nama'])) {
-                                        echo htmlspecialchars($event['validator_nama']);
-                                    } else {
-                                        echo "N/A"; // Atau 'Belum divalidasi'
-                                    }
-                                ?>
-                            </td>
-                            <td>
                                 <?php if (!empty($event['pengajuan_tanggalEdit'])): ?>
                                     <div class="modified-info">
-                                        <?php
-                                            // Format tanggal dan waktu dari pengajuan_tanggalEdit
-                                            echo htmlspecialchars(date('d M Y H:i', strtotime($event['pengajuan_tanggalEdit'])));
-                                        ?>
+                                        <?php echo htmlspecialchars(date('d M Y H:i', strtotime($event['pengajuan_tanggalEdit']))); ?>
                                     </div>
                                 <?php else: ?>
                                     <div class="modified-info">N/A</div>
@@ -195,7 +190,7 @@ $conn->close();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" class="no-data">Belum ada pengajuan event.</td>
+                        <td colspan="5" class="no-data">Belum ada pengajuan event.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

@@ -92,7 +92,7 @@ try {
                         foreach ($clear_period as $dt) {
                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
                                 $day = (int)$dt->format('j');
-                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Beres-beres)', 'type' => 'clear'];
+                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
                             }
                         }
                     }
@@ -102,7 +102,16 @@ try {
         }
 
         // Data Event Mahasiswa Mendatang (Hanya 1 Terdekat)
-        $stmt_events = $conn->prepare("SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai FROM pengajuan_event WHERE pengajuan_status = 'Disetujui' AND pengajuan_event_tanggal_selesai >= CURDATE() ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC LIMIT 1");
+        // Data Event Mahasiswa Mendatang (3 Terdekat)
+        $stmt_events = $conn->prepare(
+            "SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai 
+            FROM pengajuan_event 
+            WHERE pengajuan_status = 'Disetujui' 
+            AND pengaju_tipe = 'mahasiswa'  -- Tambahkan filter ini!
+            AND pengajuan_event_tanggal_selesai >= CURDATE() 
+            ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC 
+            LIMIT 3"  
+        );
         if ($stmt_events) {
             $stmt_events->execute();
             $upcoming_events = $stmt_events->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -110,7 +119,13 @@ try {
         }
 
         // Data Aktivitas Pengajuan Terbaru (Hanya 1 terbaru)
-        $stmt_submissions = $conn->prepare("SELECT pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit FROM pengajuan_event WHERE mahasiswa_id = ? ORDER BY pengajuan_tanggalEdit DESC LIMIT 1");
+        $stmt_submissions = $conn->prepare(
+            "SELECT pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit 
+            FROM pengajuan_event 
+            WHERE pengaju_id = ? AND pengaju_tipe = 'mahasiswa' 
+            ORDER BY pengajuan_tanggalEdit DESC LIMIT 1"
+        );
+        // Bind param tetap sama karena user_id mahasiswa yang login
         if ($stmt_submissions && $user_id !== null) {
             $stmt_submissions->bind_param("i", $user_id);
             $stmt_submissions->execute();
@@ -145,7 +160,7 @@ try {
         .navbar { display: flex; justify-content: space-between; align-items: center; background: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color: white; line-height: 1.2; }
+        .navbar-title { color: white; line-height: 1.2;font-size: 14px; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
@@ -169,6 +184,10 @@ try {
         .event-card-info { padding: 15px 20px; }
         .event-card-info h4 { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; }
         .event-card-info p { font-size: 0.9em; color: var(--text-light); }
+        /* Tambahkan ini di dalam tag <style> di mahasiswa_dashboard.php */
+        .event-card:not(:last-child) {
+            margin-bottom: 15px; /* Memberi jarak antar kartu */
+        }
         .submission-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; position: relative; border-left: 5px solid; }
         .submission-card:not(:last-child) { margin-bottom: 15px; }
         .submission-card-title { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; padding-right: 90px; }
@@ -225,6 +244,19 @@ try {
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
     </style>
 </head>
 <body>

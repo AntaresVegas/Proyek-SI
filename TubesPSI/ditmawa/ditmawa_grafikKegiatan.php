@@ -128,6 +128,7 @@ $year_range = range(date('Y'), date('Y') - 10);
     </div>
     <ul class="navbar-menu">
         <li><a href="ditmawa_dashboard.php">Home</a></li>
+        <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php" class="active">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>

@@ -22,9 +22,9 @@ session_start();
         }
         .container {
             display: flex;
-            flex-wrap: wrap; /* Agar responsif di layar kecil */
+            flex-wrap: wrap;
             gap: 40px;
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.94);
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
@@ -41,61 +41,65 @@ session_start();
             min-width: 300px;
         }
         .product-item img {
-            width: 250px; /* Ukuran logo disesuaikan */
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            width: 250px; height: auto; border-radius: 8px; margin-bottom: 20px;
         }
-        .welcome-text {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .welcome-text h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .welcome-text p {
-            font-size: 16px;
-            color: #555;
-            line-height: 1.5;
-        }
+        .welcome-text { text-align: center; color: #2c3e50; }
+        .welcome-text h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+        .welcome-text p { font-size: 16px; color: #555; line-height: 1.5; }
 
         .login-box {
-            flex: 1;
-            min-width: 320px;
-            border-left: 1px solid #ddd;
-            padding-left: 40px;
+            flex: 1; min-width: 320px; border-left: 1px solid #ddd; padding-left: 40px;
         }
-        .header {
-            font-size: 22px;
+        .header { font-size: 22px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; text-align: center; }
+
+        .user-choice-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .user-choice-card {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .user-choice-card:hover {
+            border-color: #3498db;
+            background-color: #f9f9f9;
+        }
+        .user-choice-card.active {
+            border-color: #3498db;
+            background-color: #eaf5fc;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+        }
+        .user-choice-card h3 {
+            font-size: 16px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 25px;
-            text-align: center;
+            margin-bottom: 5px;
         }
+        .user-choice-card p {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.4;
+        }
+
         .form-group { margin-bottom: 18px; }
         .form-group label { display: block; margin-bottom: 8px; color: #2c3e50; font-weight: 500; }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
+        .form-group input {
+            width: 100%; padding: 12px 15px; border: 1px solid #ccc; border-radius: 8px;
+            font-size: 16px; transition: border-color 0.3s, box-shadow 0.3s;
         }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        .form-group input:focus {
+            outline: none; border-color: #3498db; box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
         }
         .btn {
-            width: 100%; padding: 14px;
-            background: #3498db; color: white;
-            border: none; border-radius: 8px;
-            font-size: 16px; font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            width: 100%; padding: 14px; background: #3498db; color: white;
+            border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
+            cursor: pointer; transition: background-color 0.3s;
         }
         .btn:hover { background: #2980b9; }
         .form-links {
@@ -126,7 +130,7 @@ session_start();
         </div>
 
         <div class="login-box">
-            <div class="header">Silakan Login</div>
+            <div class="header">Login Sebagai</div>
 
             <?php if (isset($_SESSION['error'])): ?>
                 <div class="message-box error-message"><?= htmlspecialchars($_SESSION['error']); ?></div>
@@ -137,13 +141,18 @@ session_start();
             <?php endif; ?>
 
             <form action="./mahasiswa/process_login.php" method="POST" class="login-form">
-                <div class="form-group">
-                    <label for="user_type">Login Sebagai:</label>
-                    <select name="user_type" id="user_type" required onchange="updateLoginView()">
-                        <option value="mahasiswa">Mahasiswa</option>
-                        <option value="ditmawa">Ditmawa</option>
-                    </select>
+                <div class="user-choice-container">
+                    <div class="user-choice-card active" data-type="mahasiswa">
+                        <h3>Mahasiswa</h3>
+                        <p>Portal untuk pengajuan dan pengelolaan event.</p>
+                    </div>
+                    <div class="user-choice-card" data-type="ditmawa">
+                        <h3>Ditmawa</h3>
+                        <p>Portal untuk validasi dan persetujuan kegiatan.</p>
+                    </div>
                 </div>
+                <input type="hidden" name="user_type" id="user_type" value="mahasiswa">
+                
                 <div class="form-group"><label for="email">Email:</label><input type="text" id="email" name="email" required autocomplete="email" /></div>
                 <div class="form-group"><label for="password">Password:</label><input type="password" id="password" name="password" required autocomplete="current-password" /></div>
                 <div class="form-group"><button type="submit" class="btn">Login</button></div>
@@ -157,32 +166,57 @@ session_start();
     </div>
 
     <script>
-        function updateLoginView() {
+        function updateVisuals(userType) {
             const form = document.querySelector('.login-form');
-            const userType = document.getElementById('user_type').value;
+            // Ambil setiap link secara spesifik
             const registerLink = document.getElementById('register-link');
             const forgotLink = document.getElementById('forgot-password-link');
+            
             const body = document.getElementById('body');
             const logoImg = document.getElementById('logo-img');
             const welcomeText = document.querySelector('.welcome-text p');
+            const hiddenInput = document.getElementById('user_type');
 
             if (userType === 'mahasiswa') {
                 form.action = './mahasiswa/process_login.php';
+                // Tampilkan kedua link untuk mahasiswa
                 registerLink.style.display = 'inline';
                 forgotLink.style.display = 'inline';
+                
                 body.style.backgroundImage = "url('./img/backgroundUnpar.jpeg')";
                 logoImg.src = "./img/logo.png";
                 welcomeText.textContent = "Di Situs Pengelolaan Event Mahasiswa Universitas Katolik Parahyangan";
             } else { // Ditmawa
                 form.action = './ditmawa/process_login.php';
+                // Hanya sembunyikan link registrasi untuk Ditmawa
                 registerLink.style.display = 'none';
-                forgotLink.style.display = 'none';
+                forgotLink.style.display = 'inline';
+                
                 body.style.backgroundImage = "url('./img/backgroundDitmawa.jpeg')";
                 logoImg.src = "./img/logoDitmawa.png";
                 welcomeText.textContent = "Portal khusus untuk manajemen dan persetujuan kegiatan oleh Ditmawa.";
             }
+            hiddenInput.value = userType;
         }
-        document.addEventListener('DOMContentLoaded', updateLoginView);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.user-choice-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    cards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    
+                    const userType = card.getAttribute('data-type');
+                    updateVisuals(userType);
+                });
+            });
+            
+            const initialActiveCard = document.querySelector('.user-choice-card.active');
+            if (initialActiveCard) {
+                updateVisuals(initialActiveCard.getAttribute('data-type'));
+            }
+        });
     </script>
 </body>
 </html>

@@ -2,7 +2,6 @@
 session_start();
 include '../config/db_connection.php';
 
-// Check if user is logged in and is a mahasiswa
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
     header("Location: ../index.php");
     exit();
@@ -26,12 +25,13 @@ if (isset($_GET['status'])) {
 
 $events_for_lpj = [];
 if (isset($user_id)) {
-    // ==== PERUBAHAN 1: Memperbarui Kueri SQL ====
-    // Logika diubah untuk menampilkan event yang (belum ada LPJ) ATAU (LPJ-nya ditolak)
+    // ======================================================
+    // ## KODE DIPERBAIKI: Menggunakan skema database baru ##
+    // ======================================================
     $stmt = $conn->prepare("
         SELECT pengajuan_id, pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_statusLPJ 
         FROM pengajuan_event 
-        WHERE mahasiswa_id = ? 
+        WHERE pengaju_id = ? AND pengaju_tipe = 'mahasiswa'
           AND pengajuan_status = 'Disetujui' 
           AND ((pengajuan_LPJ IS NULL OR pengajuan_LPJ = '') OR pengajuan_statusLPJ = 'Ditolak')
         ORDER BY pengajuan_event_tanggal_mulai DESC
@@ -54,14 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_lpj'])) {
         $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
         $allowed_extensions = ['pdf', 'doc', 'docx'];
         if (!in_array($file_ext, $allowed_extensions)) { header("Location: mahasiswa_laporan.php?status=error&msg=" . urlencode("Ekstensi file tidak valid.")); exit(); }
+        
         $db_path = 'uploads/lpj/' . uniqid('lpj_', true) . '.' . $file_ext;
         $upload_path = '../' . $db_path;
         if (!is_dir(dirname($upload_path))) { mkdir(dirname($upload_path), 0777, true); }
+
         if (move_uploaded_file($file_tmp_name, $upload_path)) {
-            // ==== PERUBAHAN 2: Menyesuaikan Status LPJ saat diunggah ====
-            // Status diubah menjadi 'Menunggu Persetujuan' agar masuk ke alur review Ditmawa.
-            $update_stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_LPJ = ?, pengajuan_statusLPJ = 'Menunggu Persetujuan' WHERE pengajuan_id = ? AND mahasiswa_id = ?");
+            // ======================================================
+            // ## KODE DIPERBAIKI: Menggunakan skema database baru ##
+            // ======================================================
+            $update_stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_LPJ = ?, pengajuan_statusLPJ = 'Menunggu Persetujuan' WHERE pengajuan_id = ? AND pengaju_id = ? AND pengaju_tipe = 'mahasiswa'");
             $update_stmt->bind_param("sii", $db_path, $selected_pengajuan_id, $user_id);
+            
             if ($update_stmt->execute()) { header("Location: mahasiswa_laporan.php?status=success"); exit(); } 
             else { unlink($upload_path); header("Location: mahasiswa_laporan.php?status=error&msg=" . urlencode("Gagal menyimpan data LPJ.")); exit(); }
         } else { header("Location: mahasiswa_laporan.php?status=error&msg=" . urlencode("Gagal mengunggah file.")); exit(); }
@@ -69,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_lpj'])) {
 }
 $conn->close();
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -78,31 +81,16 @@ $conn->close();
     <title>Upload LPJ - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        :root {
-            --primary-color: rgb(2, 71, 25);
-            --secondary-color: #0d6efd;
-            --status-rejected: #dc3545;
-        }
+        :root { --primary-color: rgb(2, 71, 25); --secondary-color: #0d6efd; --status-rejected: #dc3545; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #f4f7f6; 
-            padding-top: 80px;
-            background-image: url('../img/backgroundUnpar.jpeg'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed;
-            display: flex;
-            flex-direction: column;
-            min-height: 100%;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding-top: 80px; background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; min-height: 100%; }
         .content-wrapper { flex-grow: 1; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background:var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
-        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
-        .navbar-menu { list-style: none; }
+        .navbar-menu { list-style: none; gap: 25px;}
         .navbar-menu li a { text-decoration: none; color:white; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { color:white; }
@@ -128,65 +116,18 @@ $conn->close();
         .btn-download-template:hover { background-color: #0b5ed7; }
         .btn-download-template i { margin-right: 8px; }
         .template-note { font-size: 14px; color: #555; line-height: 1.5; margin: 0; text-align: center; }
-        .status-ditolak-info { font-size: 14px; color: var(--status-rejected); font-weight: 500; }
-        .page-footer {
-            background-color: var(--primary-color);
-            color: #e9ecef;
-            padding: 40px 0;
-            margin-top: 40px;
-        }
-        .footer-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 30px;
-        }
-        .footer-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .footer-logo {
-            width: 60px;
-            height: 60px;
-        }
-        .footer-left h4 {
-            font-size: 1.2em;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-        .footer-right ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .footer-right li {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .footer-right .social-icons {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-        }
-        .footer-right .social-icons a {
-            color: #e9ecef;
-            font-size: 1.5em;
-            transition: color 0.3s;
-        }
-        .footer-right .social-icons a:hover {
-            color: #fff;
-        }
+        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; }
     </style>
 </head>
 <body>
-
 <nav class="navbar">
     <div class="navbar-left"><img src="../img/logo.png" alt="Logo UNPAR" class="navbar-logo"><div class="navbar-title"><span>Pengelolaan</span><br><strong>Event UNPAR</strong></div></div>
     <ul class="navbar-menu">
@@ -199,11 +140,9 @@ $conn->close();
     </ul>
     <div class="navbar-right"><a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 15px;"></i></a><a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a></div>
 </nav>
-
 <div class="content-wrapper">
     <div class="container">
         <div class="header"><h1>Laporan Pertanggungjawaban Event</h1></div>
-
         <form action="mahasiswa_laporan.php" method="POST" enctype="multipart/form-data" id="lpjForm">
             <div class="form-group">
                 <label for="pengajuan_id">Pilih Event yang Telah Selesai</label>
@@ -214,7 +153,7 @@ $conn->close();
                             <?php 
                                 $displayName = htmlspecialchars($event['pengajuan_namaEvent']);
                                 $displayDate = htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai'])));
-                                $statusInfo = ($event['pengajuan_statusLPJ'] == 'Ditolak') ? '' : '';
+                                $statusInfo = ($event['pengajuan_statusLPJ'] == 'Ditolak') ? ' - (LPJ Ditolak, harap unggah ulang)' : '';
                             ?>
                             <option value="<?php echo htmlspecialchars($event['pengajuan_id']); ?>">
                                 <?php echo $displayName . ' (' . $displayDate . ')' . $statusInfo; ?>
@@ -225,21 +164,15 @@ $conn->close();
                     <?php endif; ?>
                 </select>
             </div>
-
             <div class="template-info-box">
                 <p class="template-title">Gunakan Template Resmi Untuk Laporan Anda</p>
-                <a href="../templates/LPJ_Template.docx" class="btn-download-template" download>
-                    <i class="fas fa-download"></i> Unduh Template LPJ
-                </a>
-                <p class="template-note">
-                    <strong>Penting:</strong> Pastikan laporan dibuat sesuai dengan template yang disediakan dan berikan penamaan file dengan nama <span style="color: red;"><b>LPJ_NamaEvent</b></span>.
-                </p>
+                <a href="../templates/LPJ_Template.docx" class="btn-download-template" download><i class="fas fa-download"></i> Unduh Template LPJ</a>
+                <p class="template-note"><strong>Penting:</strong> Pastikan laporan dibuat sesuai dengan template yang disediakan dan berikan penamaan file dengan nama <span style="color: red;"><b>LPJ_NamaEvent</b></span>.</p>
             </div>
             <div class="form-group">
                 <label for="dokumen_lpj">Unggah Dokumen LPJ Anda</label>
                 <input type="file" id="dokumen_lpj" name="dokumen_lpj" class="form-control-file" accept=".pdf,.doc,.docx" required>
             </div>
-
             <div class="form-actions">
                 <button type="button" class="btn btn-clear" onclick="document.getElementById('lpjForm').reset();">Clear</button>
                 <button type="submit" name="submit_lpj" class="btn btn-submit">Submit LPJ</button>
@@ -247,29 +180,10 @@ $conn->close();
         </form>
     </div>
 </div>
-
 <div id="uploadMessage" class="upload-message <?php echo !empty($message) ? 'show ' . $message_type : ''; ?>"><?php echo htmlspecialchars($message); ?></div>
-
 <script>
-    window.onload = function() {
-        const messageDiv = document.getElementById('uploadMessage');
-        if (messageDiv.textContent.trim() !== '') {
-            setTimeout(() => {
-                messageDiv.classList.add('show');
-                setTimeout(() => {
-                    messageDiv.classList.remove('show');
-                    if (window.history.replaceState) {
-                        const url = new URL(window.location.href);
-                        url.searchParams.delete('status');
-                        url.searchParams.delete('msg');
-                        window.history.replaceState({}, document.title, url.href);
-                    }
-                }, 5000);
-            }, 100);
-        }
-    };
+    window.onload = function() { const messageDiv = document.getElementById('uploadMessage'); if (messageDiv.textContent.trim() !== '') { setTimeout(() => { messageDiv.classList.add('show'); setTimeout(() => { messageDiv.classList.remove('show'); if (window.history.replaceState) { const url = new URL(window.location.href); url.searchParams.delete('status'); url.searchParams.delete('msg'); window.history.replaceState({}, document.title, url.href); } }, 5000); }, 100); } };
 </script>
-
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
@@ -294,6 +208,5 @@ $conn->close();
         </div>
     </div>
 </footer>
-
 </body>
 </html>

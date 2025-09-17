@@ -35,7 +35,6 @@ $conn->close();
             box-sizing: border-box;
         }
 
-        /* PERBAIKAN KUNCI DI SINI */
         html {
             height: 100%;
         }
@@ -43,8 +42,11 @@ $conn->close();
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f2f5;
-            min-height: 100%; /* Diubah dari 100vh */
-            background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;
+            min-height: 100%;
+            background-image: url('../img/backgroundUnpar.jpeg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
             display: flex;
             flex-direction: column;
         }
@@ -77,7 +79,6 @@ $conn->close();
         .navbar-logo {
             width: 50px;
             height: 50px;
-            object-fit: cover;
         }
 
         .navbar-title {
@@ -86,24 +87,9 @@ $conn->close();
             line-height: 1.2;
         }
 
-        .navbar-menu {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .navbar-menu li a {
-            text-decoration: none;
-            color: white;
-            font-weight: 500;
-            font-size: 15px;
-            transition: color 0.3s;
-        }
-
-        .navbar-menu li a:hover,
-        .navbar-menu li a.active {
-            color: #007bff;
-        }
+        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
 
         .navbar-right {
             display: flex;
@@ -120,11 +106,6 @@ $conn->close();
         .icon {
             font-size: 20px;
             cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .icon:hover {
-            color: #87CEEB;
         }
 
         .container {
@@ -141,62 +122,76 @@ $conn->close();
             background:rgb(44, 62, 80);
             color: white;
             padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin: -30px -30px 30px -30px;
             border-radius: 15px 15px 0 0;
+            text-align: center;
         }
 
         .header h1 {
             font-size: 24px;
         }
 
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* ================================================ */
+        /* ## CSS BARU: Untuk Desain Kartu Pilihan History ## */
+        /* ================================================ */
+
+        .history-options-container {
             margin-top: 20px;
         }
 
-        .history-table th,
-        .history-table td {
-            border-bottom: 1px solid #ddd;
-            padding: 12px 15px;
-            text-align: left;
+        .history-card {
+            display: flex;
+            align-items: center;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            margin-bottom: 20px;
+            background-color: #fff;
         }
 
-        .history-table th {
-            background-color: #f8f9fa;
-            color: #333;
-            font-weight: 600;
-            text-transform: uppercase;
-            border-bottom: 2px solid #dee2e6;
+        .history-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary-color);
         }
 
-        .history-table td {
-            font-size: 16px;
+        .history-card .card-icon {
+            font-size: 2.5em;
+            color: var(--primary-color);
+            margin-right: 25px;
+            width: 50px;
+            text-align: center;
         }
         
-        .history-table tr:hover {
-            background-color: #f1f1f1;
+        .history-card .card-text h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2em;
+            color: #333;
         }
 
-        .action-button {
-            background-color: #28a745;
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-            display: inline-block;
+        .history-card .card-text p {
+            margin: 0;
+            font-size: 0.95em;
+            color: #666;
         }
 
-        .action-button:hover {
-            background-color: #218838;
+        .history-card .card-arrow {
+            margin-left: auto;
+            font-size: 1.5em;
+            color: #ccc;
+            transition: color 0.3s ease;
         }
+
+        .history-card:hover .card-arrow {
+            color: var(--primary-color);
+        }
+        
+        /* ================================================ */
+        /* ## AKHIR CSS BARU ## */
+        /* ================================================ */
 
         .page-footer {
             background-color: var(--primary-color);
@@ -226,7 +221,6 @@ $conn->close();
         .footer-left h4 {
             font-size: 1.2em;
             font-weight: 500;
-            line-height: 1.4;
         }
         .footer-right ul {
             list-style: none;
@@ -247,10 +241,6 @@ $conn->close();
         .footer-right .social-icons a {
             color: #e9ecef;
             font-size: 1.5em;
-            transition: color 0.3s;
-        }
-        .footer-right .social-icons a:hover {
-            color: #fff;
         }
     </style>
 </head>
@@ -284,28 +274,37 @@ $conn->close();
 <div class="content-wrapper">
     <div class="container">
         <div class="header">
-            <h1>Pilih Kategori History</h1>
+            <h1>Pilih Kategori Riwayat</h1>
         </div>
 
-        <table class="history-table">
-            <thead>
-                <tr>
-                    <th>KATEGORI</th>
-                    <th>LIHAT DETAIL</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Riwayat Pengajuan Event</td>
-                    <td><a href="mahasiswa_history_pengajuan.php" class="action-button">Masuk</a></td>
-                </tr>
-                <tr>
-                    <td>Riwayat Laporan Pertanggungjawaban</td>
-                    <td><a href="mahasiswa_history_laporan.php" class="action-button">Masuk</a></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="history-options-container">
+            <a href="mahasiswa_history_pengajuan.php" class="history-card">
+                <div class="card-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="card-text">
+                    <h3>Riwayat Pengajuan Event</h3>
+                    <p>Lihat status dan detail semua event yang pernah Anda ajukan.</p>
+                </div>
+                <div class="card-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+            
+            <a href="mahasiswa_history_laporan.php" class="history-card">
+                 <div class="card-icon">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <div class="card-text">
+                    <h3>Riwayat Laporan Pertanggungjawaban</h3>
+                    <p>Lihat status dan riwayat LPJ yang telah Anda unggah.</p>
+                </div>
+                <div class="card-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+        </div>
+        </div>
 </div>
 
 <footer class="page-footer">
