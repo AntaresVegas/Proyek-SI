@@ -336,7 +336,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <p><strong>Konfirmasi Ruangan:</strong> Sebelum mengajukan form, panitia wajib mengonfirmasi ketersediaan ruangan dengan Administrasi Sarana dan Prasarana (ASP).</p>
         <p><strong>Kesesuaian:</strong> Penggunaan fasilitas kampus harus sesuai dengan jadwal dan kapasitas yang telah ditentukan.</p>
         <p><strong>Tanggung Jawab:</strong> Panitia bertanggung jawab atas kebersihan, ketertiban, dan keamanan area yang digunakan.</p>
-        <p><strong>Persiapan:</strong> Jika acara memerlukan persiapan lebih, panitia harus menambah hari peminjaman ruangan sebelum acara dimulai.</p>
+        <p><strong>Persiapan:</strong> Jika acara memerlukan persiapan lebih, panitia harus menambah hari peminjaman ruangan minimal 1 hari sebelum acara dimulai.</p>
         <p><strong>Pembersihan:</strong> Jika acara selesai setelah jam 15:00, panitia harus meminjam ruangan tersebut untuk membersihkan area.</p>
 
         <h3>5. Keamanan dan Keselamatan</h3>
