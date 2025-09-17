@@ -289,48 +289,52 @@ $isLoggedIn = isset($_SESSION['user_id']);
     </div>
 
     <div class="main-content">
-        <h2>A. Peraturan Pengajuan Event</h2>
+            <h2>A. Peraturan Pengajuan Event</h2>
 
-        <h3>1. Persyaratan Pengajuan</h3>
-        <p><strong>Pemohon:</strong> Pengajuan event hanya dapat dilakukan oleh mahasiswa, dosen, atau staf UNPAR.</p>
-        <p><strong>Dokumen yang Diperlukan:</strong></p>
-        <ul>
-            <li>Surat permohonan penyelenggaraan kegiatan di lingkungan UNPAR yang ditujukan kepada Sekretaris Universitas.</li>
-            <li>Rundown kegiatan.</li>
-            <li>Surat Rekomendasi berdasarkan jenis kegiatan:
-                <ul>
-                    <li>Kegiatan Kemahasiswaan: dikeluarkan oleh Direktorat Kemahasiswaan.</li>
-                    <li>Kegiatan Akademik: dikeluarkan oleh Jurusan.</li>
-                    <li>Kegiatan Kepanitiaan: dikeluarkan oleh unit penanggung jawab kegiatan.</li>
-                </ul>
-            </li>
-        </ul>
+            <h3>1. Persyaratan Pengajuan</h3>
+            <p><strong>Pemohon:</strong> Pengajuan event hanya dapat dilakukan oleh mahasiswa atau staf DITMAWA UNPAR.</p>
+            <p><strong>Dokumen yang Diperlukan:</strong></p>
+            <ul>
+                <li>Surat permohonan penyelenggaraan kegiatan di lingkungan UNPAR yang ditujukan kepada Sekretaris Universitas.</li>
+                <li>Rundown kegiatan.</li>
+                <li>Surat Rekomendasi berdasarkan jenis kegiatan:
+                    <ul>
+                        <li>Kegiatan Kemahasiswaan: dikeluarkan oleh Direktorat Kemahasiswaan.</li>
+                        <li>Kegiatan Akademik: dikeluarkan oleh Jurusan.</li>
+                        <li>Kegiatan Kepanitiaan: dikeluarkan oleh unit penanggung jawab kegiatan.</li>
+                    </ul>
+                </li>
+            </ul>
 
-        <h3>2. Batas Waktu Pengajuan</h3>
-        <p><strong>Minimal:</strong> Pengajuan harus dilakukan minimal 7 hari sebelum tanggal pelaksanaan.</p>
-        <p><strong>Keterlambatan:</strong> Keterlambatan pengajuan dapat menyebabkan penolakan atau keterlambatan persetujuan.</p>
+            <h3>2. Batas Waktu Pengajuan</h3>
+            <p><strong>Minimal:</strong> Pengajuan harus dilakukan minimal 7 hari sebelum tanggal pelaksanaan.</p>
+            <p><strong>Keterlambatan:</strong> Keterlambatan pengajuan dapat menyebabkan penolakan atau keterlambatan persetujuan.</p>
 
-        <h3>3. Izin dan Kepatuhan</h3>
-        <p><strong>Peraturan:</strong> Semua event harus mematuhi peraturan akademik, etika, dan tata tertib UNPAR.</p>
-        <p><strong>Pihak Eksternal:</strong> Event yang melibatkan pihak eksternal harus mendapatkan izin tambahan dari pihak terkait.</p>
+            <h3>3. Izin dan Kepatuhan</h3>
+            <p><strong>Peraturan:</strong> Semua event harus mematuhi peraturan akademik, etika, dan tata tertib UNPAR.</p>
+            <p><strong>Pihak Eksternal:</strong> Event yang melibatkan pihak eksternal harus mendapatkan izin tambahan dari pihak terkait.</p>
 
-        <h3>4. Penggunaan Fasilitas</h3>
-        <p><strong>Konfirmasi Ruangan:</strong> Sebelum mengajukan form, panitia wajib mengonfirmasi ketersediaan ruangan dengan Administrasi Sarana dan Prasarana (ASP).</p>
-        <p><strong>Kesesuaian:</strong> Penggunaan fasilitas kampus harus sesuai dengan jadwal dan kapasitas yang telah ditentukan.</p>
-        <p><strong>Tanggung Jawab:</strong> Panitia bertanggung jawab atas kebersihan, ketertiban, dan keamanan area yang digunakan.</p>
-        <p><strong>Persiapan:</strong> Jika acara memerlukan persiapan lebih, panitia harus menambah hari peminjaman ruangan minimal 1 hari sebelum acara dimulai.</p>
-        <p><strong>Pembersihan:</strong> Jika acara selesai setelah jam 15:00, panitia harus meminjam ruangan tersebut untuk membersihkan area.</p>
+            <h3>4. Penggunaan Fasilitas</h3>
+            <p><strong>Konfirmasi Ruangan:</strong> Sebelum mengajukan form, panitia wajib mengonfirmasi ketersediaan ruangan dengan Administrasi Sarana dan Prasarana (ASP).</p>
+            <p><strong>Kesesuaian:</strong> Penggunaan fasilitas kampus harus sesuai dengan jadwal dan kapasitas yang telah ditentukan.</p>
+            <p><strong>Tanggung Jawab:</strong> Panitia bertanggung jawab atas kebersihan, ketertiban, dan keamanan area yang digunakan.</p>
+            <p><strong>Persiapan:</strong> Jika acara memerlukan persiapan lebih, panitia harus menambah hari peminjaman ruangan minimal 1 hari sebelum acara dimulai.</p>
+            <p><strong>Pembersihan:</strong> Jika acara selesai setelah jam 15:00, panitia harus meminjam ruangan tersebut untuk membersihkan area.</p>
 
-        <h3>5. Keamanan dan Keselamatan</h3>
-        <p><strong>Rencana Keamanan:</strong> Setiap event yang melibatkan kerumunan besar harus memiliki rencana keamanan yang jelas.</p>
-        <p><strong>Larangan:</strong> Dilarang membawa atau menggunakan barang terlarang seperti minuman beralkohol, narkotika, dan senjata tajam dalam event.</p>
+            <h3>5. Keamanan dan Keselamatan</h3>
+            <p><strong>Rencana Keamanan:</strong> Setiap event yang melibatkan kerumunan besar harus memiliki rencana keamanan yang jelas.</p>
+            <p><strong>Larangan:</strong> Dilarang membawa atau menggunakan barang terlarang seperti minuman beralkohol, narkotika, dan senjata tajam dalam event.</p>
 
-        <h3>6. Pembatalan atau Perubahan</h3>
-        <p><strong>Pemberitahuan:</strong> Panitia wajib memberitahukan pihak kampus jika ada perubahan atau pembatalan event.</p>
-        <p><strong>Kewenangan Universitas:</strong> Pihak universitas berhak membatalkan event jika ditemukan pelanggaran peraturan.</p>
-    </div>
-    
+            <h3>6. Pembatalan atau Perubahan</h3>
+            <p><strong>Pemberitahuan:</strong> Panitia wajib memberitahukan pihak kampus jika ada perubahan atau pembatalan event.  Pembatalan paling lambat diberitahukan H-1 dari tanggal acara atau persiapan (jika ada).</p>
+            <p><strong>Kewenangan Universitas:</strong> Pihak universitas berhak membatalkan event jika ditemukan pelanggaran peraturan.</p>
+
+            <h3>7. Laporan Pertanggungjawaban (LPJ)</h3>
+            <p><strong>Dokumentasi:</strong> Panitia wajib menyusun laporan pelaksanaan event, termasuk foto kegiatan, evaluasi, dan realisasi anggaran.</p>
+            <p><strong>Batas Waktu LPJ:</strong> Laporan harus diserahkan maksimal 14 hari setelah kegiatan selesai.</p>
+    </div>   
 </div>
+
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
