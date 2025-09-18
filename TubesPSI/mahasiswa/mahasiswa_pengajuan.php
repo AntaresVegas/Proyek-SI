@@ -796,8 +796,8 @@ $conn->close();
         } 
         
         // TERAKHIR: Cek panjang Nama Event (hanya jika semua kolom sudah terisi)
-        else if (namaEventValue.length < 5) {
-            alert('Nama Event harus memiliki minimal 5 karakter.');
+        else if (namaEventValue.length < 4) {
+            alert('Nama Event harus memiliki minimal 4 karakter.');
             namaEventInput.focus();
             return;
         }
