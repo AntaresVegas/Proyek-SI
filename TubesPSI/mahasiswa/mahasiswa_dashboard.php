@@ -36,8 +36,9 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 try {
     if (isset($conn) && $conn->ping()) {
         
+        // ======================= PERUBAHAN LOGIKA KALENDER DIMULAI DI SINI =======================
         $stmt_calendar = $conn->prepare("
-            SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, tanggal_persiapan, tanggal_beres 
+            SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, tanggal_persiapan, tanggal_beres, pengaju_tipe 
             FROM pengajuan_event 
             WHERE pengajuan_status = 'Disetujui' 
             AND (
@@ -52,62 +53,75 @@ try {
             $stmt_calendar->execute();
             $result = $stmt_calendar->get_result();
             
-            $events_to_process = [];
+            $temp_events_by_day = [];
+
+            // Langkah 1: Kumpulkan semua event dan kelompokkan berdasarkan hari dan tipe
             while ($row = $result->fetch_assoc()) {
-                $events_to_process[$row['pengajuan_namaEvent']] = $row;
-            }
-            
-            foreach ($events_to_process as $row) {
-                // Proses Tanggal Event Utama
+                $event_pengaju_tipe = $row['pengaju_tipe'];
+                
                 $period = new DatePeriod(new DateTime($row['pengajuan_event_tanggal_mulai']), new DateInterval('P1D'), (new DateTime($row['pengajuan_event_tanggal_selesai']))->modify('+1 day'));
                 foreach ($period as $day) {
                     if ($day->format('n') == $currentMonth && $day->format('Y') == $currentYear) {
-                        $calendar_events[$day->format('j')][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
+                         $day_num = $day->format('j');
+                        $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
                     }
                 }
                 
-                // Logika untuk rentang waktu persiapan
                 if (!empty($row['tanggal_persiapan'])) {
                     $prep_start_dt = new DateTime($row['tanggal_persiapan']);
                     $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
-                    if ($prep_start_dt < $main_event_start_dt) {
-                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
+                     if ($prep_start_dt <= $main_event_start_dt) {
+                        $prep_period_end = (clone $main_event_start_dt)->modify('+1 day');
+                        if($prep_start_dt->format('Y-m-d') == $main_event_start_dt->format('Y-m-d')) {
+                            $prep_period_end = (clone $prep_start_dt)->modify('+1 day');
+                        }
+                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $prep_period_end);
                         foreach ($prep_period as $dt) {
                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                                $day = (int)$dt->format('j');
-                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
+                                $day_num = (int)$dt->format('j');
+                                $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
                             }
                         }
                     }
                 }
 
-                // Logika untuk rentang waktu beres-beres
                 if (!empty($row['tanggal_beres'])) {
                     $main_event_end_dt = new DateTime($row['pengajuan_event_tanggal_selesai']);
                     $clear_end_dt = new DateTime($row['tanggal_beres']);
-                    if ($clear_end_dt > $main_event_end_dt) {
+                    if ($clear_end_dt >= $main_event_end_dt) {
                         $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
-                        $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
-                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
+                         if($clear_end_dt->format('Y-m-d') == $main_event_end_dt->format('Y-m-d')) {
+                            $clear_start_dt = $clear_end_dt;
+                        }
+                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), (clone $clear_end_dt)->modify('+1 day'));
                         foreach ($clear_period as $dt) {
                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                                $day = (int)$dt->format('j');
-                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
+                                $day_num = (int)$dt->format('j');
+                                $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
                             }
                         }
                     }
                 }
             }
             $stmt_calendar->close();
-        }
 
-        // Data Event Mahasiswa Mendatang (Hanya 1 Terdekat)
+            // Langkah 2: Bangun array $calendar_events final dengan aturan prioritas
+            foreach ($temp_events_by_day as $day => $types) {
+                if (!empty($types['ditmawa'])) {
+                    $calendar_events[$day] = $types['ditmawa'];
+                } else if (!empty($types['mahasiswa'])) {
+                    $calendar_events[$day] = $types['mahasiswa'];
+                }
+            }
+        }
+        // ======================= PERUBAHAN LOGIKA KALENDER SELESAI DI SINI =======================
+
         // Data Event Mahasiswa Mendatang (3 Terdekat)
         $stmt_events = $conn->prepare(
             "SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai 
             FROM pengajuan_event 
             WHERE pengajuan_status = 'Disetujui' 
-            AND pengaju_tipe = 'mahasiswa'  -- Tambahkan filter ini!
+            AND pengaju_tipe = 'mahasiswa'
             AND pengajuan_event_tanggal_selesai >= CURDATE() 
             ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC 
             LIMIT 3"  
@@ -125,7 +139,6 @@ try {
             WHERE pengaju_id = ? AND pengaju_tipe = 'mahasiswa' 
             ORDER BY pengajuan_tanggalEdit DESC LIMIT 1"
         );
-        // Bind param tetap sama karena user_id mahasiswa yang login
         if ($stmt_submissions && $user_id !== null) {
             $stmt_submissions->bind_param("i", $user_id);
             $stmt_submissions->execute();
@@ -184,10 +197,7 @@ try {
         .event-card-info { padding: 15px 20px; }
         .event-card-info h4 { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; }
         .event-card-info p { font-size: 0.9em; color: var(--text-light); }
-        /* Tambahkan ini di dalam tag <style> di mahasiswa_dashboard.php */
-        .event-card:not(:last-child) {
-            margin-bottom: 15px; /* Memberi jarak antar kartu */
-        }
+        .event-card:not(:last-child) { margin-bottom: 15px; }
         .submission-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; position: relative; border-left: 5px solid; }
         .submission-card:not(:last-child) { margin-bottom: 15px; }
         .submission-card-title { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; padding-right: 90px; }

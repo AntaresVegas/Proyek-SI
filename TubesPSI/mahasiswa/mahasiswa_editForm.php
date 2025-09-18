@@ -447,6 +447,109 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // --- START: VALIDASI FORM SEBELUM SUBMIT ---
+    document.getElementById('eventForm').addEventListener('submit', function(event) {
+        if (!isEditable) {
+            return; 
+        }
+
+        // 1. Validasi Input Teks dan Pilihan
+        const namaEventInput = document.getElementById('pengajuan_namaEvent');
+        const namaEventValue = namaEventInput.value.trim();
+        if (namaEventValue === '') {
+            alert('Nama Event wajib diisi.');
+            event.preventDefault();
+            namaEventInput.focus();
+            return;
+        }
+        if (namaEventValue.length < 4) {
+            alert('Nama Event harus memiliki minimal 4 karakter.');
+            event.preventDefault();
+            namaEventInput.focus();
+            return;
+        }
+
+        const typeKegiatanSelect = document.getElementById('pengajuan_TypeKegiatan_select');
+        const typeKegiatanValue = typeKegiatanSelect.value;
+        const typeLainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
+        const typeLainnyaValue = typeLainnyaInput.value.trim();
+
+        if (typeKegiatanValue === 'Lainnya' && typeLainnyaValue === '') {
+            alert('Harap sebutkan tipe kegiatan lainnya.');
+            event.preventDefault();
+            typeLainnyaInput.focus();
+            return;
+        }
+
+        // 2. Validasi Tanggal dan Jam
+        const tglMulai = document.getElementById('pengajuan_event_tanggal_mulai').value;
+        const tglSelesai = document.getElementById('pengajuan_event_tanggal_selesai').value;
+        const tglPersiapan = document.getElementById('tanggal_persiapan').value;
+        const tglBeres = document.getElementById('tanggal_beres').value;
+        const jamMulai = document.getElementById('pengajuan_event_jam_mulai').value;
+        const jamSelesai = document.getElementById('pengajuan_event_jam_selesai').value;
+
+        if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
+            alert('Error: Tanggal Selesai Acara tidak boleh mendahului Tanggal Mulai Acara.');
+            event.preventDefault();
+            document.getElementById('pengajuan_event_tanggal_selesai').focus();
+            return;
+        }
+        
+        if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
+            if (jamMulai && jamSelesai && jamSelesai <= jamMulai) {
+                alert('Error: Untuk acara di hari yang sama, Jam Selesai harus setelah Jam Mulai.');
+                event.preventDefault();
+                document.getElementById('pengajuan_event_jam_selesai').focus();
+                return;
+            }
+        }
+
+        if (tglBeres) {
+            if (tglSelesai && tglBeres < tglSelesai) {
+                alert('Error: Tanggal Beres-Beres tidak boleh mendahului Tanggal Selesai Acara.');
+                event.preventDefault();
+                document.getElementById('tanggal_beres').focus();
+                return;
+            }
+            if (tglMulai && tglBeres < tglMulai) {
+                 alert('Error: Tanggal Beres-Beres tidak boleh mendahului Tanggal Mulai Acara.');
+                event.preventDefault();
+                document.getElementById('tanggal_beres').focus();
+                return;
+            }
+        }
+        
+        if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) {
+            alert('Error: Tanggal Persiapan tidak boleh setelah Tanggal Mulai Acara.');
+            event.preventDefault();
+            document.getElementById('tanggal_persiapan').focus();
+            return;
+        }
+
+        // 3. Validasi Pemilihan Lokasi
+        const gedungChecked = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
+        if (gedungChecked === 0) {
+            alert('Error: Anda harus memilih minimal satu Gedung.');
+            event.preventDefault();
+            return;
+        }
+
+        const lantaiChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length;
+        if (document.getElementById('lantai_selection') && lantaiChecked === 0) {
+            alert('Error: Anda harus memilih minimal satu Lantai.');
+            event.preventDefault();
+            return;
+        }
+        
+        const ruanganChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length;
+        if (document.getElementById('ruangan_selection') && ruanganChecked === 0) {
+            alert('Error: Anda harus memilih minimal satu Ruangan.');
+            event.preventDefault();
+            return;
+        }
+    });
+    // --- END: VALIDASI FORM SEBELUM SUBMIT ---
 });
 </script>
 </body>

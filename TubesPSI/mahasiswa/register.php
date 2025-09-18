@@ -1,6 +1,7 @@
 <?php
 session_start();
-// Daftar jurusan untuk dropdown
+
+// Daftar jurusan lengkap (tidak diubah)
 $daftar_jurusan = [
     "Administrasi Bisnis", "Administrasi Publik", "Akuntansi", "Arsitektur",
     "D-3 Manajemen Perusahaan", "D-4 Agribisnis Pangan", "D-4 Bisnis Kreatif",
@@ -17,6 +18,65 @@ $daftar_jurusan = [
     "Profesi Insinyur", "Studi Humanitas", "Teknik Industri", "Teknik Kimia",
     "Teknik Mekatronika", "Teknik Sipil"
 ];
+
+// START: MODIFIKASI (KODE NPM DIPERBARUI SESUAI DAFTAR BARU)
+// Daftar ini berisi kode yang sudah fix dari Anda, dan sisa kode dari versi sebelumnya.
+$jurusan_to_npm_map = [
+    // -- Kode baru & yang diutamakan dari Anda --
+    "Hukum" => "605",
+    "Matematika" => "616",
+    "Fisika" => "617",
+    "Teknik Industri" => "613",
+    "Teknik Kimia" => "614",
+    "Informatika" => "618",
+    "Akuntansi" => "604",
+    "Hubungan Internasional" => "609",
+    "Administrasi Bisnis" => "608",
+    "D-3 Manajemen Perusahaan" => "503",
+    "Manajemen" => "603",
+    "Ekonomi Pembangunan" => "602",
+    "Teknik Sipil" => "610",
+    "Filsafat" => "612",
+    "Administrasi Publik" => "607",
+
+    // -- Sisa kode dari versi sebelumnya yang dipertahankan --
+    "Arsitektur" => "622",
+    "D-4 Agribisnis Pangan" => "624",
+    "D-4 Bisnis Kreatif" => "625",
+    "D-4 Teknologi Rekayasa Pangan" => "626",
+    "Doktor Arsitektur" => "627",
+    "Doktor Ekonomi" => "628",
+    "Doktor Hukum" => "629",
+    "Doktor Teknik Sipil" => "630",
+    "Kedokteran" => "633",
+    "Magister Administrasi Bisnis" => "634",
+    "Magister Arsitektur" => "635",
+    "Magister Filsafat Keilahian" => "636",
+    "Magister Hubungan Internasional" => "637",
+    "Magister Hukum" => "638",
+    "Magister Manajemen" => "639",
+    "Magister Pendidikan Ilmu Pengetahuan Alam" => "640",
+    "Magister Studi Pembangunan" => "641",
+    "Magister Teknik Industri" => "642",
+    "Magister Teknik Kimia" => "643",
+    "Magister Teknik Sipil" => "644",
+    "Pendidikan Bahasa Inggris" => "646",
+    "Pendidikan Fisika" => "647",
+    "Pendidikan Guru Sekolah Dasar" => "648",
+    "Pendidikan Kimia" => "649",
+    "Pendidikan Matematika" => "650",
+    "Pendidikan Teknik Informatika & Komputer" => "651",
+    "Profesi Arsitek" => "652",
+    "Profesi Dokter" => "653",
+    "Profesi Insinyur" => "654",
+    "Studi Humanitas" => "655",
+    "Teknik Mekatronika" => "656"
+];
+
+
+// Buat mapping sebaliknya (NPM ke Jurusan) untuk JavaScript
+$npm_to_jurusan_map = array_flip($jurusan_to_npm_map);
+// END: MODIFIKASI
 
 // Ganti path ini jika lokasi gambar background berbeda
 $background_path = '../img/backgroundUnpar.jpeg'; 
@@ -63,14 +123,6 @@ $background_path = '../img/backgroundUnpar.jpeg';
             <input type="text" id="mahasiswa_nama" name="mahasiswa_nama" required value="<?php echo isset($_SESSION['old_data']['nama']) ? htmlspecialchars($_SESSION['old_data']['nama']) : ''; ?>">
         </div>
         <div class="form-group">
-            <label for="mahasiswa_npm">NPM</label>
-            <input type="text" id="mahasiswa_npm" name="mahasiswa_npm" required value="<?php echo isset($_SESSION['old_data']['npm']) ? htmlspecialchars($_SESSION['old_data']['npm']) : ''; ?>">
-        </div>
-        <div class="form-group">
-            <label for="mahasiswa_email">Email</label>
-            <input type="email" id="mahasiswa_email" name="mahasiswa_email" required value="<?php echo isset($_SESSION['old_data']['email']) ? htmlspecialchars($_SESSION['old_data']['email']) : ''; ?>">
-        </div>
-        <div class="form-group">
             <label for="mahasiswa_jurusan">Jurusan</label>
             <select id="mahasiswa_jurusan" name="mahasiswa_jurusan" required>
                 <option value="">-- Pilih Jurusan --</option>
@@ -81,7 +133,15 @@ $background_path = '../img/backgroundUnpar.jpeg';
                 <?php endforeach; ?>
             </select>
         </div>
-        <?php unset($_SESSION['old_data']); // Hapus data lama setelah ditampilkan ?>
+        <div class="form-group">
+            <label for="mahasiswa_npm">NPM</label>
+            <input type="text" id="mahasiswa_npm" name="mahasiswa_npm" required value="<?php echo isset($_SESSION['old_data']['npm']) ? htmlspecialchars($_SESSION['old_data']['npm']) : ''; ?>" maxlength="10" pattern="\d*">
+        </div>
+        <div class="form-group">
+            <label for="mahasiswa_email">Email</label>
+            <input type="email" id="mahasiswa_email" name="mahasiswa_email" required value="<?php echo isset($_SESSION['old_data']['email']) ? htmlspecialchars($_SESSION['old_data']['email']) : ''; ?>">
+        </div>
+        <?php unset($_SESSION['old_data']); ?>
         <button type="submit" name="register">Kirim Kode Verifikasi</button>
     </form>
 
@@ -89,5 +149,49 @@ $background_path = '../img/backgroundUnpar.jpeg';
         <a href="../index.php">Kembali ke Halaman Utama</a>
     </div>
   </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Ambil data mapping dari PHP
+    const jurusanToNpm = <?php echo json_encode($jurusan_to_npm_map); ?>;
+    const npmToJurusan = <?php echo json_encode($npm_to_jurusan_map); ?>;
+
+    const jurusanSelect = document.getElementById('mahasiswa_jurusan');
+    const npmInput = document.getElementById('mahasiswa_npm');
+
+    // Event listener untuk dropdown JURUSAN
+    jurusanSelect.addEventListener('change', function() {
+        const selectedJurusan = this.value;
+        const currentNpmValue = npmInput.value;
+        const sisaNpm = currentNpmValue.length > 3 ? currentNpmValue.substring(3) : '';
+
+        if (jurusanToNpm[selectedJurusan]) {
+            const prefix = jurusanToNpm[selectedJurusan];
+            npmInput.value = prefix + sisaNpm;
+        }
+    });
+
+    // Event listener untuk input NPM
+    npmInput.addEventListener('input', function() {
+        const typedNpm = this.value;
+
+        if (typedNpm.length >= 3) {
+            const prefix = typedNpm.substring(0, 3);
+            
+            if (npmToJurusan[prefix]) {
+                // Jika prefix valid, pilih jurusan yang sesuai
+                jurusanSelect.value = npmToJurusan[prefix];
+            } else {
+                // Jika prefix TIDAK valid, kosongkan pilihan jurusan
+                jurusanSelect.value = '';
+            }
+        } else {
+            // Jika NPM kurang dari 3 digit, kosongkan pilihan jurusan
+            jurusanSelect.value = '';
+        }
+    });
+});
+</script>
+
 </body>
 </html>

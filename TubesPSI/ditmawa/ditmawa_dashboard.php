@@ -1,151 +1,165 @@
-    <?php
-    session_start();
+<?php
+session_start();
 
-    // Check if user is logged in and is a ditmawa
-    if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
-        header("Location: ../index.php"); // Redirect to login page if not authorized
-        exit();
-    }
+// Check if user is logged in and is a ditmawa
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
+    header("Location: ../index.php"); // Redirect to login page if not authorized
+    exit();
+}
 
-    $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
-    $user_id = $_SESSION['user_id'] ?? 'No ID';
+$nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
+$user_id = $_SESSION['user_id'] ?? 'No ID';
 
-    require_once('../config/db_connection.php');
+require_once('../config/db_connection.php');
 
-    // Initialize statistics variables
-    $total_events_this_month = 0;
-    $completed_events_this_month = 0;
-    $pending_approvals = 0;
+// Initialize statistics variables
+$total_events_this_month = 0;
+$completed_events_this_month = 0;
+$pending_approvals = 0;
 
-    // Current month and year for calendar and stats
-    $currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
-    $currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
-    $today = date('Y-m-d'); // Get current date for highlighting
+// Current month and year for calendar and stats
+$currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
+$currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+$today = date('Y-m-d'); // Get current date for highlighting
 
-    if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; } 
-    elseif ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
+if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; } 
+elseif ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
 
-    $date = new DateTime("$currentYear-$currentMonth-01");
-    $daysInMonth = $date->format('t');
-    $firstDayOfWeek = $date->format('N'); // 1 for Monday, 7 for Sunday
+$date = new DateTime("$currentYear-$currentMonth-01");
+$daysInMonth = $date->format('t');
+$firstDayOfWeek = $date->format('N'); // 1 for Monday, 7 for Sunday
 
-    $prevMonth = $currentMonth - 1; $prevYear = $currentYear;
-    if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
+$prevMonth = $currentMonth - 1; $prevYear = $currentYear;
+if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
 
-    $nextMonth = $currentMonth + 1; $nextYear = $currentYear;
-    if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
+$nextMonth = $currentMonth + 1; $nextYear = $currentYear;
+if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 
-    $calendar_events = [];
+$calendar_events = [];
 
-    try {
-        if (isset($conn) && $conn->ping()) {
-            // Count total events starting this month
-            $stmt_events_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?");
-            $stmt_events_month->bind_param("ii", $currentMonth, $currentYear);
-            $stmt_events_month->execute();
-            $result_events_month = $stmt_events_month->get_result();
-            if ($result_events_month) {
-                $total_events_this_month = $result_events_month->fetch_assoc()['total'];
-            }
-            $stmt_events_month->close();
+try {
+    if (isset($conn) && $conn->ping()) {
+        // Count total events starting this month
+        $stmt_events_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?");
+        $stmt_events_month->bind_param("ii", $currentMonth, $currentYear);
+        $stmt_events_month->execute();
+        $result_events_month = $stmt_events_month->get_result();
+        if ($result_events_month) {
+            $total_events_this_month = $result_events_month->fetch_assoc()['total'];
+        }
+        $stmt_events_month->close();
 
-            // Count completed events this month
-            $stmt_completed_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ? AND pengajuan_event_tanggal_selesai < ?");
-            $stmt_completed_month->bind_param("iis", $currentMonth, $currentYear, $today);
-            $stmt_completed_month->execute();
-            $result_completed_month = $stmt_completed_month->get_result();
-            if ($result_completed_month) {
-                $completed_events_this_month = $result_completed_month->fetch_assoc()['total'];
-            }
-            $stmt_completed_month->close();
+        // Count completed events this month
+        $stmt_completed_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ? AND pengajuan_event_tanggal_selesai < ?");
+        $stmt_completed_month->bind_param("iis", $currentMonth, $currentYear, $today);
+        $stmt_completed_month->execute();
+        $result_completed_month = $stmt_completed_month->get_result();
+        if ($result_completed_month) {
+            $completed_events_this_month = $result_completed_month->fetch_assoc()['total'];
+        }
+        $stmt_completed_month->close();
 
-            // Count pending event approvals
-            $result_pending = $conn->query("SELECT COUNT(*) as total FROM pengajuan_event WHERE pengajuan_status = 'Diajukan'");
-            if ($result_pending) {
-                $pending_approvals = $result_pending->fetch_assoc()['total'];
-            }
+        // Count pending event approvals
+        $result_pending = $conn->query("SELECT COUNT(*) as total FROM pengajuan_event WHERE pengajuan_status = 'Diajukan'");
+        if ($result_pending) {
+            $pending_approvals = $result_pending->fetch_assoc()['total'];
+        }
 
-            $stmt_calendar_events = $conn->prepare("
-                SELECT 
-                    pe.pengajuan_namaEvent,
-                    pe.pengajuan_event_tanggal_mulai,
-                    pe.pengajuan_event_tanggal_selesai,
-                    pe.tanggal_persiapan,
-                    pe.tanggal_beres
-                FROM pengajuan_event pe
-                WHERE pe.pengajuan_status = 'Disetujui'
-                AND (
-                    (MONTH(pe.pengajuan_event_tanggal_mulai) = ? AND YEAR(pe.pengajuan_event_tanggal_mulai) = ?) OR
-                    (MONTH(pe.pengajuan_event_tanggal_selesai) = ? AND YEAR(pe.pengajuan_event_tanggal_selesai) = ?) OR
-                    (MONTH(pe.tanggal_persiapan) = ? AND YEAR(pe.tanggal_persiapan) = ?) OR
-                    (MONTH(pe.tanggal_beres) = ? AND YEAR(pe.tanggal_beres) = ?)
-                )
-            ");
+        // ======================= PERUBAHAN LOGIKA KALENDER DIMULAI DI SINI =======================
+        $stmt_calendar_events = $conn->prepare("
+            SELECT 
+                pe.pengajuan_namaEvent,
+                pe.pengajuan_event_tanggal_mulai,
+                pe.pengajuan_event_tanggal_selesai,
+                pe.tanggal_persiapan,
+                pe.tanggal_beres,
+                pe.pengaju_tipe -- Ambil tipe pengaju untuk prioritas
+            FROM pengajuan_event pe
+            WHERE pe.pengajuan_status = 'Disetujui'
+            AND (
+                (MONTH(pe.pengajuan_event_tanggal_mulai) = ? AND YEAR(pe.pengajuan_event_tanggal_mulai) = ?) OR
+                (MONTH(pe.pengajuan_event_tanggal_selesai) = ? AND YEAR(pe.pengajuan_event_tanggal_selesai) = ?) OR
+                (MONTH(pe.tanggal_persiapan) = ? AND YEAR(pe.tanggal_persiapan) = ?) OR
+                (MONTH(pe.tanggal_beres) = ? AND YEAR(pe.tanggal_beres) = ?)
+            )
+        ");
 
-            if ($stmt_calendar_events) {
-                $stmt_calendar_events->bind_param("iiiiiiii", $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear);
-                $stmt_calendar_events->execute();
-                $result_calendar_events = $stmt_calendar_events->get_result();
+        if ($stmt_calendar_events) {
+            $stmt_calendar_events->bind_param("iiiiiiii", $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear, $currentMonth, $currentYear);
+            $stmt_calendar_events->execute();
+            $result_calendar_events = $stmt_calendar_events->get_result();
+            
+            $temp_events_by_day = []; // Array sementara untuk menampung semua event
+
+            // Langkah 1: Kumpulkan semua event dan kelompokkan berdasarkan hari dan tipe (ditmawa/mahasiswa)
+            while ($row = $result_calendar_events->fetch_assoc()) {
+                $event_pengaju_tipe = $row['pengaju_tipe'];
+
+                // Proses Tanggal Event Utama
+                $period = new DatePeriod(new DateTime($row['pengajuan_event_tanggal_mulai']), new DateInterval('P1D'), (new DateTime($row['pengajuan_event_tanggal_selesai']))->modify('+1 day'));
+                foreach ($period as $day) {
+                    if ($day->format('n') == $currentMonth && $day->format('Y') == $currentYear) {
+                        $day_num = $day->format('j');
+                        $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
+                    }
+                }
                 
-                // Mengumpulkan semua event unik berdasarkan nama untuk diproses
-                $events_to_process = [];
-                while ($row = $result_calendar_events->fetch_assoc()) {
-                    $events_to_process[$row['pengajuan_namaEvent']] = $row;
+                // Logika persiapan
+                if (!empty($row['tanggal_persiapan'])) {
+                    $prep_start_dt = new DateTime($row['tanggal_persiapan']);
+                    $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
+                    if ($prep_start_dt <= $main_event_start_dt) { // Diubah ke <= untuk mencakup hari yang sama
+                        $prep_period_end = (clone $main_event_start_dt)->modify('+1 day');
+                        if($prep_start_dt->format('Y-m-d') == $main_event_start_dt->format('Y-m-d')) {
+                            $prep_period_end = (clone $prep_start_dt)->modify('+1 day');
+                        }
+                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $prep_period_end);
+                        foreach ($prep_period as $dt) {
+                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
+                                $day_num = (int)$dt->format('j');
+                                $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
+                             }
+                        }
+                    }
                 }
 
-                foreach ($events_to_process as $row) {
-                    // Proses tanggal event utama
-                    $eventStartDate = new DateTime($row['pengajuan_event_tanggal_mulai']);
-                    $eventEndDate = new DateTime($row['pengajuan_event_tanggal_selesai']);
-                    $period = new DatePeriod($eventStartDate, new DateInterval('P1D'), (clone $eventEndDate)->modify('+1 day')); 
-
-                    foreach ($period as $dt) {
-                        if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                            $day = (int)$dt->format('j');
-                            $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
+                // Logika beres-beres
+                if (!empty($row['tanggal_beres'])) {
+                    $main_event_end_dt = new DateTime($row['pengajuan_event_tanggal_selesai']);
+                    $clear_end_dt = new DateTime($row['tanggal_beres']);
+                     if ($clear_end_dt >= $main_event_end_dt) { // Diubah ke >= untuk mencakup hari yang sama
+                        $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
+                        if($clear_end_dt->format('Y-m-d') == $main_event_end_dt->format('Y-m-d')) {
+                            $clear_start_dt = $clear_end_dt;
                         }
-                    }
-
-                    // Logika untuk rentang waktu persiapan
-                    if (!empty($row['tanggal_persiapan'])) {
-                        $prep_start_dt = new DateTime($row['tanggal_persiapan']);
-                        $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
-                        if ($prep_start_dt < $main_event_start_dt) {
-                            $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
-                            foreach ($prep_period as $dt) {
-                                if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                                    $day = (int)$dt->format('j');
-                                    $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Logika untuk rentang waktu beres-beres
-                    if (!empty($row['tanggal_beres'])) {
-                        $main_event_end_dt = new DateTime($row['pengajuan_event_tanggal_selesai']);
-                        $clear_end_dt = new DateTime($row['tanggal_beres']);
-                        if ($clear_end_dt > $main_event_end_dt) {
-                            $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
-                            $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
-                            $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
-                            foreach ($clear_period as $dt) {
-                                if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                                    $day = (int)$dt->format('j');
-                                    $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
-                                }
+                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), (clone $clear_end_dt)->modify('+1 day'));
+                        foreach ($clear_period as $dt) {
+                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
+                                $day_num = (int)$dt->format('j');
+                                $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
                             }
                         }
                     }
                 }
-                $stmt_calendar_events->close();
+            }
+            $stmt_calendar_events->close();
+
+            // Langkah 2: Bangun array $calendar_events final dengan menerapkan aturan prioritas
+            foreach ($temp_events_by_day as $day => $types) {
+                if (!empty($types['ditmawa'])) { // Prioritaskan event institusional (ditmawa)
+                    $calendar_events[$day] = $types['ditmawa'];
+                } else if (!empty($types['mahasiswa'])) { // Jika tidak ada, baru tampilkan event mahasiswa
+                    $calendar_events[$day] = $types['mahasiswa'];
+                }
             }
         }
-    } catch (Exception $e) {
-        error_log("Error in Ditmawa Dashboard: " . $e->getMessage());
+        // ======================= PERUBAHAN LOGIKA KALENDER SELESAI DI SINI =======================
     }
-    $conn->close();
-    ?>
+} catch (Exception $e) {
+    error_log("Error in Ditmawa Dashboard: " . $e->getMessage());
+}
+$conn->close();
+?>
 
     <!DOCTYPE html>
     <html lang="id">
@@ -169,14 +183,14 @@
                 display: flex;
                 flex-direction: column;
             }
-            .navbar { display: flex; justify-content: space-between; align-items: center; background: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-            .navbar-left { display: flex; align-items: center; gap: 25px; }
+            .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
+            .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
             .navbar-logo { width: 50px; height: 50px; }
             .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
-            .navbar-menu { display: flex; list-style: none; gap: 25px; }
-            .navbar-menu li a { text-decoration: none; color:rgb(250, 250, 250); font-weight: 500; }
-            .navbar-menu li a.active { color: #007bff; }     
-            .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
+            .navbar-menu { list-style: none; }
+            .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
+            .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+            .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }
             .icon { font-size: 20px; cursor: pointer; }
             .main-content { flex-grow: 1; }
             .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
