@@ -35,6 +35,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
             background: #f4f6f9; /* Light background for content page */
             min-height: 100vh;
             color: #333;
+            background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;
         }
 
         .navbar {
@@ -71,24 +72,9 @@ $isLoggedIn = isset($_SESSION['user_id']);
             line-height: 1.2;
         }
 
-        .navbar-menu {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .navbar-menu li a {
-            text-decoration: none;
-            color:rgb(253, 253, 253);
-            font-weight: 500;
-            font-size: 15px;
-            transition: color 0.3s;
-        }
-
-        .navbar-menu li a:hover {
-            color: #007bff;
-        }
-
+        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right {
             display: flex;
             align-items: center;
@@ -205,6 +191,66 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 font-size: 17px;
             }
         }
+        :root {
+            --primary-color: rgb(2, 71, 25); --secondary-color: #0d6efd; --light-gray: #f8f9fa;
+            --text-dark: #212529; --text-light: #6c757d; --border-color: #dee2e6;
+            --status-green: #198754; --status-red: #dc3545; --status-yellow: #ffc107;
+        }
+        /* ===== FOOTER STYLES ===== */
+        .page-footer {
+            background-color: var(--primary-color);
+            color: #e9ecef;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-logo {
+            width: 60px;
+            height: 60px;
+        }
+        .footer-left h4 {
+            font-size: 1.2em;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .footer-right ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-right li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
 
     </style>
 </head>
@@ -220,21 +266,20 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li> 
-        <li><a href="#" class="active">Rules</a></li>
-        <li><a href="#">Form</a></li>
-        <li><a href="#">Event</a></li>
-        <li><a href="#">Laporan</a></li>
+        <li><a href="mahasiswa_rules.php" class="active">Rules</a></li>
+        <li><a href="mahasiswa_pengajuan.php">Form</a></li>
+        <li><a href="mahasiswa_event.php">Event</a></li>
+        <li><a href="mahasiswa_laporan.php">Laporan</a></li>
+        <li><a href="mahasiswa_history.php">History</a></li>
+
     </ul>
 
-    <div class="navbar-right">
-        <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
-        <i class="fas fa-user-circle icon"></i>
-        <?php if ($isLoggedIn): ?>
-            <i class="fas fa-bell icon"></i>
-            <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
-        <?php else: ?>
-            <a href="../index.php" style="color: #2c3e50; text-decoration: none; font-weight: 500;">Login</a>
-        <?php endif; ?>
+<div class="navbar-right">
+        <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
+            <i class="fas fa-user-circle icon"></i>
+        </a>
+        <a href="logout.php"><i class="fas fa-right-from-bracket icon"></i></a>
     </div>
 </nav>
 
@@ -284,7 +329,32 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <p><strong>Pemberitahuan:</strong> Panitia wajib memberitahukan pihak kampus jika ada perubahan atau pembatalan event.</p>
         <p><strong>Kewenangan Universitas:</strong> Pihak universitas berhak membatalkan event jika ditemukan pelanggaran peraturan.</p>
     </div>
+    
 </div>
-
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
+            </div>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
+
 </html>
