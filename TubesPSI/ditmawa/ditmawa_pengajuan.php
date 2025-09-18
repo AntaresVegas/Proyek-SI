@@ -130,16 +130,16 @@ $conn->close();
         .navbar-menu li a.active { color: #007bff; }    
         .icon { font-size: 20px; cursor: pointer; color: white; }
         a { text-decoration: none; }
-        .page-footer { background-color: var(--ditmawa-primary); color: #fff; padding: 40px 0; margin-top: auto; }
-        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
-        .footer-left h4, .footer-left h3 { color: black; }
-        .footer-right ul { list-style: none; padding: 0; color: black; }
-        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
-        .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
-        .footer-right .social-icons a:hover { color: #fff; }
+            .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
+            .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
+            .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+            .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+            .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
+            .footer-right .social-icons a:hover { color: #fff; }
         .navbar-right a[href="logout.php"] .icon {
             color: black;
             transition: color 0.3s; /* Opsional: agar perubahan warna saat hover lebih halus */
@@ -269,28 +269,26 @@ $conn->close();
         </div>
     </div>
 
-    <footer>
-        <div class="page-footer">
-            <div class="footer-container">
-                <div class="footer-left">
-                    <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
-                    <div>
-                        <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
-                        <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
-                    </div>
+    <footer class="page-footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+                <div>
+                    <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                    <h3 style="font-weight: bold; margin-top: 5px;color :black">DIREKTORAT KEMAHASISWAAN</h3>
                 </div>
-                <div class="footer-right">
-                    <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
-                        <li><i class="fas fa-phone-alt"></i> (022) 203 2555 ext. 100140</li>
-                        <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
-                    </ul>
-                    <div class="social-icons">
+            </div>
+            <div class="footer-right">
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                    <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                    <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+                </ul>
+                <div class="social-icons">
                     <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                     <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-                </div>
                 </div>
             </div>
         </div>

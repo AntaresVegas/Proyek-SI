@@ -88,28 +88,15 @@ $conn->close();
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
-        body { 
-            font-family: 'Poppins', 'Segoe UI', sans-serif; 
-            background: var(--bg-light); 
-            padding-top: 80px; 
-            background-image: url('../img/backgroundUnpar.jpeg'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed;
-            color: var(--text-dark);
-        }
-
-        /* Navbar & Footer (Sama seperti sebelumnya, tidak diubah) */
-        .navbar { display: flex; justify-content: space-between; align-items: center; background:var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
-        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 10px; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--light-gray); padding-top: 80px;  background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; min-height: 100%; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
-        .navbar-menu { list-style: none; gap: 25px;}
-        .navbar-menu li a { text-decoration: none; color:white; font-weight: 500; }
+        .navbar-title { color: white; line-height: 1.2;font-size: 14px; }
+        .navbar-menu { display: flex; list-style: none; gap: 25px; }
+        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
-        .navbar-right { color:white; }
-        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
-        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color: white; }
         /* ... Sisa CSS Navbar & Footer */
 
         .container { 
@@ -299,6 +286,26 @@ $conn->close();
         .upload-message.success { background-color: var(--accent-color); color: white; }
         .upload-message.error { background-color: #dc3545; color: white; }
         .upload-message.show { opacity: 1; }
+        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .footer-right .social-icons a {
+            color: #e9ecef;
+            font-size: 1.5em;
+            transition: color 0.3s;
+        }
+        .footer-right .social-icons a:hover {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -386,8 +393,29 @@ $conn->close();
 <div id="uploadMessage" class="upload-message <?php echo !empty($message) ? 'show ' . $message_type : ''; ?>"><?php echo htmlspecialchars($message); ?></div>
 
 <footer class="page-footer">
-    </footer>
-
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
+            </div>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 <script>
     // Script notifikasi (sama seperti sebelumnya)
     window.onload = function() { const messageDiv = document.getElementById('uploadMessage'); if (messageDiv.textContent.trim() !== '') { setTimeout(() => { messageDiv.classList.add('show'); setTimeout(() => { messageDiv.classList.remove('show'); if (window.history.replaceState) { const url = new URL(window.location.href); url.searchParams.delete('status'); url.searchParams.delete('msg'); window.history.replaceState({}, document.title, url.href); } }, 5000); }, 100); } };
