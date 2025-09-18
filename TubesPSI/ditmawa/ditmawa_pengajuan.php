@@ -118,28 +118,26 @@ $conn->close();
         .checkbox-item input[type="checkbox"]:checked + label::before { background-color: var(--ditmawa-primary); border-color: var(--ditmawa-primary); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e"); background-position: center; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--ditmawa-primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; margin-left: 10px; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left { display: flex; align-items: center; gap: 25px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
-        .navbar-menu { display: flex; list-style: none; gap: 25px; }
-        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: var(--text-dark); }
-        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
-        .navbar-right .user-name { color: white; }
-        .navbar-menu li a.active { color: #007bff; }    
+        .navbar-menu { list-style: none; }
+        .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }  
         .icon { font-size: 20px; cursor: pointer; color: white; }
         a { text-decoration: none; }
-        .page-footer { background-color: var(--ditmawa-primary); color: #fff; padding: 40px 0; margin-top: auto; }
-        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
-        .footer-left h4, .footer-left h3 { color: black; }
-        .footer-right ul { list-style: none; padding: 0; color: black; }
-        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
-        .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
-        .footer-right .social-icons a:hover { color: #fff; }
+            .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
+            .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
+            .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+            .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+            .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
+            .footer-right .social-icons a:hover { color: #fff; }
         .navbar-right a[href="logout.php"] .icon {
             color: black;
             transition: color 0.3s; /* Opsional: agar perubahan warna saat hover lebih halus */
@@ -188,13 +186,12 @@ $conn->close();
                         <label for="nama_event">Nama Event</label>
                         <input type="text" id="nama_event" name="nama_event" 
                                placeholder="Contoh: Rapat Koordinasi Awal Semester" 
-                               required 
-                               minlength="5" 
-                               title="Nama event harus terdiri dari minimal 5 karakter.">
+                               required>
                     </div>
                     <div class="form-group">
                         <label for="tipe_kegiatan_select">Tipe Kegiatan</label>
                         <select id="tipe_kegiatan_select" name="tipe_kegiatan_select" required>
+                            <option value="">-- Pilih Tipe --</option>
                             <option value="Institusional">Institusional</option>
                             <option value="Rapat">Rapat</option>
                             <option value="Seminar">Seminar</option>
@@ -269,112 +266,105 @@ $conn->close();
         </div>
     </div>
 
-    <footer>
-        <div class="page-footer">
-            <div class="footer-container">
-                <div class="footer-left">
-                    <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
-                    <div>
-                        <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
-                        <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
-                    </div>
+    <footer class="page-footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+                <div>
+                    <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                    <h3 style="font-weight: bold; margin-top: 5px;color :black">DIREKTORAT KEMAHASISWAAN</h3>
                 </div>
-                <div class="footer-right">
-                    <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
-                        <li><i class="fas fa-phone-alt"></i> (022) 203 2555 ext. 100140</li>
-                        <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
-                    </ul>
-                    <div class="social-icons">
+            </div>
+            <div class="footer-right">
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                    <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                    <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+                </ul>
+                <div class="social-icons">
                     <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                     <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-                </div>
                 </div>
             </div>
         </div>
     </footer>
     
 <script>
-    // ================================================
-    // ## PENAMBAHAN: VALIDASI FORM DI SISI CLIENT (JAVASCRIPT) ##
-    // ================================================
+    // =================================================================
+    // ## START: BLOK JAVASCRIPT YANG TELAH DIPERBAIKI & DILENGKAPI ##
+    // =================================================================
+    
+    // --- 1. VALIDASI FORM SAAT SUBMIT ---
     document.getElementById('event-form').addEventListener('submit', function(event) {
-        // --- 1. Validasi Nama Event ---
+        // Fungsi bantuan untuk menampilkan pesan error dan menghentikan submit
+        const stopSubmission = (message, element) => {
+            alert('Validasi Gagal: ' + message);
+            if (element) {
+                element.focus();
+            }
+            event.preventDefault();
+        };
+
+        // --- Validasi Detail Event ---
         const namaEventInput = document.getElementById('nama_event');
         if (namaEventInput.value.trim().length < 5) {
-            alert('Validasi Gagal: Nama event harus terdiri dari minimal 5 karakter.');
-            namaEventInput.focus();
-            event.preventDefault(); // Mencegah form submit
-            return;
+            return stopSubmission('Nama event harus terdiri dari minimal 5 karakter.', namaEventInput);
         }
 
-        // --- 2. Validasi Tanggal dan Jam ---
+        const tipeSelect = document.getElementById('tipe_kegiatan_select');
+        const tipeLainnyaInput = document.getElementById('tipe_kegiatan_lainnya');
+        if (tipeSelect.value === 'Lainnya' && tipeLainnyaInput.value.trim() === '') {
+            return stopSubmission('Anda memilih "Lainnya", maka wajib menyebutkan tipe kegiatannya.', tipeLainnyaInput);
+        }
+        
+        // --- Validasi Jadwal (Tanggal dan Jam) ---
         const tglMulai = document.getElementById('tanggal_mulai').value;
         const tglSelesai = document.getElementById('tanggal_selesai').value;
-        const tglPersiapan = document.getElementById('tanggal_persiapan').value;
-        const tglBeres = document.getElementById('tanggal_beres').value;
         const jamMulai = document.getElementById('jam_mulai').value;
         const jamSelesai = document.getElementById('jam_selesai').value;
+        const tglPersiapan = document.getElementById('tanggal_persiapan').value;
+        const tglBeres = document.getElementById('tanggal_beres').value;
 
-        if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
-            alert('Validasi Gagal: Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.');
-            event.preventDefault(); vs Jam Selesai ---
-        if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
-            if (jamMulai && jamSelesai && jamSelesai < jamMulai) {
-                alert('Validasi Gagal: Untuk event di hari yang sama, Jam Selesai tidak boleh lebih awal dari Jam Mulai.');
-                event.preventDefault();
-                document.getElementById('jam_selesai').focus();
-                return;
-            return;
+        if (tglSelesai < tglMulai) {
+            return stopSubmission('Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.', document.getElementById('tanggal_selesai'));
         }
 
-        // --- PENAMBAHAN BARU: Validasi Jam Mulai
-            }
+        if (tglMulai === tglSelesai && jamSelesai <= jamMulai) {
+            return stopSubmission('Untuk event di hari yang sama, Jam Selesai harus setelah Jam Mulai.', document.getElementById('jam_selesai'));
         }
-        // --- AKHIR PENAMBAHAN BARU ---
+
+        if (tglBeres && tglSelesai && tglBeres < tglSelesai) {
+            return stopSubmission('Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Selesai Event.', document.getElementById('tanggal_beres'));
+        }
         
-        // Cek tanggal beres-beres
-        if (tglBeres) {
-            if (tglSelesai && tglBeres < tglSelesai) {
-                alert('Validasi Gagal: Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Selesai Event.');
-                event.preventDefault();
-                return;
-            }
-             if (tglMulai && tglBeres < tglMulai) {
-                alert('Validasi Gagal: Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Mulai Event.');
-                event.preventDefault();
-                return;
-            }
+        if (tglBeres && tglMulai && tglBeres < tglMulai) {
+            return stopSubmission('Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Mulai Event.', document.getElementById('tanggal_beres'));
         }
-
-        // Cek tanggal persiapan
+        
         if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) {
-            alert('Validasi Gagal: Tanggal Mulai Persiapan tidak boleh setelah Tanggal Mulai Event.');
-            event.preventDefault();
-            return;
+            return stopSubmission('Tanggal Mulai Persiapan tidak boleh setelah Tanggal Mulai Event.', document.getElementById('tanggal_persiapan'));
         }
 
-        // --- 3. Validasi Pemilihan Lokasi ---
-        const gedungChecked = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length > 0;
-        const lantaiChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length > 0;
-        const ruanganChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length > 0;
-
-        // Jika user mulai memilih lokasi (memilih gedung), maka lantai dan ruangan menjadi wajib.
-        // Jika tidak ada gedung yang dipilih, kita asumsikan event tidak memerlukan ruangan.
-        if (gedungChecked && (!lantaiChecked || !ruanganChecked)) {
-            if (!lantaiChecked) {
-                 alert('Validasi Gagal: Anda telah memilih Gedung, silakan pilih minimal satu Lantai.');
-            } else { // Ini berarti lantai sudah dipilih, tapi ruangan belum
-                 alert('Validasi Gagal: Anda telah memilih Lantai, silakan pilih minimal satu Ruangan.');
+        // --- Validasi Pemilihan Lokasi ---
+        const gedungCheckedCount = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
+        if (gedungCheckedCount > 0) {
+            const lantaiIsPopulated = !!document.getElementById('lantai_selection');
+            const lantaiIsChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length > 0;
+            if (!lantaiIsPopulated || !lantaiIsChecked) {
+                return stopSubmission('Anda telah memilih Gedung, maka wajib memilih minimal satu Lantai.');
             }
-            event.preventDefault();
-            return;
+
+            const ruanganIsPopulated = !!document.getElementById('ruangan_selection');
+            const ruanganIsChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length > 0;
+            if (!ruanganIsPopulated || !ruanganIsChecked) {
+                return stopSubmission('Anda telah memilih Lantai, maka wajib memilih minimal satu Ruangan.');
+            }
         }
     });
 
-    // Script lainnya (Tipe Kegiatan & Dynamic Checkbox) tetap sama
+    // --- 2. LOGIKA UNTUK TIPE KEGIATAN "LAINNYA" ---
     const tipeKegiatanSelect = document.getElementById('tipe_kegiatan_select');
     const lainnyaContainer = document.getElementById('lainnya_container');
     const lainnyaInput = document.getElementById('tipe_kegiatan_lainnya');
@@ -389,11 +379,13 @@ $conn->close();
         }
     });
 
+    // --- 3. LOGIKA UNTUK DYNAMIC CHECKBOX (GEDUNG -> LANTAI -> RUANGAN) ---
     const gedungSelection = document.getElementById('gedung_selection');
     const lantaiContainer = document.getElementById('lantai_selection_container');
     const ruanganContainer = document.getElementById('ruangan_selection_container');
     const lantaiLoader = document.getElementById('lantai_loader');
     const ruanganLoader = document.getElementById('ruangan_loader');
+    
     gedungSelection.addEventListener('change', function() {
         const selectedGedungIds = Array.from(gedungSelection.querySelectorAll('input:checked')).map(cb => cb.value);
         lantaiContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Gedung terlebih dahulu.</div>';
@@ -406,6 +398,7 @@ $conn->close();
             fetchData('lantai', selectedGedungIds);
         }
     });
+
     function handleLantaiChange() {
         const selectedLantaiIds = Array.from(document.querySelectorAll('#lantai_selection input:checked')).map(cb => cb.value);
         ruanganContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div>';
@@ -413,6 +406,7 @@ $conn->close();
             fetchData('ruangan', selectedLantaiIds);
         }
     }
+
     function fetchData(type, ids) {
         const loader = (type === 'lantai') ? lantaiLoader : ruanganLoader;
         const container = (type === 'lantai') ? lantaiContainer : ruanganContainer;
@@ -426,9 +420,7 @@ $conn->close();
                 return response.json();
             })
             .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                if (data.error) { throw new Error(data.error); }
                 if (data.length > 0) {
                     let html = `<div id="${type}_selection" class="checkbox-group-modern">`;
                     data.forEach(item => {
@@ -452,12 +444,15 @@ $conn->close();
             })
             .catch(error => {
                 console.error(`Error fetching ${type}:`, error);
-                container.innerHTML = `<div class="checkbox-placeholder" style="color:red;">Gagal memuat data ${type}. Periksa console untuk detail.</div>`;
+                container.innerHTML = `<div class="checkbox-placeholder" style="color:red;">Gagal memuat data ${type}.</div>`;
             })
             .finally(() => {
                 loader.style.display = 'none';
             });
     }
+    // =================================================================
+    // ## END: BLOK JAVASCRIPT YANG TELAH DIPERBAIKI & DILENGKAPI ##
+    // =================================================================
 </script>
 
 </body>

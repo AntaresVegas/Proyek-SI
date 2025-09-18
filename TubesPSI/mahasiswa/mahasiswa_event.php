@@ -89,7 +89,8 @@ try {
     }
     unset($event_data);
 
-    foreach ($events_by_id as $event) {
+    // ============================= BLOK KODE YANG DIPERBAIKI =============================
+    foreach ($events_by_id as $id => $event) {
         // Proses tanggal utama event
         $start = new DateTime($event['start']);
         $end = (new DateTime($event['end']))->modify('+1 day');
@@ -97,7 +98,7 @@ try {
         foreach ($period as $dt) {
             if ($dt->format('n') == $currentMonth) {
                 $day = (int)$dt->format('j');
-                $calendar_events[$day][] = ['name' => $event['name'], 'type' => 'main', 'locations' => $event['locations']];
+                $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'], 'type' => 'main', 'locations' => $event['locations']];
             }
         }
     
@@ -105,12 +106,21 @@ try {
         if (!empty($event['prep'])) {
             $prep_start_dt = new DateTime($event['prep']);
             $main_event_start_dt = new DateTime($event['start']);
-            if ($prep_start_dt < $main_event_start_dt) {
+            
+            // KASUS 1: Persiapan pada hari yang sama dengan acara
+            if ($prep_start_dt->format('Y-m-d') == $main_event_start_dt->format('Y-m-d')) {
+                if ($prep_start_dt->format('n') == $currentMonth) {
+                    $day = (int)$prep_start_dt->format('j');
+                    $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'] . ' (Persiapan)', 'type' => 'prep', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                }
+            } 
+            // KASUS 2: Persiapan pada hari-hari sebelum acara
+            else if ($prep_start_dt < $main_event_start_dt) {
                 $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
                 foreach ($prep_period as $dt) {
                     if ($dt->format('n') == $currentMonth) {
                         $day = (int)$dt->format('j');
-                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Persiapan)', 'type' => 'prep', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                        $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'] . ' (Persiapan)', 'type' => 'prep', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
                     }
                 }
             }
@@ -120,19 +130,29 @@ try {
         if (!empty($event['clear'])) {
             $main_event_end_dt = new DateTime($event['end']);
             $clear_end_dt = new DateTime($event['clear']);
-            if ($clear_end_dt > $main_event_end_dt) {
+
+            // KASUS 1: Pembongkaran pada hari yang sama dengan akhir acara
+            if ($clear_end_dt->format('Y-m-d') == $main_event_end_dt->format('Y-m-d')) {
+                 if ($clear_end_dt->format('n') == $currentMonth) {
+                    $day = (int)$clear_end_dt->format('j');
+                    $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'] . ' (Pembongkaran)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                }
+            }
+            // KASUS 2: Pembongkaran pada hari-hari setelah acara
+            else if ($clear_end_dt > $main_event_end_dt) {
                 $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
                 $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
                 $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
                 foreach ($clear_period as $dt) {
                     if ($dt->format('n') == $currentMonth) {
                         $day = (int)$dt->format('j');
-                        $calendar_events[$day][] = ['name' => $event['name'] . ' (Pembongkaran)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
+                        $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'] . ' (Pembongkaran)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
                     }
                 }
             }
         }
     }
+    // ============================= AKHIR BLOK KODE YANG DIPERBAIKI =============================
 } catch (Exception $e) {
     error_log("Error fetching calendar data in mahasiswa_event.php: " . $e->getMessage());
 }
@@ -171,24 +191,10 @@ $calendar_events_json = json_encode($calendar_events);
         .day-cell { min-height: 120px; cursor: pointer; transition: background-color 0.2s; }
         .day-cell:not(.empty-day):hover { background-color: #f0f0f0; }
         .day-number { font-size: 18px; font-weight: bold; }
-        .event-indicator {
-            font-size: 12px; font-weight: 600; margin-top: 5px; padding: 3px 6px; border-radius: 4px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block;
-            background-color: #198754;
-            color: white;
-        }
-        .event-indicator.prep-clear {
-            background-color: #ffc107;
-            color: #212529;
-        }
+        .event-indicator { font-size: 12px; font-weight: 600; margin-top: 5px; padding: 3px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block; background-color: #198754; color: white; }
+        .event-indicator.prep-clear { background-color: #ffc107; color: #212529; }
         .empty-day { background-color: #fafafa; cursor: default; }
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; position: relative; }
-        .close-button { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .modal-header h3 { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .modal-body .event-item { border-left: 4px solid rgb(2, 71, 25); padding: 10px; margin-bottom: 10px; background-color: #f8f9fa; }
-        .modal-body .event-item h4 { margin-bottom: 5px; }
-        .modal-body .event-item span { display: block; font-size: 14px; color: #555; }
+        
         .page-header { background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .page-header h1 { margin-bottom: 10px; font-size: 28px; }
         .page-header p { opacity: 0.9; font-size: 16px; }
@@ -199,19 +205,32 @@ $calendar_events_json = json_encode($calendar_events);
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-         .footer-right .social-icons {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #fff; }
+
+        /* --- CSS untuk Modal Pop-up --- */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
-        .footer-right .social-icons a {
-            color: #e9ecef;
-            font-size: 1.5em;
-            transition: color 0.3s;
-        }
-        .footer-right .social-icons a:hover {
-            color: #fff;
-        }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal.show { display: block; opacity: 1; visibility: visible; }
+        .modal-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 0; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: fadeInScale 0.3s ease-out forwards; overflow: hidden; }
+        .modal-header { padding: 20px 25px; border-bottom: 1px solid #e9ecef; }
+        .modal-header h3 { margin: 0; padding: 0; font-size: 1.25rem; color: #333; }
+        .modal-body { padding: 25px; }
+        .close-button { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; }
+        .close-button:hover { color: #e74c3c; transform: rotate(90deg); }
+        .event-choice-button { display: block; width: 100%; padding: 12px 15px; margin-bottom: 12px; text-align: left; background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; color: #444; transition: all 0.2s ease; position: relative; padding-right: 40px; }
+        .event-choice-button:hover { background-color: #f8f9fa; border-color: rgb(2, 71, 25); color: rgb(2, 71, 25); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .event-choice-button:last-child { margin-bottom: 0; }
+        .event-choice-button::after { content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #aaa; transition: right 0.2s ease; }
+        .event-choice-button:hover::after { right: 12px; color: rgb(2, 71, 25); }
+        .modal-body .event-item { border-left: 4px solid rgb(2, 71, 25); padding: 10px; margin-bottom: 10px; background-color: #f8f9fa; }
+        .modal-body .event-item h4 { font-size: 1.1rem; color: #333; margin-bottom: 15px; }
+        .modal-body .event-item span { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.95rem; color: #555; }
+        .modal-body .event-item i.fas { width: 20px; text-align: center; color: #888; }
     </style>
 </head>
 <body>
@@ -234,6 +253,7 @@ $calendar_events_json = json_encode($calendar_events);
         <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
+
 <div class="page-header">
     <h1>Kalender Event UNPAR</h1>
     <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
@@ -260,7 +280,7 @@ $calendar_events_json = json_encode($calendar_events);
     <div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
-<div id="eventModal" class="modal" style="display: none;">
+<div id="eventModal" class="modal">
     <div class="modal-content">
         <span class="close-button">&times;</span>
         <div class="modal-header"><h3 id="modalDate"></h3></div>
@@ -364,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarGrid.innerHTML = html;
         addDayCellClickListeners();
     }
-
+    
     function addDayCellClickListeners() {
         document.querySelectorAll('.day-cell:not(.empty-day)').forEach(cell => {
             cell.addEventListener('click', function() {
@@ -372,8 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dayNumber = new Date(cellDate + 'T00:00:00Z').getUTCDate();
                 const selectedGedung = gedungFilter.value;
                 const selectedLantai = lantaiFilter.value;
-
-                let dateForFetch = cellDate;
+                const modalBody = document.getElementById('modalBody');
 
                 const dayEvents = calendarEventsData[dayNumber] || [];
                 const filteredDayEvents = dayEvents.filter(event => {
@@ -388,49 +407,81 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 });
 
-                if (filteredDayEvents.length > 0) {
-                    const firstEvent = filteredDayEvents[0];
-                    if ((firstEvent.type === 'prep' || firstEvent.type === 'clear') && firstEvent.main_start_date) {
-                        dateForFetch = firstEvent.main_start_date.split(' ')[0];
+                const uniqueEvents = new Map();
+                filteredDayEvents.forEach(event => {
+                    if (!uniqueEvents.has(event.id)) {
+                        uniqueEvents.set(event.id, event);
                     }
-                }
+                });
                 
-                document.getElementById('modalDate').textContent = new Date(cellDate + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                document.getElementById('modalBody').innerHTML = '<p>Memuat...</p>';
-                eventModal.style.display = 'flex';
+                const eventsArray = Array.from(uniqueEvents.values());
 
-                fetch(`../fetch_event_details.php?date=${dateForFetch}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const modalBody = document.getElementById('modalBody');
-                        modalBody.innerHTML = '';
-                        if (data.length > 0) {
-                            data.forEach(event => {
-                                const eventItem = document.createElement('div');
-                                eventItem.className = 'event-item';
-                                eventItem.innerHTML = `<h4>${event.name}</h4><span><strong>Waktu:</strong> ${event.start_time} - ${event.end_time}</span><span><strong>Lokasi:</strong> ${event.lokasi}</span>`;
-                                modalBody.appendChild(eventItem);
-                            });
-                        } else {
-                            modalBody.innerHTML = '<p>Tidak ada kegiatan pada tanggal ini.</p>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching details:', error);
-                        document.getElementById('modalBody').innerHTML = '<p>Gagal memuat detail kegiatan.</p>';
+                document.getElementById('modalDate').textContent = new Date(cellDate + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                eventModal.classList.add('show');
+
+                if (eventsArray.length > 1) {
+                    modalBody.innerHTML = '<h5>Ada beberapa kegiatan di tanggal ini. Silakan pilih satu untuk melihat detail:</h5>';
+                    eventsArray.forEach(event => {
+                        const eventButton = document.createElement('button');
+                        eventButton.textContent = event.name;
+                        eventButton.className = 'event-choice-button';
+                        eventButton.onclick = () => showEventDetails(event, cellDate, selectedGedung, selectedLantai);
+                        modalBody.appendChild(eventButton);
                     });
+                } else if (eventsArray.length === 1) {
+                    showEventDetails(eventsArray[0], cellDate, selectedGedung, selectedLantai);
+                } else {
+                    modalBody.innerHTML = '<p>Tidak ada kegiatan pada tanggal ini.</p>';
+                }
             });
         });
     }
 
+    function showEventDetails(event, cellDate, selectedGedung, selectedLantai) {
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = '<p>Memuat detail...</p>';
+        
+        let dateForFetch = cellDate;
+        if ((event.type === 'prep' || event.type === 'clear') && event.main_start_date) {
+            dateForFetch = event.main_start_date.split(' ')[0];
+        }
+
+        fetch(`../fetch_event_details.php?date=${dateForFetch}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
+            .then(response => response.json())
+            .then(data => {
+                modalBody.innerHTML = '';
+                const specificEventData = data.filter(details => details.id == event.id);
+
+                if (specificEventData.length > 0) {
+                    specificEventData.forEach(details => {
+                        const eventItem = document.createElement('div');
+                        eventItem.className = 'event-item';
+                        eventItem.innerHTML = `
+                            <h4>${details.name}</h4>
+                            <span><i class="fas fa-clock"></i><strong>Waktu:</strong> ${details.start_time} - ${details.end_time}</span>
+                            <span><i class="fas fa-map-marker-alt"></i><strong>Lokasi:</strong> ${details.lokasi}</span>
+                        `;
+                        modalBody.appendChild(eventItem);
+                    });
+                } else {
+                    modalBody.innerHTML = '<p>Detail untuk kegiatan ini tidak ditemukan.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching details:', error);
+                modalBody.innerHTML = '<p>Gagal memuat detail kegiatan.</p>';
+            });
+    }
+
     gedungFilter.addEventListener('change', updateLantaiFilter);
     lantaiFilter.addEventListener('change', renderFilteredCalendar);
-    closeButton.addEventListener('click', () => { eventModal.style.display = 'none'; });
-    window.addEventListener('click', (event) => { if (event.target == eventModal) { eventModal.style.display = 'none'; } });
+    closeButton.addEventListener('click', () => { eventModal.classList.remove('show'); });
+    window.addEventListener('click', (event) => { if (event.target == eventModal) { eventModal.classList.remove('show'); } });
 
     renderFilteredCalendar();
 });
 </script>
+
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
