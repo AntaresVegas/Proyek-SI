@@ -1,6 +1,12 @@
 <?php
 session_start();
-require_once('../config/db_connection.php');
+// Sesuaikan path jika perlu
+require_once(__DIR__ . '/../config/db_connection.php');
+// Panggil autoloader Composer dan class PHPMailer
+require_once(__DIR__ . '/../vendor/autoload.php');
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
     header("Location: ../index.php");
@@ -18,23 +24,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
 
     if (isset($_POST['setujui_lpj'])) {
         $new_status = 'Disetujui';
-        $message = "Status LPJ berhasil diubah menjadi 'Disetujui'!";
     } elseif (isset($_POST['tolak_lpj'])) {
         $new_status = 'Ditolak';
         $komentar_lpj = !empty($_POST['alasan_penolakan']) ? trim($_POST['alasan_penolakan']) : 'Tidak ada alasan yang diberikan.';
-        $message = "Status LPJ berhasil diubah menjadi 'Ditolak'.";
     }
 
     if (!empty($new_status)) {
-        $stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_statusLPJ = ?, pengajuan_komentarLPJ = ? WHERE pengajuan_id = ?");
-        $stmt->bind_param("ssi", $new_status, $komentar_lpj, $pengajuan_id);
-        if ($stmt->execute()) {
+        try {
+            // Mengambil informasi mahasiswa dan event sebelum update
+            $info_stmt = $conn->prepare(
+                "SELECT m.mahasiswa_email, m.mahasiswa_nama, pe.pengajuan_namaEvent 
+                 FROM pengajuan_event pe 
+                 JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id 
+                 WHERE pe.pengajuan_id = ?"
+            );
+            if (!$info_stmt) throw new Exception("Gagal menyiapkan query info mahasiswa.");
+            $info_stmt->bind_param("i", $pengajuan_id);
+            $info_stmt->execute();
+            $info_result = $info_stmt->get_result()->fetch_assoc();
+            $info_stmt->close();
+
+            // Lakukan update ke database
+            $stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_statusLPJ = ?, pengajuan_komentarLPJ = ? WHERE pengajuan_id = ?");
+            if (!$stmt) throw new Exception("Gagal menyiapkan query update LPJ.");
+            $stmt->bind_param("ssi", $new_status, $komentar_lpj, $pengajuan_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            if ($info_result) {
+                // =================================================================
+                // ## KODE PENGIRIMAN EMAIL (MENGGUNAKAN PHPMailer) ##
+                // =================================================================
+                $mail = new PHPMailer(true);
+                
+                // Konfigurasi server SMTP
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'audricaurelius.aa@gmail.com'; // Email Pengirim
+                $mail->Password   = 'leyp iuwc jxfs emlm';     // App Password Anda
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                // Penerima
+                $mail->setFrom('no-reply@unpar.ac.id', 'Sistem Event Unpar');
+                $mail->addAddress($info_result['mahasiswa_email'], $info_result['mahasiswa_nama']);
+
+                // Konten Email
+                $mail->isHTML(true);
+                $nama_event = $info_result['pengajuan_namaEvent'];
+                $nama_mahasiswa = $info_result['mahasiswa_nama'];
+
+                if ($new_status === 'Disetujui') {
+                    $mail->Subject = "LPJ untuk Event '{$nama_event}' Telah Disetujui";
+                    $mail->Body    = "
+                        <html><body>
+                        <h2>Halo {$nama_mahasiswa},</h2>
+                        <p>Kabar baik! Laporan Pertanggungjawaban (LPJ) untuk event <strong>'{$nama_event}'</strong> yang Anda unggah telah kami periksa dan setujui.</p>
+                        <p>Terima kasih atas kerja keras dan laporannya. Proses pertanggungjawaban untuk event ini telah selesai.</p>
+                        <br><p>Hormat kami,</p><p><strong>Direktorat Kemahasiswaan (Ditmawa) UNPAR</strong></p>
+                        </body></html>";
+                } else { // Ditolak
+                    $mail->Subject = "Pemberitahuan: LPJ untuk Event '{$nama_event}' Ditolak";
+                    $mail->Body    = "
+                        <html><body>
+                        <h2>Halo {$nama_mahasiswa},</h2>
+                        <p>Dengan menyesal kami informasikan bahwa Laporan Pertanggungjawaban (LPJ) untuk event <strong>'{$nama_event}'</strong> yang Anda unggah belum dapat kami setujui.</p>
+                        <p><strong>Alasan Penolakan:</strong></p>
+                        <p><em>" . htmlspecialchars($komentar_lpj) . "</em></p>
+                        <p>Mohon segera perbaiki LPJ Anda sesuai dengan catatan di atas dan unggah kembali melalui sistem.</p>
+                        <br><p>Hormat kami,</p><p><strong>Direktorat Kemahasiswaan (Ditmawa) UNPAR</strong></p>
+                        </body></html>";
+                }
+                
+                $mail->send(); // Kirim email
+            }
+
+            $message = "Status LPJ berhasil diperbarui dan notifikasi email telah dikirim.";
             $message_type = 'success';
-        } else {
-            $message = 'Gagal memperbarui status LPJ.';
+
+        } catch (Exception $e) {
+            $error_info = isset($mail) ? $mail->ErrorInfo : '';
+            $message = "Gagal memperbarui status LPJ. Error: " . $e->getMessage() . " | Mailer Error: " . $error_info;
             $message_type = 'error';
         }
-        $stmt->close();
     }
 }
 
@@ -72,6 +145,7 @@ $conn->close();
     <title>Kelola Laporan - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        /* CSS Anda tetap sama */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
         body { font-family: 'Segoe UI', sans-serif; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; padding-top: 80px; display: flex; flex-direction: column; min-height: 100%; }
@@ -214,24 +288,15 @@ $conn->close();
 </div>
 
 <script>
-    // Mengambil elemen modal dari halaman
     var modal = document.getElementById('rejectModal');
     var rejectPengajuanIdInput = document.getElementById('reject_pengajuan_id');
-
-    // Fungsi untuk MEMBUKA modal
     function openRejectModal(pengajuan_id) {
-        // Mengisi ID pengajuan ke dalam form di modal
         rejectPengajuanIdInput.value = pengajuan_id;
-        // Menampilkan modal
         modal.style.display = "block";
     }
-
-    // Fungsi untuk MENUTUP modal
     function closeRejectModal() {
         modal.style.display = "none";
     }
-
-    // Menutup modal jika pengguna mengklik di luar area konten modal
     window.onclick = function(event) {
         if (event.target == modal) {
             closeRejectModal();

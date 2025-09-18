@@ -7,7 +7,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
     exit();
 }
 
-require_once('../config/db_connection.php');
+// Sesuaikan path jika perlu
+require_once(__DIR__ . '/../config/db_connection.php'); 
+// Panggil autoloader Composer dan class PHPMailer
+require_once(__DIR__ . '/../vendor/autoload.php');
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 $ditmawa_id = $_SESSION['user_id'];
 $nama_ditmawa = $_SESSION['nama'] ?? 'Staff Ditmawa';
@@ -26,74 +32,116 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $conn->begin_transaction();
         
         try {
-            // Query UPDATE sudah benar, tidak perlu diubah.
-            // Namun, kita asumsikan kolom 'ditmawa_id' juga sudah ada di tabel pengajuan_event.
+            // Update status pengajuan di database
             $update_sql = "UPDATE pengajuan_event SET pengajuan_status = ?, pengajuan_komentarDitmawa = ?, pengajuan_tanggalApprove = ? WHERE pengajuan_id = ?";
             $stmt = $conn->prepare($update_sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement gagal (update): " . $conn->error);
-            }
+            if (!$stmt) throw new Exception("Prepare statement gagal (update): " . $conn->error);
             $stmt->bind_param("sssi", $status_baru, $komentar, $tanggal_approve, $pengajuan_id);
             $stmt->execute();
             $stmt->close();
 
-            // =================================================================
-            // ## PERBAIKAN 1: Query untuk Notifikasi ##
-            // Mengambil 'pengaju_id' bukan 'mahasiswa_id'
-            // =================================================================
-            $info_stmt = $conn->prepare("SELECT pengaju_id, pengajuan_namaEvent FROM pengajuan_event WHERE pengajuan_id = ? AND pengaju_tipe = 'mahasiswa'");
-            if (!$info_stmt) {
-                 throw new Exception("Prepare statement gagal (fetch info): " . $conn->error);
-            }
+            // Mengambil data mahasiswa (termasuk email) dan nama event untuk notifikasi
+            $info_stmt = $conn->prepare(
+                "SELECT m.mahasiswa_email, m.mahasiswa_nama, pe.pengajuan_namaEvent, pe.pengaju_id
+                 FROM pengajuan_event pe 
+                 JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id 
+                 WHERE pe.pengajuan_id = ? AND pe.pengaju_tipe = 'mahasiswa'"
+            );
+            if (!$info_stmt) throw new Exception("Prepare statement gagal (fetch info): " . $conn->error);
             $info_stmt->bind_param("i", $pengajuan_id);
             $info_stmt->execute();
             $info_result = $info_stmt->get_result()->fetch_assoc();
+            $info_stmt->close();
 
-            // Hanya kirim notifikasi jika pengaju adalah mahasiswa
             if ($info_result) {
-                $target_user_id = $info_result['pengaju_id']; // Menggunakan 'pengaju_id'
+                $target_user_id = $info_result['pengaju_id'];
+                $target_email = $info_result['mahasiswa_email'];
+                $nama_mahasiswa = $info_result['mahasiswa_nama'];
                 $nama_event = $info_result['pengajuan_namaEvent'];
-                $info_stmt->close();
-
                 $link = "mahasiswa/mahasiswa_detail_pengajuan.php?id=" . $pengajuan_id;
+
+                // Kirim notifikasi internal (jika masih diperlukan)
                 if ($status_baru === 'Disetujui') {
                     $message = "Selamat! Pengajuan event '{$nama_event}' Anda telah disetujui.";
                 } else {
                     $message = "Mohon maaf, pengajuan event '{$nama_event}' Anda ditolak. Silakan cek detail.";
                 }
-
                 $notif_sql = "INSERT INTO notifications (user_id, message, link, is_read, created_at) VALUES (?, ?, ?, 0, NOW())";
                 $notif_stmt = $conn->prepare($notif_sql);
-                if (!$notif_stmt) {
-                    throw new Exception("Prepare statement gagal (insert notif): " . $conn->error);
-                }
+                if (!$notif_stmt) throw new Exception("Prepare statement gagal (insert notif): " . $conn->error);
                 $notif_stmt->bind_param("iss", $target_user_id, $message, $link);
                 $notif_stmt->execute();
                 $notif_stmt->close();
-            } else {
-                 $info_stmt->close();
+
+                // =================================================================
+                // ## KODE PENGIRIMAN EMAIL (MENGGUNAKAN PHPMailer) ##
+                // =================================================================
+                $mail = new PHPMailer(true);
+
+                // Konfigurasi server SMTP
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'audricaurelius.aa@gmail.com'; // Email Pengirim
+                $mail->Password   = 'leyp iuwc jxfs emlm';     // App Password Anda
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                // Penerima
+                $mail->setFrom('no-reply@unpar.ac.id', 'Sistem Event Unpar');
+                $mail->addAddress($target_email, $nama_mahasiswa);
+
+                // Konten Email
+                $mail->isHTML(true);
+                
+                if ($status_baru === 'Disetujui') {
+                    $mail->Subject = "Selamat! Pengajuan Event '{$nama_event}' Anda Telah Disetujui";
+                    $mail->Body    = "
+                        <html><body>
+                        <h2>Halo {$nama_mahasiswa},</h2>
+                        <p>Kabar baik! Pengajuan event Anda yang bernama <strong>'{$nama_event}'</strong> telah kami setujui.</p>
+                        <p>Anda dapat melanjutkan ke tahap persiapan selanjutnya. Silakan login ke sistem untuk melihat detail lebih lanjut.</p>
+                        <br>
+                        <p>Hormat kami,</p>
+                        <p><strong>Direktorat Kemahasiswaan (Ditmawa) UNPAR</strong></p>
+                        </body></html>";
+                } else { // Ditolak
+                    $mail->Subject = "Pemberitahuan: Pengajuan Event '{$nama_event}' Anda Ditolak";
+                    $mail->Body    = "
+                        <html><body>
+                        <h2>Halo {$nama_mahasiswa},</h2>
+                        <p>Dengan berat hati kami memberitahukan bahwa pengajuan event Anda yang bernama <strong>'{$nama_event}'</strong> belum dapat kami setujui saat ini.</p>
+                        <p><strong>Alasan Penolakan:</strong></p>
+                        <p><em>" . (!empty($komentar) ? htmlspecialchars($komentar) : "Tidak ada alasan spesifik yang diberikan.") . "</em></p>
+                        <p>Mohon periksa kembali proposal Anda dan lakukan perbaikan yang diperlukan. Silakan login ke sistem untuk melihat detail.</p>
+                        <br>
+                        <p>Hormat kami,</p>
+                        <p><strong>Direktorat Kemahasiswaan (Ditmawa) UNPAR</strong></p>
+                        </body></html>";
+                }
+
+                $mail->send(); // Kirim email
             }
             
             $conn->commit();
-
-            $_SESSION['success_message'] = "Status event berhasil diperbarui dan notifikasi telah dikirim!";
-            header("Location: ditmawa_listKegiatan.php"); // Redirect ke list kegiatan agar lebih relevan
+            $_SESSION['success_message'] = "Status event berhasil diperbarui, notifikasi dan email telah dikirim!";
+            header("Location: ditmawa_listKegiatan.php");
             exit();
 
         } catch (Exception $e) {
             $conn->rollback();
-            $error_message = "Terjadi kesalahan: " . $e->getMessage();
+            // Menambahkan error dari PHPMailer ke pesan error utama jika ada
+            $error_info = isset($mail) ? $mail->ErrorInfo : '';
+            $error_message = "Terjadi kesalahan: " . $e->getMessage() . " | Mailer Error: " . $error_info;
         }
     }
 }
 
+// ... Sisa kode HTML Anda tetap sama persis seperti sebelumnya ...
 // 3. PENGAMBILAN DATA EVENT DARI DATABASE
 $pengajuan_id = $_GET['id'] ?? null;
 if ($pengajuan_id) {
-    // =================================================================
-    // ## PERBAIKAN 2: Query Utama untuk Menampilkan Detail ##
-    // Menggunakan 'pengaju_id' dan 'pengaju_tipe' untuk JOIN
-    // =================================================================
+    // Query Utama untuk Menampilkan Detail
     $sql = "SELECT 
                 pe.*, 
                 m.mahasiswa_nama, 
@@ -140,18 +188,9 @@ $conn->close();
     <title>Form Pengajuan Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        /* CSS Anda tetap sama */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e3c72;
-            background-image: url('../img/backgroundDitmawa.jpeg');
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
-            padding-top: 80px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e3c72; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed; min-height: 100vh; padding-top: 80px; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; object-fit: cover; }
@@ -179,7 +218,7 @@ $conn->close();
         .button-group button:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
         .btn-approve { background-color: #28a745; }
         .btn-reject { background-color: #dc3545; }
-        .error-message { color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; text-align: center; font-size: 16px; }
+        .error-message { color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; text-align: center; font-size: 16px; margin-bottom: 20px; }
         .status-badge { padding: 5px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 14px; }
         .status-badge.disetujui { background-color: #28a745; }
         .status-badge.ditolak { background-color: #dc3545; }
@@ -221,28 +260,20 @@ $conn->close();
         <dl class="detail-grid">
             <dt>Status Saat Ini</dt>
             <dd><span class="status-badge <?php echo strtolower(htmlspecialchars($event_data['pengajuan_status'])); ?>"><?php echo htmlspecialchars($event_data['pengajuan_status']); ?></span></dd>
-            
             <dt>Nama Pengaju</dt>
             <dd><?php echo htmlspecialchars($event_data['mahasiswa_nama'] ?? 'N/A'); ?></dd>
-
             <dt>Email</dt>
             <dd><?php echo htmlspecialchars($event_data['mahasiswa_email'] ?? 'N/A'); ?></dd>
-
             <dt>NPM</dt>
             <dd><?php echo htmlspecialchars($event_data['mahasiswa_npm'] ?? 'N/A'); ?></dd>
-
             <dt>Jurusan</dt>
             <dd><?php echo htmlspecialchars($event_data['mahasiswa_jurusan'] ?? 'N/A'); ?></dd>
-
             <dt>Nama Event</dt>
             <dd><?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?></dd>
-            
             <dt>Tipe Kegiatan</dt>
             <dd><?php echo htmlspecialchars($event_data['pengajuan_TypeKegiatan']); ?></dd>
-
             <dt>Lokasi</dt>
             <dd><?php echo htmlspecialchars($event_data['nama_gedung'] . ' (' . $event_data['nama_ruangan'] . ')'); ?></dd>
-
             <dt>Waktu Acara</dt>
             <dd>
                 <?php 
@@ -250,7 +281,6 @@ $conn->close();
                          htmlspecialchars(date('d F Y', strtotime($event_data['pengajuan_event_tanggal_selesai'])));
                 ?>
             </dd>
-
             <dt>Jam Acara</dt>
             <dd>
                 <?php
@@ -258,14 +288,12 @@ $conn->close();
                          htmlspecialchars(date('H:i', strtotime($event_data['pengajuan_event_jam_selesai']))) . " WIB";
                 ?>
             </dd>
-
             <dt>Rundown Acara</dt>
             <dd>
                 <a href="../mahasiswa/<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" class="download-link" download>
                     <i class="fas fa-download"></i> Unduh File Rundown
                 </a>
             </dd>
-
             <dt>Proposal Kegiatan</dt>
             <dd>
                  <a href="../mahasiswa/<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" class="download-link" download>
@@ -279,10 +307,8 @@ $conn->close();
                 <hr>
                 <h2>Tindakan Persetujuan</h2>
                 <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
-                
                 <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Komentar/Alasan (Wajib diisi jika menolak):</label>
                 <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan persetujuan/penolakan..."></textarea>
-                
                 <div class="button-group">
                     <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
                     <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>

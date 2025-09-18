@@ -267,6 +267,104 @@ try {
         .footer-right .social-icons a:hover {
             color: #fff;
         }
+        /* ================== CSS UNTUK FITUR NOTIFIKASI ================== */
+        .notification-wrapper {
+            position: relative;
+        }
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            padding: 2px 6px;
+            border-radius: 50%;
+            background: red;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .notifications-dropdown {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            color: #333;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            width: 350px;
+            z-index: 1001;
+            overflow: hidden;
+        }
+        .notifications-dropdown.show {
+            display: block;
+        }
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .notification-header span {
+            font-weight: bold;
+        }
+        .notification-header button {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notification-list-item a {
+            display: flex;
+            padding: 15px;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f1f1f1;
+            transition: background-color 0.2s;
+        }
+        .notification-list-item.unread a {
+            background-color: #eaf2ff;
+        }
+        .notification-list-item a:hover {
+            background-color: #f0f0f0;
+        }
+        .notification-list-item:last-child a {
+            border-bottom: none;
+        }
+        .status-dot {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 15px;
+            margin-top: 5px;
+        }
+        .status-dot.unread {
+            background-color: var(--secondary-color);
+        }
+        .notification-message {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .notification-time {
+            font-size: 12px;
+            color: #888;
+        }
+        .no-notifications {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -284,12 +382,27 @@ try {
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
-    <div class="navbar-right">
-        <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
-            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
-        </a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+<div class="navbar-right">
+    <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+        <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
+    </a>
+    
+    <div class="notification-wrapper">
+        <i class="fas fa-bell icon" id="notificationBell">
+            <span class="badge" id="notificationBadge" style="display: none;"></span>
+        </i>
+        <div class="notifications-dropdown" id="notificationsDropdown">
+            <div class="notification-header">
+                <span>Notifikasi</span>
+                <button id="markAsRead">Tandai semua dibaca</button>
+            </div>
+            <ul class="notification-list" id="notificationList">
+                <li class="no-notifications">Memuat...</li>
+            </ul>
+        </div>
     </div>
+    <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+</div>
 </nav>
 
 <div class="container">
