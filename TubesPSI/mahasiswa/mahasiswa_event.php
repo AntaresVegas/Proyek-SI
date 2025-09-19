@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 eventModal.classList.add('show');
 
                 if (eventsArray.length > 1) {
-                    modalBody.innerHTML = '<h5>Ada beberapa kegiatan di tanggal ini. Silakan pilih satu untuk melihat detail:</h5>';
+                    modalBody.innerHTML = '<h5>Ada beberapa kegiatan di tanggal ini. Silakan pilih satu untuk melihat detail:</h5><br>';
                     eventsArray.forEach(event => {
                         const eventButton = document.createElement('button');
                         eventButton.textContent = event.name;
