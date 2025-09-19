@@ -229,11 +229,11 @@ $conn->close();
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="tanggal_persiapan">Tgl Mulai Persiapan (Opsional)</label>
+                            <label for="tanggal_persiapan">Tgl Persiapan Lokasi (Opsional)</label>
                             <input type="date" id="tanggal_persiapan" name="tanggal_persiapan">
                         </div>
                         <div class="form-group">
-                            <label for="tanggal_beres">Tgl Selesai Pembongkaran (Opsional)</label>
+                            <label for="tanggal_beres">Tgl Pembongkaran Lokasi (Opsional)</label>
                             <input type="date" id="tanggal_beres" name="tanggal_beres">
                         </div>
                     </div>

@@ -94,11 +94,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Konten Email
                 $mail->isHTML(true);
                 
+                // --- PERUBAHAN ---
+// Memformat nama mahasiswa agar setiap kata diawali huruf kapital.
+                $nama_mahasiswa_formatted = ucwords(strtolower($nama_mahasiswa));
+
                 if ($status_baru === 'Disetujui') {
                     $mail->Subject = "Selamat! Pengajuan Event '{$nama_event}' Anda Telah Disetujui";
                     $mail->Body    = "
                         <html><body>
-                        <h2>Halo {$nama_mahasiswa},</h2>
+                        <h2>Halo {$nama_mahasiswa_formatted},</h2>
                         <p>Kabar baik! Pengajuan event Anda yang bernama <strong>'{$nama_event}'</strong> telah kami setujui.</p>
                         <p>Anda dapat melanjutkan ke tahap persiapan selanjutnya. Silakan login ke sistem untuk melihat detail lebih lanjut.</p>
                         <br>
@@ -109,7 +113,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $mail->Subject = "Pemberitahuan: Pengajuan Event '{$nama_event}' Anda Ditolak";
                     $mail->Body    = "
                         <html><body>
-                        <h2>Halo {$nama_mahasiswa},</h2>
+                        <h2>Halo {$nama_mahasiswa_formatted},</h2>
                         <p>Dengan berat hati kami memberitahukan bahwa pengajuan event Anda yang bernama <strong>'{$nama_event}'</strong> belum dapat kami setujui saat ini.</p>
                         <p><strong>Alasan Penolakan:</strong></p>
                         <p><em>" . (!empty($komentar) ? htmlspecialchars($komentar) : "Tidak ada alasan spesifik yang diberikan.") . "</em></p>
@@ -119,7 +123,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <p><strong>Direktorat Kemahasiswaan (Ditmawa) UNPAR</strong></p>
                         </body></html>";
                 }
-
                 $mail->send(); // Kirim email
             }
             

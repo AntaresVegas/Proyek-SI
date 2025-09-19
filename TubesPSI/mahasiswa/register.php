@@ -117,14 +117,18 @@ $background_path = '../img/backgroundUnpar.jpeg';
       <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
-    <form action="send_register_otp.php" method="POST" novalidate>
+    <form action="send_register_otp.php" method="POST" novalidate autocomplete="off">
         <div class="form-group">
             <label for="mahasiswa_nama">Nama Lengkap</label>
-            <input type="text" id="mahasiswa_nama" name="mahasiswa_nama" required value="<?php echo isset($_SESSION['old_data']['nama']) ? htmlspecialchars($_SESSION['old_data']['nama']) : ''; ?>">
+            <input type="text" id="mahasiswa_nama" name="mahasiswa_nama" required value="<?php echo isset($_SESSION['old_data']['nama']) ? htmlspecialchars($_SESSION['old_data']['nama']) : ''; ?>" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="mahasiswa_npm">NPM</label>
+            <input type="text" id="mahasiswa_npm" name="mahasiswa_npm" required value="<?php echo isset($_SESSION['old_data']['npm']) ? htmlspecialchars($_SESSION['old_data']['npm']) : ''; ?>" maxlength="10" pattern="\d*" autocomplete="off">
         </div>
         <div class="form-group">
             <label for="mahasiswa_jurusan">Jurusan</label>
-            <select id="mahasiswa_jurusan" name="mahasiswa_jurusan" required>
+            <select id="mahasiswa_jurusan" name="mahasiswa_jurusan" required autocomplete="off">
                 <option value="">-- Pilih Jurusan --</option>
                 <?php foreach ($daftar_jurusan as $jur) : ?>
                     <option value="<?php echo htmlspecialchars($jur); ?>" <?php echo (isset($_SESSION['old_data']['jurusan']) && $_SESSION['old_data']['jurusan'] == $jur) ? 'selected' : ''; ?>>
@@ -134,12 +138,8 @@ $background_path = '../img/backgroundUnpar.jpeg';
             </select>
         </div>
         <div class="form-group">
-            <label for="mahasiswa_npm">NPM</label>
-            <input type="text" id="mahasiswa_npm" name="mahasiswa_npm" required value="<?php echo isset($_SESSION['old_data']['npm']) ? htmlspecialchars($_SESSION['old_data']['npm']) : ''; ?>" maxlength="10" pattern="\d*">
-        </div>
-        <div class="form-group">
             <label for="mahasiswa_email">Email</label>
-            <input type="email" id="mahasiswa_email" name="mahasiswa_email" required value="<?php echo isset($_SESSION['old_data']['email']) ? htmlspecialchars($_SESSION['old_data']['email']) : ''; ?>">
+            <input type="email" id="mahasiswa_email" name="mahasiswa_email" required value="<?php echo isset($_SESSION['old_data']['email']) ? htmlspecialchars($_SESSION['old_data']['email']) : ''; ?>" autocomplete="off">
         </div>
         <?php unset($_SESSION['old_data']); ?>
         <button type="submit" name="register">Kirim Kode Verifikasi</button>

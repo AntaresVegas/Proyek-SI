@@ -49,7 +49,7 @@ try {
 
                 $response['notifications'][] = [
                     'message' => htmlspecialchars($row['message']),
-                    'link' => htmlspecialchars($row['link']),
+                    'link' => 'mahasiswa_history.php', // Diubah agar selalu mengarah ke history
                     'is_read' => (bool)$row['is_read'],
                     'time_ago' => $time_ago
                 ];
