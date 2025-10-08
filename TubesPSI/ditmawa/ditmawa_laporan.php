@@ -298,8 +298,8 @@ $conn->close();
 <div class="main-content">
     <div class="container">
         <header class="page-header">
-            <h1>Laporan Pertanggungjawaban</h1>
-            <p>Tinjau, setujui, atau tolak LPJ yang diajukan oleh mahasiswa.</p>
+            <h1>Laporan Bukti Kegiatan</h1>
+            <p>Tinjau, setujui, atau tolak laporan bukti kegiatan yang diajukan oleh mahasiswa.</p>
         </header>
         
         <?php if ($message): ?>

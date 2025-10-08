@@ -151,8 +151,8 @@ $conn->close();
 <div class="main-content">
     <div class="container">
         <header class="page-header">
-            <h1>Arsip Laporan Pertanggungjawaban</h1>
-            <p>Halaman ini menampilkan semua laporan yang telah diproses oleh Ditmawa.</p>
+            <h1>Arsip Laporan Bukti Kegiatan</h1>
+            <p>Halaman ini menampilkan semua laporan bukti kegiatan yang telah diproses oleh Ditmawa.</p>
         </header>
         
         <div class="laporan-list">
