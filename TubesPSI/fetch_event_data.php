@@ -31,7 +31,7 @@ try {
         LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
         LEFT JOIN gedung g ON l.gedung_id = g.gedung_id
         WHERE 
-            pe.pengajuan_status = 'Disetujui'
+            pe.pengajuan_status_ditmawa = 'Disetujui' -- [FIX] Menggunakan kolom status yang benar
             AND (
                 (pe.pengajuan_event_tanggal_mulai BETWEEN ? AND ?) OR
                 (pe.pengajuan_event_tanggal_selesai BETWEEN ? AND ?) OR
@@ -70,10 +70,22 @@ try {
                 if (!isset($response['events'][$day])) {
                     $response['events'][$day] = [];
                 }
-                $response['events'][$day][] = [
-                    'id'   => $row['pengajuan_id'],
-                    'name' => htmlspecialchars($row['pengajuan_namaEvent'])
-                ];
+                
+                // Mencegah duplikasi event pada hari yang sama
+                $isDuplicate = false;
+                foreach ($response['events'][$day] as $existingEvent) {
+                    if ($existingEvent['id'] === $row['pengajuan_id']) {
+                        $isDuplicate = true;
+                        break;
+                    }
+                }
+
+                if (!$isDuplicate) {
+                    $response['events'][$day][] = [
+                        'id'   => $row['pengajuan_id'],
+                        'name' => htmlspecialchars($row['pengajuan_namaEvent'])
+                    ];
+                }
             }
         }
     }

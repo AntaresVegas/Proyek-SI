@@ -1,13 +1,13 @@
 <?php
 session_start();
-$background_path = '../img/backgroundDitmawa.jpeg'; 
+$background_path = '../img/backgroundASP.jpeg'; 
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Registrasi Akun Ditmawa - Sistem Event Unpar</title>
+    <title>Registrasi Akun ASP - Sistem Event Unpar</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,35 +75,35 @@ $background_path = '../img/backgroundDitmawa.jpeg';
 <body>
   <main class="container">
     <div class="header">
-        <img src="../img/logoDitmawa.png" alt="Logo Ditmawa Unpar">
-        <h1>Registrasi Akun Ditmawa</h1>
+        <img src="../img/logoASP.png" alt="Logo ASP Unpar">
+        <h1>Registrasi Akun ASP</h1>
         <p>Lengkapi data Anda untuk melanjutkan.</p>
     </div>
 
-    <?php if (isset($_SESSION['error_ditmawa'])) : ?>
+    <?php if (isset($_SESSION['error_asp'])) : ?>
       <div class="message-box error-message">
-        <?php echo htmlspecialchars($_SESSION['error_ditmawa']); ?>
+        <?php echo htmlspecialchars($_SESSION['error_asp']); ?>
       </div>
-      <?php unset($_SESSION['error_ditmawa']); ?>
+      <?php unset($_SESSION['error_asp']); ?>
     <?php endif; ?>
 
-    <form action="send_otp_ditmawa.php" method="POST" autocomplete="off">
+    <form action="send_otp_asp.php" method="POST" autocomplete="off">
         <div class="form-group">
-            <label for="ditmawa_nama">Nama Lengkap</label>
-            <input type="text" id="ditmawa_nama" name="ditmawa_nama" required value="<?php echo isset($_SESSION['old_data_ditmawa']['nama']) ? htmlspecialchars($_SESSION['old_data_ditmawa']['nama']) : ''; ?>" placeholder="Masukkan nama sesuai data karyawan">
+            <label for="asp_nama">Nama Lengkap</label>
+            <input type="text" id="asp_nama" name="asp_nama" required value="<?php echo isset($_SESSION['old_data_asp']['nama']) ? htmlspecialchars($_SESSION['old_data_asp']['nama']) : ''; ?>" placeholder="Masukkan nama sesuai data karyawan">
             <i class="input-icon fa-solid fa-user"></i>
         </div>
         <div class="form-group">
-            <label for="ditmawa_nik">NIK (Nomor Induk Karyawan)</label>
-            <input type="text" id="ditmawa_nik" name="ditmawa_nik" required value="<?php echo isset($_SESSION['old_data_ditmawa']['nik']) ? htmlspecialchars($_SESSION['old_data_ditmawa']['nik']) : ''; ?>" pattern="\d*" placeholder="Masukkan NIK Anda">
+            <label for="asp_nik">NIK (Nomor Induk Karyawan)</label>
+            <input type="text" id="asp_nik" name="asp_nik" required value="<?php echo isset($_SESSION['old_data_asp']['nik']) ? htmlspecialchars($_SESSION['old_data_asp']['nik']) : ''; ?>" pattern="\d*" placeholder="Masukkan NIK Anda">
             <i class="input-icon fa-solid fa-id-card"></i>
         </div>
         <div class="form-group">
-            <label for="ditmawa_email">Email</label>
-            <input type="email" id="ditmawa_email" name="ditmawa_email" required value="<?php echo isset($_SESSION['old_data_ditmawa']['email']) ? htmlspecialchars($_SESSION['old_data_ditmawa']['email']) : ''; ?>" placeholder="Gunakan email Unpar">
+            <label for="asp_email">Email</label>
+            <input type="email" id="asp_email" name="asp_email" required value="<?php echo isset($_SESSION['old_data_asp']['email']) ? htmlspecialchars($_SESSION['old_data_asp']['email']) : ''; ?>" placeholder="Gunakan email Unpar">
             <i class="input-icon fa-solid fa-envelope"></i>
         </div>
-        <?php unset($_SESSION['old_data_ditmawa']); ?>
+        <?php unset($_SESSION['old_data_asp']); ?>
         <button type="submit" class="btn">Kirim Kode Verifikasi</button>
     </form>
 
