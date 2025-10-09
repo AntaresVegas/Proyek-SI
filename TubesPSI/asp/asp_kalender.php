@@ -160,6 +160,7 @@ $calendar_events_json = json_encode($calendar_events);
         .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+        .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; cursor: pointer; }
         .page-header { background: linear-gradient(135deg, #0A2342 0%, #1a4a8a 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .page-header h1 { margin-bottom: 10px; font-size: 28px; }

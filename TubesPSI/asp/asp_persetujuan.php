@@ -104,6 +104,7 @@ $conn->close();
         .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+        .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; }
         .form-container { max-width: 800px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 30px 40px; }
         .form-header h1 { font-size: 28px; color: #2c3e50; text-align: center; margin-bottom: 30px;}

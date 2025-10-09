@@ -77,6 +77,7 @@ $year_range = range(date('Y'), date('Y') - 10);
         .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
         .navbar-menu li a:hover, .navbar-menu li a.active { color: #FFD700; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+        .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; cursor: pointer; }
         .chart-container { max-width: 1000px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }

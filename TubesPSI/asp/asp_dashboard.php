@@ -157,6 +157,7 @@ $conn->close();
             .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; transition: color 0.3s; }
             .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
             .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+            .navbar-right a {color: #FFFFFF;}
             .icon { font-size: 20px; cursor: pointer; }
             .main-content { flex-grow: 1; }
             .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }

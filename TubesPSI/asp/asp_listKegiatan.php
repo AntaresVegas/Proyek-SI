@@ -120,6 +120,7 @@ $years = range($current_year, $current_year - 5);
         .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+        .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; cursor: pointer; }
         .kegiatan-container { max-width: 1200px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .kegiatan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;}

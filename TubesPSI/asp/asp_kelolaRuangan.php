@@ -180,6 +180,7 @@ $conn->close();
         .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+        .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; }
         .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
         .page-header { font-size: 2.2em; color: white; margin-bottom: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
