@@ -668,11 +668,11 @@ $conn->close();
 
                     <div class="date-grid">
                         <div class="form-group">
-                            <label for="tanggal_persiapan">Tanggal Persiapan (Opsional)</label>
+                            <label for="tanggal_persiapan">Tanggal Persiapan Lokasi (Opsional)</label>
                             <input type="date" id="tanggal_persiapan" name="tanggal_persiapan">
                         </div>
                         <div class="form-group">
-                            <label for="tanggal_beres">Tanggal Beres-Beres (Opsional)</label>
+                            <label for="tanggal_beres">Tanggal Pembongkaran Lokasi (Opsional)</label>
                             <input type="date" id="tanggal_beres" name="tanggal_beres">
                         </div>
                     </div>

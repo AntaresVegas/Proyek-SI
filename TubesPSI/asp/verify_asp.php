@@ -2,8 +2,8 @@
 session_start();
 require_once(__DIR__ . '/../config/db_connection.php');
 
-if (!isset($_SESSION['reg_data_ditmawa'])) {
-    header('Location: register_ditmawa.php');
+if (!isset($_SESSION['reg_data_asp'])) {
+    header('Location: register_asp.php');
     exit();
 }
 
@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm_password = $_POST['confirm_password'];
     $captcha_input = trim($_POST['captcha']);
     
-    $otp_session = $_SESSION['reg_otp_ditmawa'] ?? null;
-    $otp_expiry = $_SESSION['otp_expiry_ditmawa'] ?? 0;
+    $otp_session = $_SESSION['reg_otp_asp'] ?? null;
+    $otp_expiry = $_SESSION['otp_expiry_asp'] ?? 0;
     $captcha_session = $_SESSION['captcha_text'] ?? '';
 
     if ($otp_input != $otp_session) $errors[] = "Kode OTP salah.";
@@ -26,15 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     unset($_SESSION['captcha_text']);
 
     if (empty($errors)) {
-        $reg_data = $_SESSION['reg_data_ditmawa'];
+        $reg_data = $_SESSION['reg_data_asp'];
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $stmt = $conn->prepare("INSERT INTO ditmawa (ditmawa_nama, ditmawa_email, ditmawa_password, ditmawa_NIK) VALUES (?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO asp (asp_nama, asp_email, asp_password, asp_NIK) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("ssss", $reg_data['nama'], $reg_data['email'], $hashed_password, $reg_data['nik']);
 
         if ($stmt->execute()) {
-            unset($_SESSION['reg_data_ditmawa'], $_SESSION['reg_otp_ditmawa'], $_SESSION['otp_expiry_ditmawa']);
-            $_SESSION['success_message'] = "Registrasi Akun Ditmawa berhasil! Silakan login.";
+            unset($_SESSION['reg_data_asp'], $_SESSION['reg_otp_asp'], $_SESSION['otp_expiry_asp']);
+            $_SESSION['success_message'] = "Registrasi Akun ASP berhasil! Silakan login.";
             header("Location: ../index.php");
             exit();
         } else {
@@ -43,14 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 }
-$background_path = '../img/backgroundDitmawa.jpeg';
+$background_path = '../img/backgroundASP.jpeg';
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Verifikasi Akun Ditmawa - Sistem Event Unpar</title>
+<title>Verifikasi Akun ASP - Sistem Event Unpar</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -130,9 +130,9 @@ $background_path = '../img/backgroundDitmawa.jpeg';
 <body>
   <main class="container">
     <div class="header">
-        <img src="../img/logoDitmawa.png" alt="Logo Ditmawa Unpar">
-        <h1>Verifikasi Akun Ditmawa</h1>
-        <p>Kode verifikasi telah dikirim ke <strong><?php echo htmlspecialchars($_SESSION['reg_data_ditmawa']['email']); ?></strong></p>
+        <img src="../img/logoASP.png" alt="Logo ASP Unpar">
+        <h1>Verifikasi Akun ASP</h1>
+        <p>Kode verifikasi telah dikirim ke <strong><?php echo htmlspecialchars($_SESSION['reg_data_asp']['email']); ?></strong></p>
     </div>
 
     <?php if (!empty($errors)) : ?>

@@ -37,10 +37,11 @@ try {
     if (isset($conn) && $conn->ping()) {
         
         // ======================= PERUBAHAN LOGIKA KALENDER DIMULAI DI SINI =======================
+        // [FIX] Mengubah 'pengajuan_status' menjadi 'pengajuan_status_ditmawa'
         $stmt_calendar = $conn->prepare("
             SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, tanggal_persiapan, tanggal_beres, pengaju_tipe 
             FROM pengajuan_event 
-            WHERE pengajuan_status = 'Disetujui' 
+            WHERE pengajuan_status_ditmawa = 'Disetujui' 
             AND (
                 (MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?) OR
                 (MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ?) OR
@@ -71,7 +72,7 @@ try {
                     $prep_start_dt = new DateTime($row['tanggal_persiapan']);
                     $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
                      if ($prep_start_dt <= $main_event_start_dt) {
-                        $prep_period_end = (clone $main_event_start_dt)->modify('+1 day');
+                        $prep_period_end = (clone $main_event_start_dt); // Don't modify to +1 day here to include the start day itself
                         if($prep_start_dt->format('Y-m-d') == $main_event_start_dt->format('Y-m-d')) {
                             $prep_period_end = (clone $prep_start_dt)->modify('+1 day');
                         }
@@ -117,10 +118,11 @@ try {
         // ======================= PERUBAHAN LOGIKA KALENDER SELESAI DI SINI =======================
 
         // Data Event Mahasiswa Mendatang (3 Terdekat)
+        // [FIX] Mengubah 'pengajuan_status' menjadi 'pengajuan_status_ditmawa'
         $stmt_events = $conn->prepare(
             "SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai 
             FROM pengajuan_event 
-            WHERE pengajuan_status = 'Disetujui' 
+            WHERE pengajuan_status_ditmawa = 'Disetujui' 
             AND pengaju_tipe = 'mahasiswa'
             AND pengajuan_event_tanggal_selesai >= CURDATE() 
             ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC 
@@ -133,8 +135,10 @@ try {
         }
 
         // Data Aktivitas Pengajuan Terbaru (Hanya 1 terbaru)
+        // [FIX] Mengubah 'pengajuan_status' menjadi 'pengajuan_status_ditmawa' dan menggunakan alias 'AS pengajuan_status'
+        // agar tidak perlu mengubah variabel di bagian HTML.
         $stmt_submissions = $conn->prepare(
-            "SELECT pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit 
+            "SELECT pengajuan_namaEvent, pengajuan_status_ditmawa AS pengajuan_status, pengajuan_tanggalEdit 
             FROM pengajuan_event 
             WHERE pengaju_id = ? AND pengaju_tipe = 'mahasiswa' 
             ORDER BY pengajuan_tanggalEdit DESC LIMIT 1"
@@ -147,6 +151,7 @@ try {
         }
     }
 } catch (Exception $e) {
+    // Menampilkan pesan error yang lebih informatif untuk debugging
     die("Terjadi kesalahan saat mengambil data dari database: " . $e->getMessage());
 } finally {
     if (isset($conn) && $conn->ping()) {
@@ -232,6 +237,28 @@ try {
         .event-indicator.prep-clear { background: var(--status-yellow); color: var(--text-dark); }
 
         .empty-day { background-color: var(--light-gray); }
+
+        /* [ADD] CSS untuk Keterangan Warna Kalender */
+        .calendar-legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 20px;
+            padding-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: var(--text-light);
+        }
+        .legend-color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
         .service-flow-container { background: #fff; border-radius: 12px; padding: 25px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 30px; }
@@ -443,7 +470,7 @@ try {
             <?php if (!empty($recent_submissions)): ?>
                 <?php foreach ($recent_submissions as $submission): ?>
                     <div class="submission-card status-<?php echo htmlspecialchars($submission['pengajuan_status']); ?>">
-                        <div class="status-badge status-<?php echo htmlspecialchars($submission['pengajuan_status']); ?>"><?php echo htmlspecialchars($submission['pengajuan_status']); ?></div>
+                        <div class="status-badge"><?php echo htmlspecialchars($submission['pengajuan_status']); ?></div>
                         <h4 class="submission-card-title"><?php echo htmlspecialchars($submission['pengajuan_namaEvent']); ?></h4>
                         <p class="submission-card-date">Terakhir diubah: <?php echo date('d F Y, H:i', strtotime($submission['pengajuan_tanggalEdit'])); ?></p>
                     </div>
@@ -500,9 +527,20 @@ try {
             }
             ?>
         </div>
-            <div class="detail-link-container">
-                <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+        <div class="calendar-legend">
+            <div class="legend-item">
+                <span class="legend-color-box" style="background-color: var(--status-green);"></span>
+                <span>Event Utama</span>
             </div>
+            <div class="legend-item">
+                <span class="legend-color-box" style="background-color: var(--status-yellow);"></span>
+                <span>Persiapan / Pembongkaran</span>
+            </div>
+        </div>
+
+        <div class="detail-link-container">
+            <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+        </div>
     </div>
     <br>
     <br>

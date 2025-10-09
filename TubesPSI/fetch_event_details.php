@@ -22,7 +22,7 @@ $response = [];
 try {
     $sql = "
         SELECT 
-            pe.pengajuan_id AS id, -- ================== TAMBAHKAN BARIS INI ==================
+            pe.pengajuan_id AS id,
             pe.pengajuan_namaEvent,
             TIME_FORMAT(pe.pengajuan_event_jam_mulai, '%H:%i') AS start_time,
             TIME_FORMAT(pe.pengajuan_event_jam_selesai, '%H:%i') AS end_time,
@@ -35,7 +35,7 @@ try {
         LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
         LEFT JOIN gedung g ON l.gedung_id = g.gedung_id
         WHERE 
-            pe.pengajuan_status = 'Disetujui'
+            pe.pengajuan_status_ditmawa = 'Disetujui' -- [FIX] Menggunakan kolom status yang benar
             AND ? BETWEEN pe.pengajuan_event_tanggal_mulai AND pe.pengajuan_event_tanggal_selesai
     ";
 
@@ -70,7 +70,7 @@ try {
             $lokasi = !empty($lokasi_parts) ? implode(', ', $lokasi_parts) : 'Lokasi Belum Ditentukan';
 
             $response[] = [
-                'id'         => $row['id'], // ================== TAMBAHKAN BARIS INI ==================
+                'id'         => $row['id'],
                 'name'       => htmlspecialchars($row['pengajuan_namaEvent']),
                 'start_time' => htmlspecialchars($row['start_time']),
                 'end_time'   => htmlspecialchars($row['end_time']),
