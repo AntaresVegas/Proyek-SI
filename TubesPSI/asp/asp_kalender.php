@@ -1,21 +1,21 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
+// 1. Otentikasi diubah untuk ASP
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'asp') {
     header("Location: ../index.php");
     exit();
 }
 
 require_once('../config/db_connection.php');
 
-$nama = $_SESSION['nama'] ?? 'Mahasiswa';
-$user_id_mahasiswa = $_SESSION['user_id'] ?? null;
+$nama = $_SESSION['nama'] ?? 'Staff ASP';
 
 $currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
 $currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
-if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; }
-if ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
+if ($currentMonth < 1) { $currentMonth = 12; $currentYear--; } 
+elseif ($currentMonth > 12) { $currentMonth = 1; $currentYear++; }
 
 $date = new DateTime("$currentYear-$currentMonth-01");
 
@@ -28,25 +28,24 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 $buildings = [];
 $floors = [];
 try {
-    // Urutan Gedung menjadi numerik
-    $result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY LENGTH(gedung_nama), gedung_nama");
-    while ($row = $result_gedung->fetch_assoc()) {
-        $buildings[] = $row;
-    }
-    // Urutan Lantai menjadi numerik
-    $result_lantai = $conn->query("SELECT lantai_id, gedung_id, lantai_nomor FROM lantai ORDER BY gedung_id, CAST(lantai_nomor AS UNSIGNED)");
-    while ($row = $result_lantai->fetch_assoc()) {
-        $floors[] = $row;
+    if ($conn) {
+        $result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY LENGTH(gedung_nama), gedung_nama");
+        while ($row = $result_gedung->fetch_assoc()) { $buildings[] = $row; }
+        
+        $result_lantai = $conn->query("SELECT lantai_id, gedung_id, lantai_nomor FROM lantai ORDER BY gedung_id, CAST(lantai_nomor AS UNSIGNED)");
+        while ($row = $result_lantai->fetch_assoc()) { $floors[] = $row; }
     }
 } catch (Exception $e) {
-    error_log("Error fetching location data: " . $e->getMessage());
+    error_log("Error fetching location data for ASP: " . $e->getMessage());
 }
 
 $calendar_events = [];
-$events_by_id = [];
+$events_by_id = []; 
+
 try {
+    // 2. Query mengambil event berdasarkan status 'Disetujui' oleh Ditmawa, agar ASP bisa melihat semua event yang aktif
     $stmt = $conn->prepare("
-        SELECT
+        SELECT 
             pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_event_tanggal_mulai,
             pe.pengajuan_event_tanggal_selesai, pe.tanggal_persiapan, pe.tanggal_beres,
             r.lantai_id, l.gedung_id
@@ -85,7 +84,7 @@ try {
         }
     }
     $stmt->close();
-
+    
     foreach ($events_by_id as &$event_data) {
         $event_data['locations'] = array_values($event_data['locations']);
     }
@@ -105,14 +104,9 @@ try {
         if (!empty($event['prep'])) {
             $prep_start_dt = new DateTime($event['prep']);
             $main_event_start_dt = new DateTime($event['start']);
-            if ($prep_start_dt->format('Y-m-d') == $main_event_start_dt->format('Y-m-d')) {
-                if ($prep_start_dt->format('n') == $currentMonth) {
-                    $day = (int)$prep_start_dt->format('j');
-                    $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'] . ' (Persiapan)', 'type' => 'prep', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
-                }
-            }
-            else if ($prep_start_dt < $main_event_start_dt) {
-                $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
+            if ($prep_start_dt <= $main_event_start_dt) {
+                $prep_period_end = (clone $main_event_start_dt);
+                $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $prep_period_end);
                 foreach ($prep_period as $dt) {
                     if ($dt->format('n') == $currentMonth) {
                         $day = (int)$dt->format('j');
@@ -125,16 +119,9 @@ try {
         if (!empty($event['clear'])) {
             $main_event_end_dt = new DateTime($event['end']);
             $clear_end_dt = new DateTime($event['clear']);
-            if ($clear_end_dt->format('Y-m-d') == $main_event_end_dt->format('Y-m-d')) {
-                 if ($clear_end_dt->format('n') == $currentMonth) {
-                    $day = (int)$clear_end_dt->format('j');
-                    $calendar_events[$day][] = ['id' => $id, 'name' => $event['name'] . ' (Pembongkaran)', 'type' => 'clear', 'locations' => $event['locations'], 'main_start_date' => $event['start']];
-                }
-            }
-            else if ($clear_end_dt > $main_event_end_dt) {
+            if ($clear_end_dt >= $main_event_end_dt) {
                 $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
-                $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
-                $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
+                $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), (clone $clear_end_dt)->modify('+1 day'));
                 foreach ($clear_period as $dt) {
                     if ($dt->format('n') == $currentMonth) {
                         $day = (int)$dt->format('j');
@@ -144,8 +131,9 @@ try {
             }
         }
     }
+
 } catch (Exception $e) {
-    error_log("Error fetching calendar data in mahasiswa_event.php: " . $e->getMessage());
+    error_log("Error fetching calendar data in asp_kalender.php: " . $e->getMessage());
 }
 $conn->close();
 $calendar_events_json = json_encode($calendar_events);
@@ -156,81 +144,60 @@ $calendar_events_json = json_encode($calendar_events);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Data Event - Event Management Unpar</title>
+    <title>Kalender Peminjaman - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 70px; background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;}
-        .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left { display: flex; align-items: center; gap: 10px; }
+        html { height: 100%; }
+        /* 3. Visual diubah ke tema ASP */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-image: url('../img/backgroundASP.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; min-height: 100%; padding-top: 80px; display: flex; flex-direction: column; }
+        .main-content { flex-grow: 1; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #0A2342; width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
-        .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
-        .navbar-menu { display: flex; list-style: none; gap: 25px; }
-        .navbar-menu li a { text-decoration: none; color:rgb(253, 253, 253); font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
-        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
+        .navbar-title { color: #FFFFFF; font-size: 14px; line-height: 1.2; }
+        .navbar-menu { list-style: none; padding: 0; margin: 0; }
+        .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
+        .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; cursor: pointer; }
-        .calendar-container { max-width: 1100px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
+        .page-header { background: linear-gradient(135deg, #0A2342 0%, #1a4a8a 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .page-header h1 { margin-bottom: 10px; font-size: 28px; }
+        .page-header p { opacity: 0.9; font-size: 16px; }
+        .calendar-container { max-width: 1100px; margin: 20px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .calendar-header h2 { font-size: 28px; }
-        .calendar-header a { text-decoration: none; font-size: 24px; color: rgb(2, 71, 25); }
+        .calendar-header h2 { font-size: 28px; color: #0A2342;}
+        .calendar-header a { text-decoration: none; font-size: 24px; color: #0A2342; }
         .filter-section { display: flex; gap: 20px; margin-bottom: 20px; justify-content: center; }
         .filter-section select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; min-width: 200px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .day-name, .day-cell { border: 1px solid #eee; border-radius: 8px; padding: 10px; }
         .day-name { text-align: center; font-weight: 600; background-color: #f8f9fa; }
-
-        .day-cell { 
-            height: 120px;
-            overflow: hidden;
-            position: relative;
-            cursor: pointer; 
-            transition: background-color 0.2s; 
-        }
-
+        
+        .day-cell { height: 120px; overflow: hidden; position: relative; cursor: pointer; transition: background-color 0.2s; }
         .day-cell:not(.empty-day):hover { background-color: #f0f0f0; }
         .day-number { font-size: 18px; font-weight: bold; }
-        .event-indicator { font-size: 12px; font-weight: 600; margin-top: 5px; padding: 3px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block; background-color: #198754; color: white; }
-        .event-indicator.prep-clear { background-color: #ffc107; color: #212529; }
+        .event-indicator { font-size: 12px; font-weight: 600; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; padding: 3px 6px; border-radius: 4px; display: block; background-color: #17a2b8; color: white; }
+        .event-indicator.prep-clear { background-color: #6c757d; color: white; }
         .empty-day { background-color: #fafafa; cursor: default; }
-
-        .more-events-button {
-            position: absolute;
-            bottom: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-        }
-        .more-events-button:hover { background-color: #c82333; }
-
+        .more-events-button { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background-color: #0A2342; color: white; border: none; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background-color 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+        .more-events-button:hover { background-color: #1a4a8a; }
         .calendar-legend { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; font-size: 14px; }
         .legend-item { display: flex; align-items: center; gap: 8px; }
         .legend-color-box { width: 15px; height: 15px; border-radius: 3px; }
-        
-        .page-header { background: linear-gradient(135deg, rgb(2, 73, 43) 0%, rgb(2, 71, 25) 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .page-header h1 { margin-bottom: 10px; font-size: 28px; }
-        .page-header p { opacity: 0.9; font-size: 16px; }
-        .page-footer { background-color: rgb(2, 71, 25); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
-        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+
+        .page-footer { background-color: #0A2342; color: #E0E0E0; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
-        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #FFFFFF; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
-        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
-        .footer-right .social-icons a:hover { color: #fff; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #FFD700; }
 
-        /* --- CSS untuk Modal Pop-up --- */
         @keyframes fadeInScale { from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
         .modal.show { display: block; opacity: 1; visibility: visible; }
@@ -241,11 +208,11 @@ $calendar_events_json = json_encode($calendar_events);
         .close-button { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; }
         .close-button:hover { color: #e74c3c; transform: rotate(90deg); }
         .event-choice-button { display: block; width: 100%; padding: 12px 15px; margin-bottom: 12px; text-align: left; background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; color: #444; transition: all 0.2s ease; position: relative; padding-right: 40px; }
-        .event-choice-button:hover { background-color: #f8f9fa; border-color: rgb(2, 71, 25); color: rgb(2, 71, 25); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .event-choice-button:hover { background-color: #f8f9fa; border-color: #0A2342; color: #0A2342; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .event-choice-button:last-child { margin-bottom: 0; }
         .event-choice-button::after { content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #aaa; transition: right 0.2s ease; }
-        .event-choice-button:hover::after { right: 12px; color: rgb(2, 71, 25); }
-        .modal-body .event-item { border-left: 4px solid rgb(2, 71, 25); padding: 10px; margin-bottom: 10px; background-color: #f8f9fa; }
+        .event-choice-button:hover::after { right: 12px; color: #0A2342; }
+        .modal-body .event-item { border-left: 4px solid #0A2342; padding: 10px; margin-bottom: 10px; background-color: #f8f9fa; }
         .modal-body .event-item h4 { font-size: 1.1rem; color: #333; margin-bottom: 15px; }
         .modal-body .event-item span { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.95rem; color: #555; }
         .modal-body .event-item i.fas { width: 20px; text-align: center; color: #888; }
@@ -256,55 +223,49 @@ $calendar_events_json = json_encode($calendar_events);
 <nav class="navbar">
     <div class="navbar-left">
         <img src="../img/logo.png" alt="Logo UNPAR" class="navbar-logo">
-        <div class="navbar-title"><span>Pengelolaan</span><br><strong>Event UNPAR</strong></div>
+        <div class="navbar-title"><span>Pengelolaan Sarana & Prasarana</span><br><strong>Event UNPAR</strong></div>
     </div>
     <ul class="navbar-menu">
-        <li><a href="mahasiswa_dashboard.php">Home</a></li>
-        <li><a href="mahasiswa_rules.php">Rules</a></li>
-        <li><a href="mahasiswa_pengajuan.php">Form</a></li>
-        <li><a href="mahasiswa_event.php" class="active">Event</a></li>
-        <li><a href="mahasiswa_laporan.php">Laporan</a></li>
-        <li><a href="mahasiswa_history.php">History</a></li>
+        <li><a href="asp_dashboard.php">Home</a></li>
+        <li><a href="asp_listKegiatan.php">Persetujuan Event</a></li>
+        <li><a href="asp_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="asp_kalender.php" class="active">Kalender Peminjaman</a></li>
+        <li><a href="asp_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">
-        <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
+        <a href="asp_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
         <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
 
-<div class="page-header">
-    <h1>Kalender Event UNPAR</h1>
-    <p>Gunakan filter di bawah untuk melihat jadwal event berdasarkan gedung dan lantai tertentu.</p>
-</div>
-<div class="calendar-container">
-    <div class="calendar-header">
-        <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>">&larr;</a>
-        <h2><?php echo $date->format('F Y'); ?></h2>
-        <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>">&rarr;</a>
+<div class="main-content">
+    <div class="page-header">
+        <h1>Kalender Peminjaman Sarana & Prasarana</h1>
+        <p>Gunakan filter di bawah untuk melihat jadwal peminjaman berdasarkan gedung dan lantai.</p>
     </div>
-
-    <div class="filter-section">
-        <select id="gedungFilter">
-            <option value="">Semua Gedung</option>
-            <?php foreach ($buildings as $building): ?>
-                <option value="<?php echo $building['gedung_id']; ?>"><?php echo htmlspecialchars($building['gedung_nama']); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <select id="lantaiFilter" disabled>
-            <option value="">Semua Lantai</option>
-        </select>
-    </div>
-    
-    <div class="calendar-legend">
-        <div class="legend-item">
-            <span class="legend-color-box" style="background-color: #198754;"></span> Event Utama
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <a href="?month=<?php echo $prevMonth; ?>&year=<?php echo $prevYear; ?>">&larr;</a>
+            <h2><?php echo $date->format('F Y'); ?></h2>
+            <a href="?month=<?php echo $nextMonth; ?>&year=<?php echo $nextYear; ?>">&rarr;</a>
         </div>
-        <div class="legend-item">
-            <span class="legend-color-box" style="background-color: #ffc107;"></span> Persiapan / Pembongkaran
+        <div class="filter-section">
+            <select id="gedungFilter">
+                <option value="">Semua Gedung</option>
+                <?php foreach ($buildings as $building): ?>
+                    <option value="<?php echo $building['gedung_id']; ?>"><?php echo htmlspecialchars($building['gedung_nama']); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select id="lantaiFilter" disabled>
+                <option value="">Semua Lantai</option>
+            </select>
         </div>
+        <div class="calendar-legend">
+            <div class="legend-item"><span class="legend-color-box" style="background-color: #17a2b8;"></span> Event Utama</div>
+            <div class="legend-item"><span class="legend-color-box" style="background-color: #6c757d;"></span> Persiapan / Pembongkaran</div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
     </div>
-
-    <div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
 <div id="eventModal" class="modal">
@@ -315,7 +276,27 @@ $calendar_events_json = json_encode($calendar_events);
     </div>
 </div>
 
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">ADMINISTRASI SARANA & PRASARANA</h3>
+            </div>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li>
+                <li><i class="fas fa-envelope"></i> asp@unpar.ac.id</li>
+            </ul>
+        </div>
+    </div>
+</footer>
+
 <script>
+    // 4. Data dan fungsionalitas JavaScript tetap sama
     const calendarEventsData = <?php echo $calendar_events_json; ?>;
 </script>
 
@@ -326,16 +307,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const lantaiFilter = document.getElementById('lantaiFilter');
     const eventModal = document.getElementById('eventModal');
     const closeButton = document.querySelector('.close-button');
-
     const allFloors = <?php echo json_encode($floors); ?>;
     const currentMonth = <?php echo $currentMonth; ?>;
     const currentYear = <?php echo $currentYear; ?>;
-    
+
     function updateLantaiFilter() {
         const selectedGedungId = gedungFilter.value;
         lantaiFilter.innerHTML = '<option value="">Semua Lantai</option>';
         lantaiFilter.disabled = true;
-
         if (selectedGedungId) {
             const filteredFloors = allFloors.filter(floor => floor.gedung_id == selectedGedungId);
             filteredFloors.forEach(floor => {
@@ -373,18 +352,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         renderCalendar(filteredEvents);
     }
-
+    
     function renderCalendar(eventsData) {
         const date = new Date(currentYear, currentMonth - 1, 1);
         const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
         let firstDayOfWeek = date.getDay(); 
-        if (firstDayOfWeek === 0) firstDayOfWeek = 7;
-
+        if (firstDayOfWeek === 0) firstDayOfWeek = 7; 
         let html = `<div class="day-name">Senin</div><div class="day-name">Selasa</div><div class="day-name">Rabu</div><div class="day-name">Kamis</div><div class="day-name">Jumat</div><div class="day-name">Sabtu</div><div class="day-name">Minggu</div>`;
         for (let i = 1; i < firstDayOfWeek; i++) {
             html += '<div class="day-cell empty-day"></div>';
         }
-
         for (let day = 1; day <= daysInMonth; day++) {
             const fullDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dayEvents = eventsData[day] || [];
@@ -401,18 +378,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const eventList = Object.values(uniqueEvents);
 
-                // [FIX] Logika baru untuk menampilkan event dan tombol "More"
                 if (eventList.length > 3) {
-                    // Jika lebih dari 3 event, tampilkan 2 event + tombol More
                     eventList.slice(0, 2).forEach(event => {
-                        const eventTypeClass = (event.type === 'prep' || event.type === 'clear') ? 'prep-clear' : '';
+                        const eventTypeClass = (event.type === 'main') ? '' : 'prep-clear';
                         html += `<span class="event-indicator ${eventTypeClass}">${event.name}</span>`;
                     });
                     html += `<button class="more-events-button" data-date="${fullDate}">More</button>`;
                 } else {
-                    // Jika 1, 2, atau 3 event, tampilkan semua
                     eventList.forEach(event => {
-                        const eventTypeClass = (event.type === 'prep' || event.type === 'clear') ? 'prep-clear' : '';
+                        const eventTypeClass = (event.type === 'main') ? '' : 'prep-clear';
                         html += `<span class="event-indicator ${eventTypeClass}">${event.name}</span>`;
                     });
                 }
@@ -422,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarGrid.innerHTML = html;
         setupEventListeners();
     }
-    
+
     function setupEventListeners() {
         document.querySelectorAll('.day-cell:not(.empty-day), .more-events-button').forEach(el => {
             el.addEventListener('click', function(e) {
@@ -488,10 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         fetch(`../fetch_event_details.php?date=${dateForFetch}&gedung_id=${selectedGedung}&lantai_id=${selectedLantai}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 modalBody.innerHTML = '';
                 const specificEventData = data.filter(details => details.id == event.id);
@@ -522,33 +493,9 @@ document.addEventListener('DOMContentLoaded', function() {
     closeButton.addEventListener('click', () => { eventModal.classList.remove('show'); });
     window.addEventListener('click', (event) => { if (event.target == eventModal) { eventModal.classList.remove('show'); } });
 
-    renderFilteredCalendar();
+    renderFilteredCalendar(); 
 });
 </script>
 
-<footer class="page-footer">
-    <div class="footer-container">
-        <div class="footer-left">
-            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
-            <div>
-                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
-                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
-            </div>
-        </div>
-        <div class="footer-right">
-            <ul>
-                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
-                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
-                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
-            </ul>
-            <div class="social-icons">
-                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-            </div>
-        </div>
-    </div>
-</footer>
 </body>
 </html>

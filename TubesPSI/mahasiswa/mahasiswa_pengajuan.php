@@ -668,11 +668,12 @@ $conn->close();
 
                     <div class="date-grid">
                         <div class="form-group">
-                            <label for="tanggal_persiapan">Tanggal Persiapan (Opsional)</label>
+                            <label for="tanggal_persiapan">Tanggal Persiapan Lokasi (Opsional)</label>
                             <input type="date" id="tanggal_persiapan" name="tanggal_persiapan">
                         </div>
                         <div class="form-group">
-                            <label for="tanggal_beres">Tanggal Pembongkaran (Opsional)</label>
+                            <label for="tanggal_beres">Tanggal Pembongkaran Lokasi (Opsional)</label>
+
                             <input type="date" id="tanggal_beres" name="tanggal_beres">
                         </div>
                     </div>
@@ -796,8 +797,8 @@ $conn->close();
         } 
         
         // TERAKHIR: Cek panjang Nama Event (hanya jika semua kolom sudah terisi)
-        else if (namaEventValue.length < 5) {
-            alert('Nama Event harus memiliki minimal 5 karakter.');
+        else if (namaEventValue.length < 4) {
+            alert('Nama Event harus memiliki minimal 4   karakter.');
             namaEventInput.focus();
             return;
         }
@@ -878,6 +879,13 @@ $conn->close();
         const tglSelesai = document.getElementById('pengajuan_event_tanggal_selesai').value;
         const tglPersiapan = document.getElementById('tanggal_persiapan').value;
         const tglBeres = document.getElementById('tanggal_beres').value;
+        
+        // ============================================================================================
+        // ## FIX: Tambahkan deklarasi variabel untuk jamMulai dan jamSelesai di sini ##
+        // ============================================================================================
+        const jamMulai = document.getElementById('pengajuan_event_jam_mulai').value;
+        const jamSelesai = document.getElementById('pengajuan_event_jam_selesai').value;
+
 
         if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
             alert('Error: Tanggal Selesai Acara tidak boleh mendahului Tanggal Mulai Acara.');
@@ -885,6 +893,16 @@ $conn->close();
             return;
         }
 
+        // --- PENAMBAHAN BARU (YANG KINI SUDAH BENAR): Validasi Jam Mulai vs Jam Selesai ---
+        // Pengecekan ini hanya berlaku jika acara berlangsung di hari yang sama.
+        if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
+            if (jamMulai && jamSelesai && jamSelesai <= jamMulai) {
+                alert('Error: Untuk acara di hari yang sama, Jam Selesai harus setelah Jam Mulai.');
+                event.preventDefault(); // Mencegah form untuk submit
+                document.getElementById('pengajuan_event_jam_selesai').focus();
+                return;
+            }
+        }
         if (tglBeres) {
             if (tglSelesai && tglBeres < tglSelesai) {
                 alert('Error: Tanggal Beres-Beres tidak boleh mendahului Tanggal Selesai Acara.');

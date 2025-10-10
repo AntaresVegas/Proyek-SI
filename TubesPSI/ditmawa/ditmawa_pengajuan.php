@@ -13,17 +13,12 @@ $message = '';
 $message_type = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $namaEvent = trim($_POST['nama_event']); // Ambil dan bersihkan spasi
+    $namaEvent = trim($_POST['nama_event']);
 
-    // ================================================
-    // ## 1. VALIDASI BACKEND (PHP) ##
-    // Cek panjang nama event di sisi server
-    // ================================================
     if (strlen($namaEvent) < 5) {
         $message = "Nama event harus terdiri dari minimal 5 karakter.";
         $message_type = 'error';
     } else {
-        // Jika validasi lolos, lanjutkan proses ke database
         $tipeKegiatan = $_POST['tipe_kegiatan_select'];
         if ($tipeKegiatan === 'Lainnya') {
             $tipeKegiatan = !empty($_POST['tipe_kegiatan_lainnya']) ? $_POST['tipe_kegiatan_lainnya'] : 'Lainnya';
@@ -37,21 +32,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $tanggalBeres = !empty($_POST['tanggal_beres']) ? $_POST['tanggal_beres'] : NULL;
         $selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : [];
 
-        $status = 'Disetujui';
+        // [FIX] Menyesuaikan logika status sesuai aturan baru
         $pengajuTipe = 'ditmawa';
+        $status_ditmawa = 'Disetujui';       // Status untuk Ditmawa langsung disetujui
+        $status_asp = 'Diajukan';           // Status untuk ASP perlu menunggu persetujuan
+        $status_proposal = 'Diajukan';      // Status untuk Proposal juga diatur sebagai diajukan
 
         $conn->begin_transaction();
         try {
+            // [FIX] Mengubah query INSERT untuk memasukkan 3 status terpisah dan tanggal approve ditmawa
             $stmt = $conn->prepare(
-                "INSERT INTO pengajuan_event (pengajuan_namaEvent, pengaju_tipe, pengaju_id, pengajuan_TypeKegiatan, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, pengajuan_event_jam_mulai, pengajuan_event_jam_selesai, tanggal_persiapan, tanggal_beres, pengajuan_status, pengajuan_tanggalEdit, pengajuan_tanggalApprove) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+                "INSERT INTO pengajuan_event (
+                    pengajuan_namaEvent, pengaju_tipe, pengaju_id, pengajuan_TypeKegiatan, 
+                    pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, 
+                    pengajuan_event_jam_mulai, pengajuan_event_jam_selesai, 
+                    tanggal_persiapan, tanggal_beres, 
+                    pengajuan_status_ditmawa, pengajuan_status_asp, pengajuan_status_proposal, 
+                    pengajuan_tanggalEdit, tanggal_approve_ditmawa
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
             );
-            $stmt->bind_param("ssissssssss", $namaEvent, $pengajuTipe, $ditmawa_id, $tipeKegiatan, $tanggalMulai, $tanggalSelesai, $jamMulai, $jamSelesai, $tanggalPersiapan, $tanggalBeres, $status);
+            
+            // [FIX] Menyesuaikan tipe data dan parameter yang di-bind
+            $stmt->bind_param("ssissssssssss", 
+                $namaEvent, $pengajuTipe, $ditmawa_id, $tipeKegiatan, 
+                $tanggalMulai, $tanggalSelesai, $jamMulai, $jamSelesai, 
+                $tanggalPersiapan, $tanggalBeres, 
+                $status_ditmawa, $status_asp, $status_proposal
+            );
+            
             $stmt->execute();
             $pengajuan_id = $stmt->insert_id;
             $stmt->close();
             
-            if (!empty($selected_ruangan_ids)) {
+            if (!empty($selected_ruangan_ids) && is_array($selected_ruangan_ids)) {
                 $stmt_ruangan = $conn->prepare("INSERT INTO peminjaman_ruangan (pengajuan_id, ruangan_id) VALUES (?, ?)");
                 foreach ($selected_ruangan_ids as $ruangan_id) {
                     $stmt_ruangan->bind_param("ii", $pengajuan_id, $ruangan_id);
@@ -61,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             $conn->commit();
-            $message = "Event berhasil dibuat dan otomatis disetujui.";
+            $message = "Event institusional berhasil dibuat. Status Ditmawa otomatis disetujui.";
             $message_type = 'success';
 
         } catch (Exception $e) {
@@ -69,14 +82,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $message = "Terjadi kesalahan: " . $e->getMessage();
             $message_type = 'error';
         }
-    } // Akhir dari blok 'else' validasi
+    }
     $conn->close();
 }
 
-// Ambil data gedung untuk checkboxes
 include '../config/db_connection.php';
 $gedung_options = [];
-$result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY CAST(SUBSTRING(gedung_nama, 7) AS UNSIGNED) ASC");
+// [FIX] Memperbaiki urutan gedung menjadi numerik dan lebih aman
+$result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY LENGTH(gedung_nama), gedung_nama");
 while ($row = $result_gedung->fetch_assoc()) {
     $gedung_options[] = $row;
 }
@@ -90,7 +103,6 @@ $conn->close();
     <title>Form Pengajuan Event - Ditmawa</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* CSS tetap sama seperti sebelumnya, tidak perlu diubah */
         :root { --ditmawa-primary: #ff8c00; --ditmawa-secondary: #e67e00; --text-dark: #2c3e50; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
@@ -118,33 +130,27 @@ $conn->close();
         .checkbox-item input[type="checkbox"]:checked + label::before { background-color: var(--ditmawa-primary); border-color: var(--ditmawa-primary); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e"); background-position: center; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--ditmawa-primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; margin-left: 10px; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
-        .navbar-left { display: flex; align-items: center; gap: 25px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
+        .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
-        .navbar-menu { display: flex; list-style: none; gap: 25px; }
-        .navbar-menu li a { text-decoration: none; color: white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: var(--text-dark); }
-        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
-        .navbar-right .user-name { color: white; }
-        .navbar-menu li a.active { color: #007bff; }    
+        .navbar-menu { list-style: none; }
+        .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }  
         .icon { font-size: 20px; cursor: pointer; color: white; }
         a { text-decoration: none; }
-        .page-footer { background-color: var(--ditmawa-primary); color: #fff; padding: 40px 0; margin-top: auto; }
-        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: 40px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
-        .footer-left h4, .footer-left h3 { color: black; }
-        .footer-right ul { list-style: none; padding: 0; color: black; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
-        .navbar-right a[href="logout.php"] .icon {
-            color: black;
-            transition: color 0.3s; /* Opsional: agar perubahan warna saat hover lebih halus */
-        }
-
+        .navbar-right a[href="logout.php"] .icon { color: black; transition: color 0.3s; }
     </style>
 </head>
 <body>
@@ -163,7 +169,7 @@ $conn->close();
                 <li><a href="ditmawa_laporan.php">Laporan</a></li>
             </ul>
             <div class="navbar-right">
-                <a href="ditmawa_profile.php" style="display: flex; align-items: center; gap: 10px;">
+                    <a href="ditmawa_profile.php" style="display: flex; align-items: center; gap: 10px; color: white;">
                     <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
                     <i class="fas fa-user-circle icon"></i>
                 </a>
@@ -175,7 +181,7 @@ $conn->close();
     <div class="main-container">
         <div class="form-container">
             <h1>Formulir Pembuatan Event Institusional</h1>
-            <p class="subtitle">Event yang dibuat di sini akan otomatis disetujui dan masuk ke kalender institusional.</p>
+            <p class="subtitle">Event yang dibuat di sini akan otomatis disetujui oleh Ditmawa dan masuk ke antrian persetujuan ASP.</p>
             
             <?php if (!empty($message)): ?>
                 <div class="alert <?php echo $message_type; ?>"><?php echo htmlspecialchars($message); ?></div>
@@ -186,15 +192,12 @@ $conn->close();
                     <h2>Detail Event</h2>
                     <div class="form-group">
                         <label for="nama_event">Nama Event</label>
-                        <input type="text" id="nama_event" name="nama_event" 
-                               placeholder="Contoh: Rapat Koordinasi Awal Semester" 
-                               required 
-                               minlength="5" 
-                               title="Nama event harus terdiri dari minimal 5 karakter.">
+                        <input type="text" id="nama_event" name="nama_event" placeholder="Contoh: Rapat Koordinasi Awal Semester" required>
                     </div>
                     <div class="form-group">
                         <label for="tipe_kegiatan_select">Tipe Kegiatan</label>
                         <select id="tipe_kegiatan_select" name="tipe_kegiatan_select" required>
+                            <option value="">-- Pilih Tipe --</option>
                             <option value="Institusional">Institusional</option>
                             <option value="Rapat">Rapat</option>
                             <option value="Seminar">Seminar</option>
@@ -211,37 +214,19 @@ $conn->close();
                 <div class="form-section">
                     <h2>Jadwal dan Ruangan</h2>
                      <div class="form-row">
-                        <div class="form-group">
-                            <label for="tanggal_mulai">Tanggal Mulai Event</label>
-                            <input type="date" id="tanggal_mulai" name="tanggal_mulai" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="tanggal_selesai">Tanggal Selesai Event</label>
-                            <input type="date" id="tanggal_selesai" name="tanggal_selesai" required>
-                        </div>
+                        <div class="form-group"><label for="tanggal_mulai">Tanggal Mulai Event</label><input type="date" id="tanggal_mulai" name="tanggal_mulai" required></div>
+                        <div class="form-group"><label for="tanggal_selesai">Tanggal Selesai Event</label><input type="date" id="tanggal_selesai" name="tanggal_selesai" required></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group">
-                            <label for="jam_mulai">Jam Mulai</label>
-                            <input type="time" id="jam_mulai" name="jam_mulai" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="jam_selesai">Jam Selesai</label>
-                            <input type="time" id="jam_selesai" name="jam_selesai" required>
-                        </div>
+                        <div class="form-group"><label for="jam_mulai">Jam Mulai</label><input type="time" id="jam_mulai" name="jam_mulai" required></div>
+                        <div class="form-group"><label for="jam_selesai">Jam Selesai</label><input type="time" id="jam_selesai" name="jam_selesai" required></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group">
-                            <label for="tanggal_persiapan">Tgl Mulai Persiapan (Opsional)</label>
-                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan">
-                        </div>
-                        <div class="form-group">
-                            <label for="tanggal_beres">Tgl Selesai Pembongkaran (Opsional)</label>
-                            <input type="date" id="tanggal_beres" name="tanggal_beres">
-                        </div>
+                        <div class="form-group"><label for="tanggal_persiapan">Tgl Persiapan (Opsional)</label><input type="date" id="tanggal_persiapan" name="tanggal_persiapan"></div>
+                        <div class="form-group"><label for="tanggal_beres">Tgl Pembongkaran (Opsional)</label><input type="date" id="tanggal_beres" name="tanggal_beres"></div>
                     </div>
                     <div class="form-group">
-                        <label>Pilih Gedung (bisa lebih dari satu)</label>
+                        <label>Pilih Gedung</label>
                         <div id="gedung_selection" class="checkbox-group-modern">
                             <?php foreach ($gedung_options as $gedung): ?>
                                 <div class="checkbox-item">
@@ -252,16 +237,12 @@ $conn->close();
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Pilih Lantai (bisa lebih dari satu) <span class="loader" id="lantai_loader"></span></label>
-                        <div id="lantai_selection_container">
-                             <div class="checkbox-placeholder">Pilih Gedung terlebih dahulu.</div>
-                        </div>
+                        <label>Pilih Lantai <span class="loader" id="lantai_loader"></span></label>
+                        <div id="lantai_selection_container"><div class="checkbox-placeholder">Pilih Gedung terlebih dahulu.</div></div>
                     </div>
                     <div class="form-group">
-                        <label>Pilih Ruangan (bisa lebih dari satu) <span class="loader" id="ruangan_loader"></span></label>
-                        <div id="ruangan_selection_container">
-                            <div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div>
-                        </div>
+                        <label>Pilih Ruangan <span class="loader" id="ruangan_loader"></span></label>
+                        <div id="ruangan_selection_container"><div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div></div>
                     </div>
                 </div>
                 <button type="submit" class="btn-submit">Buat Event</button>
@@ -269,112 +250,63 @@ $conn->close();
         </div>
     </div>
 
-    <footer>
-        <div class="page-footer">
-            <div class="footer-container">
-                <div class="footer-left">
-                    <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
-                    <div>
-                        <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
-                        <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
-                    </div>
-                </div>
-                <div class="footer-right">
-                    <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
-                        <li><i class="fas fa-phone-alt"></i> (022) 203 2555 ext. 100140</li>
-                        <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
-                    </ul>
-                    <div class="social-icons">
+    <footer class="page-footer">
+        <div class="footer-container">
+            <div class="footer-left"><img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+                <div><h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4><h3 style="font-weight: bold; margin-top: 5px;color :black">DIREKTORAT KEMAHASISWAAN</h3></div>
+            </div>
+            <div class="footer-right">
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                    <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                    <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+                </ul>
+                <div class="social-icons">
                     <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                     <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
-                </div>
                 </div>
             </div>
         </div>
     </footer>
     
 <script>
-    // ================================================
-    // ## PENAMBAHAN: VALIDASI FORM DI SISI CLIENT (JAVASCRIPT) ##
-    // ================================================
     document.getElementById('event-form').addEventListener('submit', function(event) {
-        // --- 1. Validasi Nama Event ---
-        const namaEventInput = document.getElementById('nama_event');
-        if (namaEventInput.value.trim().length < 5) {
-            alert('Validasi Gagal: Nama event harus terdiri dari minimal 5 karakter.');
-            namaEventInput.focus();
-            event.preventDefault(); // Mencegah form submit
-            return;
-        }
+        const stopSubmission = (message, element) => {
+            alert('Validasi Gagal: ' + message);
+            if (element) { element.focus(); }
+            event.preventDefault();
+        };
 
-        // --- 2. Validasi Tanggal dan Jam ---
+        const namaEventInput = document.getElementById('nama_event');
+        if (namaEventInput.value.trim().length < 5) { return stopSubmission('Nama event harus terdiri dari minimal 5 karakter.', namaEventInput); }
+
+        const tipeSelect = document.getElementById('tipe_kegiatan_select');
+        const tipeLainnyaInput = document.getElementById('tipe_kegiatan_lainnya');
+        if (tipeSelect.value === 'Lainnya' && tipeLainnyaInput.value.trim() === '') { return stopSubmission('Anda memilih "Lainnya", maka wajib menyebutkan tipe kegiatannya.', tipeLainnyaInput); }
+        
         const tglMulai = document.getElementById('tanggal_mulai').value;
         const tglSelesai = document.getElementById('tanggal_selesai').value;
-        const tglPersiapan = document.getElementById('tanggal_persiapan').value;
-        const tglBeres = document.getElementById('tanggal_beres').value;
         const jamMulai = document.getElementById('jam_mulai').value;
         const jamSelesai = document.getElementById('jam_selesai').value;
+        const tglPersiapan = document.getElementById('tanggal_persiapan').value;
+        const tglBeres = document.getElementById('tanggal_beres').value;
 
-        if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
-            alert('Validasi Gagal: Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.');
-            event.preventDefault(); vs Jam Selesai ---
-        if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
-            if (jamMulai && jamSelesai && jamSelesai < jamMulai) {
-                alert('Validasi Gagal: Untuk event di hari yang sama, Jam Selesai tidak boleh lebih awal dari Jam Mulai.');
-                event.preventDefault();
-                document.getElementById('jam_selesai').focus();
-                return;
-            return;
-        }
+        if (tglSelesai < tglMulai) { return stopSubmission('Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.', document.getElementById('tanggal_selesai')); }
+        if (tglMulai === tglSelesai && jamSelesai <= jamMulai) { return stopSubmission('Untuk event di hari yang sama, Jam Selesai harus setelah Jam Mulai.', document.getElementById('jam_selesai')); }
+        if (tglBeres && tglSelesai && tglBeres < tglSelesai) { return stopSubmission('Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Selesai Event.', document.getElementById('tanggal_beres')); }
+        if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) { return stopSubmission('Tanggal Mulai Persiapan tidak boleh setelah Tanggal Mulai Event.', document.getElementById('tanggal_persiapan')); }
 
-        // --- PENAMBAHAN BARU: Validasi Jam Mulai
-            }
-        }
-        // --- AKHIR PENAMBAHAN BARU ---
-        
-        // Cek tanggal beres-beres
-        if (tglBeres) {
-            if (tglSelesai && tglBeres < tglSelesai) {
-                alert('Validasi Gagal: Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Selesai Event.');
-                event.preventDefault();
-                return;
-            }
-             if (tglMulai && tglBeres < tglMulai) {
-                alert('Validasi Gagal: Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Mulai Event.');
-                event.preventDefault();
-                return;
-            }
-        }
-
-        // Cek tanggal persiapan
-        if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) {
-            alert('Validasi Gagal: Tanggal Mulai Persiapan tidak boleh setelah Tanggal Mulai Event.');
-            event.preventDefault();
-            return;
-        }
-
-        // --- 3. Validasi Pemilihan Lokasi ---
-        const gedungChecked = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length > 0;
-        const lantaiChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length > 0;
-        const ruanganChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length > 0;
-
-        // Jika user mulai memilih lokasi (memilih gedung), maka lantai dan ruangan menjadi wajib.
-        // Jika tidak ada gedung yang dipilih, kita asumsikan event tidak memerlukan ruangan.
-        if (gedungChecked && (!lantaiChecked || !ruanganChecked)) {
-            if (!lantaiChecked) {
-                 alert('Validasi Gagal: Anda telah memilih Gedung, silakan pilih minimal satu Lantai.');
-            } else { // Ini berarti lantai sudah dipilih, tapi ruangan belum
-                 alert('Validasi Gagal: Anda telah memilih Lantai, silakan pilih minimal satu Ruangan.');
-            }
-            event.preventDefault();
-            return;
+        const gedungCheckedCount = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
+        if (gedungCheckedCount > 0) {
+            const lantaiIsChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length > 0;
+            if (!lantaiIsChecked) { return stopSubmission('Anda telah memilih Gedung, maka wajib memilih minimal satu Lantai.'); }
+            const ruanganIsChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length > 0;
+            if (!ruanganIsChecked) { return stopSubmission('Anda telah memilih Lantai, maka wajib memilih minimal satu Ruangan.'); }
         }
     });
 
-    // Script lainnya (Tipe Kegiatan & Dynamic Checkbox) tetap sama
     const tipeKegiatanSelect = document.getElementById('tipe_kegiatan_select');
     const lainnyaContainer = document.getElementById('lainnya_container');
     const lainnyaInput = document.getElementById('tipe_kegiatan_lainnya');
@@ -394,6 +326,7 @@ $conn->close();
     const ruanganContainer = document.getElementById('ruangan_selection_container');
     const lantaiLoader = document.getElementById('lantai_loader');
     const ruanganLoader = document.getElementById('ruangan_loader');
+    
     gedungSelection.addEventListener('change', function() {
         const selectedGedungIds = Array.from(gedungSelection.querySelectorAll('input:checked')).map(cb => cb.value);
         lantaiContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Gedung terlebih dahulu.</div>';
@@ -406,6 +339,7 @@ $conn->close();
             fetchData('lantai', selectedGedungIds);
         }
     });
+
     function handleLantaiChange() {
         const selectedLantaiIds = Array.from(document.querySelectorAll('#lantai_selection input:checked')).map(cb => cb.value);
         ruanganContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div>';
@@ -413,6 +347,7 @@ $conn->close();
             fetchData('ruangan', selectedLantaiIds);
         }
     }
+
     function fetchData(type, ids) {
         const loader = (type === 'lantai') ? lantaiLoader : ruanganLoader;
         const container = (type === 'lantai') ? lantaiContainer : ruanganContainer;
@@ -420,20 +355,21 @@ $conn->close();
         const endpoint = (type === 'lantai') ? 'get_lantai.php' : 'get_ruangan.php';
         loader.style.display = 'inline-block';
         const queryString = ids.map(id => `${idKey}[]=${encodeURIComponent(id)}`).join('&');
-        fetch(`${endpoint}?${queryString}`)
+        
+        // [FIX] Mengubah path fetch dari ../includes/ menjadi ../
+        fetch(`../${endpoint}?${queryString}`)
             .then(response => {
                 if (!response.ok) { throw new Error('Network response was not ok'); }
                 return response.json();
             })
             .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                if (data.error) { throw new Error(data.error); }
                 if (data.length > 0) {
                     let html = `<div id="${type}_selection" class="checkbox-group-modern">`;
                     data.forEach(item => {
-                        const id = item[`${type}_id`] || item['ruangan_id'] || item['lantai_id'];
-                        const name = (type === 'lantai') ? `Lantai ${item.lantai_nomor} (${item.gedung_nama})` : `${item.ruangan_nama} (Lantai ${item.lantai_nomor}, ${item.gedung_nama})`;
+                        const id = item.id;
+                        const name = item.name;
+                        // [FIX] Menyederhanakan nama input checkbox
                         const inputName = (type === 'lantai') ? 'lantai_ids[]' : 'ruangan_ids[]';
                         html += `
                             <div class="checkbox-item">
@@ -452,7 +388,7 @@ $conn->close();
             })
             .catch(error => {
                 console.error(`Error fetching ${type}:`, error);
-                container.innerHTML = `<div class="checkbox-placeholder" style="color:red;">Gagal memuat data ${type}. Periksa console untuk detail.</div>`;
+                container.innerHTML = `<div class="checkbox-placeholder" style="color:red;">Gagal memuat data ${type}.</div>`;
             })
             .finally(() => {
                 loader.style.display = 'none';

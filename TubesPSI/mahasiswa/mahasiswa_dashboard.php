@@ -36,10 +36,12 @@ if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 try {
     if (isset($conn) && $conn->ping()) {
         
+        // ======================= PERUBAHAN LOGIKA KALENDER DIMULAI DI SINI =======================
+        // [FIX] Mengubah 'pengajuan_status' menjadi 'pengajuan_status_ditmawa'
         $stmt_calendar = $conn->prepare("
-            SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, tanggal_persiapan, tanggal_beres 
+            SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai, tanggal_persiapan, tanggal_beres, pengaju_tipe 
             FROM pengajuan_event 
-            WHERE pengajuan_status = 'Disetujui' 
+            WHERE pengajuan_status_ditmawa = 'Disetujui' 
             AND (
                 (MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ?) OR
                 (MONTH(pengajuan_event_tanggal_selesai) = ? AND YEAR(pengajuan_event_tanggal_selesai) = ?) OR
@@ -52,62 +54,76 @@ try {
             $stmt_calendar->execute();
             $result = $stmt_calendar->get_result();
             
-            $events_to_process = [];
+            $temp_events_by_day = [];
+
+            // Langkah 1: Kumpulkan semua event dan kelompokkan berdasarkan hari dan tipe
             while ($row = $result->fetch_assoc()) {
-                $events_to_process[$row['pengajuan_namaEvent']] = $row;
-            }
-            
-            foreach ($events_to_process as $row) {
-                // Proses Tanggal Event Utama
+                $event_pengaju_tipe = $row['pengaju_tipe'];
+                
                 $period = new DatePeriod(new DateTime($row['pengajuan_event_tanggal_mulai']), new DateInterval('P1D'), (new DateTime($row['pengajuan_event_tanggal_selesai']))->modify('+1 day'));
                 foreach ($period as $day) {
                     if ($day->format('n') == $currentMonth && $day->format('Y') == $currentYear) {
-                        $calendar_events[$day->format('j')][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
+                         $day_num = $day->format('j');
+                        $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']), 'type' => 'main'];
                     }
                 }
                 
-                // Logika untuk rentang waktu persiapan
                 if (!empty($row['tanggal_persiapan'])) {
                     $prep_start_dt = new DateTime($row['tanggal_persiapan']);
                     $main_event_start_dt = new DateTime($row['pengajuan_event_tanggal_mulai']);
-                    if ($prep_start_dt < $main_event_start_dt) {
-                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $main_event_start_dt);
+                     if ($prep_start_dt <= $main_event_start_dt) {
+                        $prep_period_end = (clone $main_event_start_dt); // Don't modify to +1 day here to include the start day itself
+                        if($prep_start_dt->format('Y-m-d') == $main_event_start_dt->format('Y-m-d')) {
+                            $prep_period_end = (clone $prep_start_dt)->modify('+1 day');
+                        }
+                        $prep_period = new DatePeriod($prep_start_dt, new DateInterval('P1D'), $prep_period_end);
                         foreach ($prep_period as $dt) {
                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                                $day = (int)$dt->format('j');
-                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
+                                $day_num = (int)$dt->format('j');
+                                $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Persiapan)', 'type' => 'prep'];
                             }
                         }
                     }
                 }
 
-                // Logika untuk rentang waktu beres-beres
                 if (!empty($row['tanggal_beres'])) {
                     $main_event_end_dt = new DateTime($row['pengajuan_event_tanggal_selesai']);
                     $clear_end_dt = new DateTime($row['tanggal_beres']);
-                    if ($clear_end_dt > $main_event_end_dt) {
+                    if ($clear_end_dt >= $main_event_end_dt) {
                         $clear_start_dt = (clone $main_event_end_dt)->modify('+1 day');
-                        $clear_period_end_dt = (clone $clear_end_dt)->modify('+1 day');
-                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), $clear_period_end_dt);
+                         if($clear_end_dt->format('Y-m-d') == $main_event_end_dt->format('Y-m-d')) {
+                            $clear_start_dt = $clear_end_dt;
+                        }
+                        $clear_period = new DatePeriod($clear_start_dt, new DateInterval('P1D'), (clone $clear_end_dt)->modify('+1 day'));
                         foreach ($clear_period as $dt) {
                             if ($dt->format('n') == $currentMonth && $dt->format('Y') == $currentYear) {
-                                $day = (int)$dt->format('j');
-                                $calendar_events[$day][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
+                                $day_num = (int)$dt->format('j');
+                                $temp_events_by_day[$day_num][$event_pengaju_tipe][] = ['name' => htmlspecialchars($row['pengajuan_namaEvent']) . ' (Pembongkaran)', 'type' => 'clear'];
                             }
                         }
                     }
                 }
             }
             $stmt_calendar->close();
-        }
 
-        // Data Event Mahasiswa Mendatang (Hanya 1 Terdekat)
+            // Langkah 2: Bangun array $calendar_events final dengan aturan prioritas
+            foreach ($temp_events_by_day as $day => $types) {
+                if (!empty($types['ditmawa'])) {
+                    $calendar_events[$day] = $types['ditmawa'];
+                } else if (!empty($types['mahasiswa'])) {
+                    $calendar_events[$day] = $types['mahasiswa'];
+                }
+            }
+        }
+        // ======================= PERUBAHAN LOGIKA KALENDER SELESAI DI SINI =======================
+
         // Data Event Mahasiswa Mendatang (3 Terdekat)
+        // [FIX] Mengubah 'pengajuan_status' menjadi 'pengajuan_status_ditmawa'
         $stmt_events = $conn->prepare(
             "SELECT pengajuan_namaEvent, pengajuan_event_tanggal_mulai, pengajuan_event_jam_mulai 
             FROM pengajuan_event 
-            WHERE pengajuan_status = 'Disetujui' 
-            AND pengaju_tipe = 'mahasiswa'  -- Tambahkan filter ini!
+            WHERE pengajuan_status_ditmawa = 'Disetujui' 
+            AND pengaju_tipe = 'mahasiswa'
             AND pengajuan_event_tanggal_selesai >= CURDATE() 
             ORDER BY pengajuan_event_tanggal_mulai ASC, pengajuan_event_jam_mulai ASC 
             LIMIT 3"  
@@ -119,13 +135,14 @@ try {
         }
 
         // Data Aktivitas Pengajuan Terbaru (Hanya 1 terbaru)
+        // [FIX] Mengubah 'pengajuan_status' menjadi 'pengajuan_status_ditmawa' dan menggunakan alias 'AS pengajuan_status'
+        // agar tidak perlu mengubah variabel di bagian HTML.
         $stmt_submissions = $conn->prepare(
-            "SELECT pengajuan_namaEvent, pengajuan_status, pengajuan_tanggalEdit 
+            "SELECT pengajuan_namaEvent, pengajuan_status_ditmawa AS pengajuan_status, pengajuan_tanggalEdit 
             FROM pengajuan_event 
             WHERE pengaju_id = ? AND pengaju_tipe = 'mahasiswa' 
             ORDER BY pengajuan_tanggalEdit DESC LIMIT 1"
         );
-        // Bind param tetap sama karena user_id mahasiswa yang login
         if ($stmt_submissions && $user_id !== null) {
             $stmt_submissions->bind_param("i", $user_id);
             $stmt_submissions->execute();
@@ -134,6 +151,7 @@ try {
         }
     }
 } catch (Exception $e) {
+    // Menampilkan pesan error yang lebih informatif untuk debugging
     die("Terjadi kesalahan saat mengambil data dari database: " . $e->getMessage());
 } finally {
     if (isset($conn) && $conn->ping()) {
@@ -184,10 +202,7 @@ try {
         .event-card-info { padding: 15px 20px; }
         .event-card-info h4 { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; }
         .event-card-info p { font-size: 0.9em; color: var(--text-light); }
-        /* Tambahkan ini di dalam tag <style> di mahasiswa_dashboard.php */
-        .event-card:not(:last-child) {
-            margin-bottom: 15px; /* Memberi jarak antar kartu */
-        }
+        .event-card:not(:last-child) { margin-bottom: 15px; }
         .submission-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; position: relative; border-left: 5px solid; }
         .submission-card:not(:last-child) { margin-bottom: 15px; }
         .submission-card-title { font-size: 1.1em; color: var(--text-dark); margin-bottom: 8px; padding-right: 90px; }
@@ -222,6 +237,28 @@ try {
         .event-indicator.prep-clear { background: var(--status-yellow); color: var(--text-dark); }
 
         .empty-day { background-color: var(--light-gray); }
+
+        /* [ADD] CSS untuk Keterangan Warna Kalender */
+        .calendar-legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 20px;
+            padding-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: var(--text-light);
+        }
+        .legend-color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        
         .detail-link-container { text-align: center; margin-top: 15px; }
         .detail-link { color: #dc3545; text-decoration: none; font-weight: bold; }
         .service-flow-container { background: #fff; border-radius: 12px; padding: 25px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 30px; }
@@ -257,6 +294,104 @@ try {
         .footer-right .social-icons a:hover {
             color: #fff;
         }
+        /* ================== CSS UNTUK FITUR NOTIFIKASI ================== */
+        .notification-wrapper {
+            position: relative;
+        }
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            padding: 2px 6px;
+            border-radius: 50%;
+            background: red;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .notifications-dropdown {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            color: #333;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            width: 350px;
+            z-index: 1001;
+            overflow: hidden;
+        }
+        .notifications-dropdown.show {
+            display: block;
+        }
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .notification-header span {
+            font-weight: bold;
+        }
+        .notification-header button {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notification-list-item a {
+            display: flex;
+            padding: 15px;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f1f1f1;
+            transition: background-color 0.2s;
+        }
+        .notification-list-item.unread a {
+            background-color: #eaf2ff;
+        }
+        .notification-list-item a:hover {
+            background-color: #f0f0f0;
+        }
+        .notification-list-item:last-child a {
+            border-bottom: none;
+        }
+        .status-dot {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 15px;
+            margin-top: 5px;
+        }
+        .status-dot.unread {
+            background-color: var(--secondary-color);
+        }
+        .notification-message {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .notification-time {
+            font-size: 12px;
+            color: #888;
+        }
+        .no-notifications {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -274,12 +409,27 @@ try {
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
-    <div class="navbar-right">
-        <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
-            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
-        </a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+<div class="navbar-right">
+    <a href="mahasiswa_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+        <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
+    </a>
+    
+    <div class="notification-wrapper">
+        <i class="fas fa-bell icon" id="notificationBell">
+            <span class="badge" id="notificationBadge" style="display: none;"></span>
+        </i>
+        <div class="notifications-dropdown" id="notificationsDropdown">
+            <div class="notification-header">
+                <span>Notifikasi</span>
+                <button id="markAsRead">Tandai semua dibaca</button>
+            </div>
+            <ul class="notification-list" id="notificationList">
+                <li class="no-notifications">Memuat...</li>
+            </ul>
+        </div>
     </div>
+    <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+</div>
 </nav>
 
 <div class="container">
@@ -320,7 +470,7 @@ try {
             <?php if (!empty($recent_submissions)): ?>
                 <?php foreach ($recent_submissions as $submission): ?>
                     <div class="submission-card status-<?php echo htmlspecialchars($submission['pengajuan_status']); ?>">
-                        <div class="status-badge status-<?php echo htmlspecialchars($submission['pengajuan_status']); ?>"><?php echo htmlspecialchars($submission['pengajuan_status']); ?></div>
+                        <div class="status-badge"><?php echo htmlspecialchars($submission['pengajuan_status']); ?></div>
                         <h4 class="submission-card-title"><?php echo htmlspecialchars($submission['pengajuan_namaEvent']); ?></h4>
                         <p class="submission-card-date">Terakhir diubah: <?php echo date('d F Y, H:i', strtotime($submission['pengajuan_tanggalEdit'])); ?></p>
                     </div>
@@ -377,9 +527,20 @@ try {
             }
             ?>
         </div>
-            <div class="detail-link-container">
-                <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+        <div class="calendar-legend">
+            <div class="legend-item">
+                <span class="legend-color-box" style="background-color: var(--status-green);"></span>
+                <span>Event Utama</span>
             </div>
+            <div class="legend-item">
+                <span class="legend-color-box" style="background-color: var(--status-yellow);"></span>
+                <span>Persiapan / Pembongkaran</span>
+            </div>
+        </div>
+
+        <div class="detail-link-container">
+            <a href="mahasiswa_event.php" class="detail-link">Klik Untuk Kalender Lebih Detail</a>
+        </div>
     </div>
     <br>
     <br>

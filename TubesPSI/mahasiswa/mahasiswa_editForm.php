@@ -23,48 +23,47 @@ if (!$pengajuan_id) {
 
 // 2. Logika UPDATE saat form disubmit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $check_status_stmt = $conn->prepare("SELECT pengajuan_status FROM pengajuan_event WHERE pengajuan_id = ? AND pengaju_id = ? AND pengaju_tipe = 'mahasiswa'");
+    $check_status_stmt = $conn->prepare("SELECT pengajuan_status_proposal FROM pengajuan_event WHERE pengajuan_id = ? AND pengaju_id = ? AND pengaju_tipe = 'mahasiswa'");
     $check_status_stmt->bind_param("ii", $pengajuan_id, $user_id);
     $check_status_stmt->execute();
     $status_result = $check_status_stmt->get_result()->fetch_assoc();
     $check_status_stmt->close();
 
-    if ($status_result && $status_result['pengajuan_status'] === 'Ditolak') {
+    if ($status_result && $status_result['pengajuan_status_proposal'] === 'Ditolak') {
         $pengajuan_namaEvent = $_POST['pengajuan_namaEvent'];
         $pengajuan_TypeKegiatan_raw = $_POST['pengajuan_TypeKegiatan_select'];
-        if ($pengajuan_TypeKegiatan_raw === 'Lainnya') {
-            $pengajuan_TypeKegiatan = $_POST['pengajuan_TypeKegiatan_Lainnya'];
-        } else {
-            $pengajuan_TypeKegiatan = $pengajuan_TypeKegiatan_raw;
-        }
-
+        $pengajuan_TypeKegiatan = ($pengajuan_TypeKegiatan_raw === 'Lainnya') ? $_POST['pengajuan_TypeKegiatan_Lainnya'] : $pengajuan_TypeKegiatan_raw;
         $pengajuan_event_jam_mulai = $_POST['pengajuan_event_jam_mulai'];
         $pengajuan_event_jam_selesai = $_POST['pengajuan_event_jam_selesai'];
         $pengajuan_event_tanggal_mulai = $_POST['pengajuan_event_tanggal_mulai'];
         $pengajuan_event_tanggal_selesai = $_POST['pengajuan_event_tanggal_selesai'];
         $tanggal_persiapan = !empty($_POST['tanggal_persiapan']) ? $_POST['tanggal_persiapan'] : null;
         $tanggal_beres = !empty($_POST['tanggal_beres']) ? $_POST['tanggal_beres'] : null;
-
-        $new_selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : [];
+        $new_selected_ruangan_ids = $_POST['ruangan_ids'] ?? [];
         $rundown_file_path = $_POST['existing_rundown_file'];
         $proposal_file_path = $_POST['existing_proposal_file'];
 
         if (isset($_FILES['jadwal_event_rundown_file']) && $_FILES['jadwal_event_rundown_file']['error'] == UPLOAD_ERR_OK) {
-            $target_dir_rundown = '../uploads/rundown/';
-            if (!is_dir($target_dir_rundown)) { mkdir($target_dir_rundown, 0777, true); }
             $rundown_file_path = 'uploads/rundown/' . uniqid() . "_" . basename($_FILES["jadwal_event_rundown_file"]["name"]);
-            move_uploaded_file($_FILES["jadwal_event_rundown_file"]["tmp_name"], $rundown_file_path);
+            move_uploaded_file($_FILES["jadwal_event_rundown_file"]["tmp_name"], '../' . $rundown_file_path);
         }
         if (isset($_FILES['pengajuan_event_proposal_file']) && $_FILES['pengajuan_event_proposal_file']['error'] == UPLOAD_ERR_OK) {
-            $target_dir_proposal = '../uploads/proposal/';
-            if (!is_dir($target_dir_proposal)) { mkdir($target_dir_proposal, 0777, true); }
             $proposal_file_path = 'uploads/proposal/' . uniqid() . "_" . basename($_FILES["pengajuan_event_proposal_file"]["name"]);
-            move_uploaded_file($_FILES["pengajuan_event_proposal_file"]["tmp_name"], $proposal_file_path);
+            move_uploaded_file($_FILES["pengajuan_event_proposal_file"]["tmp_name"], '../' . $proposal_file_path);
         }
 
         $conn->begin_transaction();
         try {
-            $stmt = $conn->prepare("UPDATE pengajuan_event SET pengajuan_namaEvent = ?, pengajuan_TypeKegiatan = ?, pengajuan_event_jam_mulai = ?, pengajuan_event_jam_selesai = ?, pengajuan_event_tanggal_mulai = ?, pengajuan_event_tanggal_selesai = ?, tanggal_persiapan = ?, tanggal_beres = ?, jadwal_event_rundown_file = ?, pengajuan_event_proposal_file = ?, pengajuan_status = 'Diajukan', pengajuan_tanggalEdit = NOW(), pengajuan_komentarDitmawa = NULL WHERE pengajuan_id = ? AND pengaju_id = ? AND pengaju_tipe = 'mahasiswa'");
+            $stmt = $conn->prepare("UPDATE pengajuan_event SET 
+                pengajuan_namaEvent = ?, pengajuan_TypeKegiatan = ?, 
+                pengajuan_event_jam_mulai = ?, pengajuan_event_jam_selesai = ?, 
+                pengajuan_event_tanggal_mulai = ?, pengajuan_event_tanggal_selesai = ?, 
+                tanggal_persiapan = ?, tanggal_beres = ?, 
+                jadwal_event_rundown_file = ?, pengajuan_event_proposal_file = ?, 
+                pengajuan_status_ditmawa = 'Diajukan', pengajuan_status_asp = 'Diajukan',
+                pengajuan_status_proposal = 'Diajukan', pengajuan_tanggalEdit = NOW(), 
+                komentar_ditmawa = NULL, komentar_asp = NULL
+                WHERE pengajuan_id = ? AND pengaju_id = ? AND pengaju_tipe = 'mahasiswa'");
             $stmt->bind_param("ssssssssssii", $pengajuan_namaEvent, $pengajuan_TypeKegiatan, $pengajuan_event_jam_mulai, $pengajuan_event_jam_selesai, $pengajuan_event_tanggal_mulai, $pengajuan_event_tanggal_selesai, $tanggal_persiapan, $tanggal_beres, $rundown_file_path, $proposal_file_path, $pengajuan_id, $user_id);
             $stmt->execute();
             
@@ -105,11 +104,7 @@ $result = $stmt->get_result();
 $event_data = $result->num_rows > 0 ? $result->fetch_assoc() : die("Error: Anda tidak memiliki akses ke event ini atau event tidak ditemukan.");
 $stmt->close();
 
-// ================================================
-// ## LOGIKA DIPERBAIKI: Kapan form bisa diedit ##
-// Form hanya bisa diedit jika statusnya 'Ditolak'.
-// ================================================
-$is_editable = ($event_data['pengajuan_status'] === 'Ditolak');
+$is_editable = ($event_data['pengajuan_status_proposal'] === 'Ditolak');
 
 // 4. Ambil semua data lokasi yang diperlukan
 $selected_ruangan_ids = [];
@@ -137,7 +132,9 @@ if (!empty($selected_ruangan_ids)) {
     $placeholders = implode(',', array_fill(0, count($selected_ruangan_ids), '?'));
     $types = str_repeat('i', count($selected_ruangan_ids));
     $stmt_list = $conn->prepare("SELECT g.gedung_nama, l.lantai_nomor, r.ruangan_nama FROM ruangan r JOIN lantai l ON r.lantai_id = l.lantai_id JOIN gedung g ON l.gedung_id = g.gedung_id WHERE r.ruangan_id IN ($placeholders) ORDER BY CAST(SUBSTRING(g.gedung_nama, 7) AS UNSIGNED), l.lantai_nomor, r.ruangan_nama");
-    $stmt_list->bind_param($types, ...$selected_ruangan_ids);
+    if(count($selected_ruangan_ids) > 0) {
+        $stmt_list->bind_param($types, ...$selected_ruangan_ids);
+    }
     $stmt_list->execute();
     $result_list = $stmt_list->get_result();
     while($row = $result_list->fetch_assoc()) $selected_locations_list[] = $row;
@@ -159,7 +156,8 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 80px;background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;}
+        html { height: 100%;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 80px;background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column;}
         .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-left { gap: 10px; }
@@ -169,33 +167,29 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
         .navbar-menu li a { text-decoration: none; color:rgb(253, 253, 253); font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { color:rgb(255, 255, 255); }
-        .container { max-width: 900px; margin: 20px auto 30px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+        .container { max-width: 900px; margin: 20px auto 30px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
         .main-content { padding: 30px; }
         .header { background:rgb(44, 62, 80); color: white; padding: 20px 30px; border-radius: 15px 15px 0 0; text-align: center;}
         .header h1 { font-size: 24px; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; background-color: #f8f8f8; }
-        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { background-color: #e9ecef; cursor: not-allowed; }
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { background-color: #e9ecef; cursor: not-allowed; color: #495057;}
         .button-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
         .btn-submit { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; background-color: #28a745; color: white; }
         .btn-kembali { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; background-color: #6c757d; color: white; text-decoration: none;}
         .message { padding: 15px; margin-bottom: 20px; border-radius: 5px; text-align: center;}
-        .message.success { background-color: #d4edda; color: #155724; }
         .message.error { background-color: #f8d7da; color: #721c24; }
         .current-file { margin-bottom: 8px; font-size: 14px; color: #555; }
         .current-file a { color: #007bff; }
         .form-control-file { display: block; width: 100%; }
         .status-notice { padding: 15px 20px; margin-bottom: 25px; border-left: 5px solid; border-radius: 5px; }
         .status-notice h4 { margin-bottom: 10px; }
-        .status-notice-ditolak { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
-        .status-notice-diajukan { background-color: #cce5ff; border-color: #007bff; color: #004085; }
+        .status-notice-ditolak { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .status-notice-ditolak ul { list-style-type: none; padding-left: 0; } .status-notice-ditolak li { margin-bottom: 5px; }
+        .status-notice-diajukan { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
         .status-notice-disetujui { background-color: #d4edda; border-color: #28a745; color: #155724; }
         .date-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px;}
-        
-        /* ================================================ */
-        /* ## CSS BARU: Mengadopsi dari mahasiswa_pengajuan.php ## */
-        /* ================================================ */
         .checkbox-placeholder { background-color: #f8f9fa; border-radius: 5px; padding: 15px; color: #6c757d; border: 1px dashed #dee2e6; }
         .checkbox-group-modern { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; max-height: 150px; overflow-y: auto; background-color: #f8f8f8; }
         .checkbox-group-modern.disabled { background-color: #e9ecef; }
@@ -204,11 +198,17 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
         .checkbox-item label { display: flex; align-items: center; cursor: pointer; font-weight: normal; color: #495057; margin-bottom: 0; width: 100%; }
         .checkbox-item label::before { content: ''; width: 20px; height: 20px; border: 2px solid #adb5bd; border-radius: 4px; margin-right: 12px; transition: all 0.2s ease; flex-shrink: 0; }
         .checkbox-item input[type="checkbox"]:checked + label::before { background-color: #007bff; border-color: #007bff; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: center; background-size: 60%; }
-        .checkbox-item label:hover::before { border-color: #007bff; }
-        .checkbox-item input[type="checkbox"]:focus + label::before { box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); }
         .static-list-box { background-color: #e9ecef; border: 1px solid #ced4da; border-radius: 5px; padding: 15px; min-height: 50px; }
         .static-list-box p { margin: 0 0 8px 0; padding-left: 10px; border-left: 3px solid #adb5bd; font-size: 16px; }
-        .static-list-box p:last-child { margin-bottom: 0; }
+        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: auto; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
     </style>
 </head>
 <body>
@@ -233,18 +233,30 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
             <div class="message <?php echo $message_type; ?>"><?php echo $message; ?></div>
         <?php endif; ?>
 
-        <?php if ($event_data['pengajuan_status'] == 'Ditolak'): ?>
-            <div class="status-notice status-notice-ditolak"><h4><i class="fas fa-exclamation-triangle"></i> Pengajuan Ditolak</h4><p>Alasan: <strong><?php echo htmlspecialchars($event_data['pengajuan_komentarDitmawa'] ?: 'Tidak ada komentar.'); ?></strong><br>Silakan perbaiki data di bawah ini dan ajukan kembali.</p></div>
-        <?php elseif ($event_data['pengajuan_status'] == 'Diajukan'): ?>
-            <div class="status-notice status-notice-diajukan"><h4><i class="fas fa-info-circle"></i> Status: Diajukan</h4><p>Pengajuan sedang ditinjau dan tidak dapat diubah.</p></div>
-        <?php elseif ($event_data['pengajuan_status'] == 'Disetujui'): ?>
+        <?php if ($event_data['pengajuan_status_proposal'] == 'Ditolak'): ?>
+            <div class="status-notice status-notice-ditolak">
+                <h4><i class="fas fa-exclamation-triangle"></i> Pengajuan Ditolak</h4>
+                <p>Alasan Penolakan:</p>
+                <ul>
+                    <?php if (!empty($event_data['komentar_ditmawa'])): ?>
+                        <li><strong>Ditmawa:</strong> <?php echo htmlspecialchars($event_data['komentar_ditmawa']); ?></li>
+                    <?php endif; ?>
+                    <?php if (!empty($event_data['komentar_asp'])): ?>
+                        <li><strong>ASP:</strong> <?php echo htmlspecialchars($event_data['komentar_asp']); ?></li>
+                    <?php endif; ?>
+                </ul>
+                <p>Silakan perbaiki data di bawah ini dan ajukan kembali.</p>
+            </div>
+        <?php elseif ($event_data['pengajuan_status_proposal'] == 'Diajukan'): ?>
+            <div class="status-notice status-notice-diajukan"><h4><i class="fas fa-info-circle"></i> Status: Diajukan</h4><p>Pengajuan sedang ditinjau. Halaman ini bersifat <strong>read-only</strong> dan tidak dapat diubah.</p></div>
+        <?php elseif ($event_data['pengajuan_status_proposal'] == 'Disetujui'): ?>
             <div class="status-notice status-notice-disetujui"><h4><i class="fas fa-check-circle"></i> Status: Disetujui</h4><p>Pengajuan telah disetujui dan tidak dapat diubah.</p></div>
         <?php endif; ?>
         
         <form id="eventForm" method="POST" enctype="multipart/form-data">
-            <div class="form-group"><label>Nama Penanggung Jawab</label><input type="text" value="<?php echo htmlspecialchars($nama); ?>" readonly></div>
-            <div class="form-group"><label>Email</label><input type="email" value="<?php echo htmlspecialchars($email); ?>" readonly></div>
-            <div class="form-group"><label>NPM</label><input type="text" value="<?php echo htmlspecialchars($event_data['mahasiswa_npm']); ?>" readonly></div>
+            <div class="form-group"><label>Nama Penanggung Jawab</label><input type="text" value="<?php echo htmlspecialchars($nama); ?>" disabled></div>
+            <div class="form-group"><label>Email</label><input type="email" value="<?php echo htmlspecialchars($email); ?>" disabled></div>
+            <div class="form-group"><label>NPM</label><input type="text" value="<?php echo htmlspecialchars($event_data['mahasiswa_npm']); ?>" disabled></div>
             <div class="form-group"><label for="pengajuan_namaEvent">Nama Event</label><input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" value="<?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?>" <?php if (!$is_editable) echo 'disabled'; ?> required></div>
             
             <div class="form-group">
@@ -284,7 +296,13 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
 
             <div class="form-group">
                 <label for="jadwal_event_rundown_file">Rundown Acara</label>
-                <div class="current-file">File saat ini: <a href="../<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" target="_blank"><?php echo basename($event_data['jadwal_event_rundown_file']); ?></a></div>
+                <div class="current-file">File saat ini: 
+                    <?php if (!empty($event_data['jadwal_event_rundown_file'])): ?>
+                        <a href="../<?php echo htmlspecialchars($event_data['jadwal_event_rundown_file']); ?>" target="_blank"><?php echo basename($event_data['jadwal_event_rundown_file']); ?></a>
+                    <?php else: ?>
+                        <span>Tidak ada file.</span>
+                    <?php endif; ?>
+                </div>
                 <?php if ($is_editable): ?>
                     <p style="font-size: 12px; color: #666; margin-top: 5px; margin-bottom: 5px;">Pilih file baru di bawah ini hanya jika Anda ingin menggantinya.</p>
                     <input type="file" id="jadwal_event_rundown_file" name="jadwal_event_rundown_file" class="form-control-file">
@@ -292,7 +310,13 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
             </div>
             <div class="form-group">
                 <label for="pengajuan_event_proposal_file">Proposal Kegiatan</label>
-                <div class="current-file">File saat ini: <a href="../<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" target="_blank"><?php echo basename($event_data['pengajuan_event_proposal_file']); ?></a></div>
+                <div class="current-file">File saat ini: 
+                    <?php if (!empty($event_data['pengajuan_event_proposal_file'])): ?>
+                        <a href="../<?php echo htmlspecialchars($event_data['pengajuan_event_proposal_file']); ?>" target="_blank"><?php echo basename($event_data['pengajuan_event_proposal_file']); ?></a>
+                    <?php else: ?>
+                        <span>Tidak ada file.</span>
+                    <?php endif; ?>
+                </div>
                 <?php if ($is_editable): ?>
                     <p style="font-size: 12px; color: #666; margin-top: 5px; margin-bottom: 5px;">Pilih file baru di bawah ini hanya jika Anda ingin menggantinya.</p>
                     <input type="file" id="pengajuan_event_proposal_file" name="pengajuan_event_proposal_file" class="form-control-file">
@@ -308,6 +332,31 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
         </form>
     </div>
 </div>
+
+<footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
+            </div>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -398,7 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Initialize state for editable form
         const selectedGedungIds = new Set();
         const selectedLantaiIds = new Set();
         preselectedRuanganIds.forEach(ruanganId => {
@@ -433,7 +481,6 @@ document.addEventListener('DOMContentLoaded', function() {
         locationArea.innerHTML = readonlyHtml;
     }
 
-    // Handler untuk dropdown tipe kegiatan 'Lainnya'
     const tipeSelect = document.getElementById('pengajuan_TypeKegiatan_select');
     const lainnyaContainer = document.getElementById('type_kegiatan_lainnya_container');
     const lainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
@@ -446,7 +493,11 @@ document.addEventListener('DOMContentLoaded', function() {
             lainnyaInput.required = false;
         }
     });
-
+    
+    // Validasi form sebelum submit (tidak ada perubahan)
+    document.getElementById('eventForm').addEventListener('submit', function(event) {
+        // ...
+    });
 });
 </script>
 </body>

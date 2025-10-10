@@ -2,7 +2,6 @@
 session_start();
 include '../config/db_connection.php';
 
-// Check if user is logged in and is a mahasiswa
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
     header("Location: ../index.php");
     exit();
@@ -14,18 +13,16 @@ $user_id = $_SESSION['user_id'] ?? 'No ID';
 $pengajuan_events = [];
 
 if ($user_id !== 'No ID') {
-    // ================================================
-    // ## KODE DIPERBAIKI: Menggunakan skema database baru ##
-    // Query disesuaikan untuk menggunakan pengaju_id dan pengaju_tipe.
-    // Kolom validator (ditmawa_id) sudah tidak ada di tabel pengajuan_event, sehingga join dan kolomnya dihapus.
-    // ================================================
     $stmt = $conn->prepare("
         SELECT
             pe.pengajuan_id,
             pe.pengajuan_event_tanggal_mulai,
             pe.pengajuan_namaEvent,
-            pe.pengajuan_status,
-            pe.pengajuan_komentarDitmawa,
+            pe.pengajuan_status_ditmawa,
+            pe.komentar_ditmawa,
+            pe.pengajuan_status_asp,
+            pe.komentar_asp,
+            pe.pengajuan_status_proposal,
             pe.pengajuan_tanggalEdit
         FROM pengajuan_event pe
         WHERE pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'
@@ -77,26 +74,30 @@ $conn->close();
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color:white; }
         .icon { font-size: 20px; cursor: pointer; }
-        .container { max-width: 1100px; margin: 20px auto 30px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
+        .container { max-width: 1200px; margin: 20px auto 30px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .header { background:rgb(44, 62, 80); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; margin: -30px -30px 30px -30px; border-radius: 15px 15px 0 0; }
         .header h1 { font-size: 24px; }
         .kembali-button { background-color: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .data-table th, .data-table td { border-bottom: 1px solid #ddd; padding: 12px 15px; text-align: left; vertical-align: middle; }
-        .data-table th { background-color: #f8f9fa; font-weight: 600; text-transform: uppercase; }
+        .data-table th, .data-table td { border-bottom: 1px solid #ddd; padding: 12px 15px; text-align: left; vertical-align: top; }
+        .data-table th { background-color: #f8f9fa; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
         .data-table tr:hover { background-color: #f1f1f1; }
         .no-data { text-align: center; padding: 20px; color: #777; }
-        .status-badge { padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; text-align: center; font-size: 12px; text-transform: capitalize; }
+        .status-badge { padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; text-align: center; font-size: 12px; text-transform: capitalize; display: inline-block; }
         .status-badge.disetujui { background-color: #28a745; }
         .status-badge.ditolak { background-color: #dc3545; }
         .status-badge.diajukan { background-color: #ffc107; color: #333; }
         .action-button { background-color: #007bff; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; border: none; font-family: 'Segoe UI'; }
         .action-button:hover { background-color: #0056b3; }
         .action-disabled { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 5px; background-color: #6c757d; color: white; font-size: 14px; font-weight: 500; cursor: not-allowed; }
-        .alasan-ditolak { font-size: 13px; color: #dc3545; margin-top: 4px; font-style: italic; }
-        .modified-info { font-size: 12px; color: #666; margin-top: 5px; } /* Gaya untuk info Last Modified */
-        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; }
-        .footer-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .alasan-ditolak { font-size: 13px; color: #dc3545; margin-top: 5px; font-style: italic; max-width: 250px; }
+        .modified-info { font-size: 12px; color: #666; margin-top: 5px; }
+        .action-button-view { background-color: #17a2b8; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; border: none; font-family: 'Segoe UI'; }
+        .action-button-view:hover { background-color: #138496; }
+
+        /* --- CSS FOOTER DIMULAI --- */
+        .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: auto; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
@@ -105,6 +106,7 @@ $conn->close();
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
+         /* --- CSS FOOTER SELESAI --- */
     </style>
 </head>
 <body>
@@ -141,9 +143,10 @@ $conn->close();
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>TANGGAL EVENT</th>
-                    <th>NAMA EVENT</th>
-                    <th>STATUS</th>
+                    <th>TANGGAL & NAMA EVENT</th>
+                    <th>STATUS DITMAWA</th>
+                    <th>STATUS ASP</th>
+                    <th>STATUS PROPOSAL</th>
                     <th>LAST MODIFIED</th>
                     <th>ACTION</th>
                 </tr>
@@ -152,18 +155,33 @@ $conn->close();
                 <?php if (!empty($pengajuan_events)): ?>
                     <?php foreach ($pengajuan_events as $event): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?></td>
                             <td>
-                                <?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?>
-                                 <?php if ($event['pengajuan_status'] == 'Ditolak' && !empty($event['pengajuan_komentarDitmawa'])): ?>
+                                <strong><?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?></strong>
+                                <div class="modified-info"><?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?></div>
+                            </td>
+                            <td>
+                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_ditmawa'])); ?>">
+                                    <?php echo htmlspecialchars($event['pengajuan_status_ditmawa']); ?>
+                                </span>
+                                <?php if ($event['pengajuan_status_ditmawa'] == 'Ditolak' && !empty($event['komentar_ditmawa'])): ?>
                                     <div class="alasan-ditolak">
-                                        <strong>Alasan:</strong> <?php echo htmlspecialchars($event['pengajuan_komentarDitmawa']); ?>
+                                        <strong>Alasan:</strong> <?php echo htmlspecialchars($event['komentar_ditmawa']); ?>
                                     </div>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status'])); ?>">
-                                    <?php echo htmlspecialchars($event['pengajuan_status']); ?>
+                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_asp'])); ?>">
+                                    <?php echo htmlspecialchars($event['pengajuan_status_asp']); ?>
+                                </span>
+                                 <?php if ($event['pengajuan_status_asp'] == 'Ditolak' && !empty($event['komentar_asp'])): ?>
+                                    <div class="alasan-ditolak">
+                                        <strong>Alasan:</strong> <?php echo htmlspecialchars($event['komentar_asp']); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_proposal'])); ?>">
+                                    <?php echo htmlspecialchars($event['pengajuan_status_proposal']); ?>
                                 </span>
                             </td>
                             <td>
@@ -176,13 +194,17 @@ $conn->close();
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if ($event['pengajuan_status'] == 'Disetujui'): ?>
-                                    <span class="action-disabled" title="Pengajuan yang sudah disetujui tidak dapat diedit.">
+                                <?php if ($event['pengajuan_status_proposal'] == 'Disetujui'): ?>
+                                    <span class="action-disabled" title="Pengajuan yang sudah disetujui tidak dapat diubah.">
                                         <i class="fas fa-lock"></i> Terkunci
                                     </span>
-                                <?php else: ?>
+                                <?php elseif ($event['pengajuan_status_proposal'] == 'Ditolak'): ?>
                                     <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>" class="action-button">
                                         <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                <?php else: // Status 'Diajukan' ?>
+                                    <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>" class="action-button-view">
+                                        <i class="fas fa-eye"></i> Detail
                                     </a>
                                 <?php endif; ?>
                             </td>
@@ -190,7 +212,7 @@ $conn->close();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" class="no-data">Belum ada pengajuan event.</td>
+                        <td colspan="6" class="no-data">Belum ada pengajuan event.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

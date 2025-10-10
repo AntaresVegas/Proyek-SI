@@ -2,8 +2,8 @@
 session_start();
 require_once(__DIR__ . '/../config/db_connection.php');
 
-if (!isset($_SESSION['registration_data'])) {
-    header('Location: register.php');
+if (!isset($_SESSION['reg_data_asp'])) {
+    header('Location: register_asp.php');
     exit();
 }
 
@@ -14,52 +14,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm_password = $_POST['confirm_password'];
     $captcha_input = trim($_POST['captcha']);
     
-    $otp_session = $_SESSION['registration_otp'] ?? null;
-    $otp_expiry = $_SESSION['otp_expiry'] ?? 0;
+    $otp_session = $_SESSION['reg_otp_asp'] ?? null;
+    $otp_expiry = $_SESSION['otp_expiry_asp'] ?? 0;
     $captcha_session = $_SESSION['captcha_text'] ?? '';
 
-    // Validasi
     if ($otp_input != $otp_session) $errors[] = "Kode OTP salah.";
-    if (time() > $otp_expiry) $errors[] = "Kode OTP sudah kedaluwarsa. Silakan mulai ulang registrasi.";
+    if (time() > $otp_expiry) $errors[] = "Kode OTP sudah kedaluwarsa.";
     if (strlen($password) < 8) $errors[] = "Password minimal 8 karakter.";
     if ($password !== $confirm_password) $errors[] = "Konfirmasi password tidak cocok.";
     if (empty($captcha_input) || strtolower($captcha_input) !== strtolower($captcha_session)) $errors[] = "Kode CAPTCHA salah.";
     unset($_SESSION['captcha_text']);
 
     if (empty($errors)) {
-        $reg_data = $_SESSION['registration_data'];
+        $reg_data = $_SESSION['reg_data_asp'];
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $stmt = $conn->prepare("INSERT INTO mahasiswa (mahasiswa_nama, mahasiswa_npm, mahasiswa_email, mahasiswa_jurusan, mahasiswa_password) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $reg_data['nama'], $reg_data['npm'], $reg_data['email'], $reg_data['jurusan'], $hashed_password);
+        $stmt = $conn->prepare("INSERT INTO asp (asp_nama, asp_email, asp_password, asp_NIK) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $reg_data['nama'], $reg_data['email'], $hashed_password, $reg_data['nik']);
 
         if ($stmt->execute()) {
-            unset($_SESSION['registration_data'], $_SESSION['registration_otp'], $_SESSION['otp_expiry']);
-            
-            $_SESSION['success_message'] = "Registrasi berhasil! Silakan login.";
+            unset($_SESSION['reg_data_asp'], $_SESSION['reg_otp_asp'], $_SESSION['otp_expiry_asp']);
+            $_SESSION['success_message'] = "Registrasi Akun ASP berhasil! Silakan login.";
             header("Location: ../index.php");
             exit();
         } else {
-            $errors[] = "Terjadi kesalahan saat menyimpan data. Silakan coba lagi.";
+            $errors[] = "Terjadi kesalahan saat menyimpan data.";
         }
         $stmt->close();
     }
 }
-$background_path = '../img/backgroundUnpar.jpeg';
+$background_path = '../img/backgroundASP.jpeg';
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Verifikasi Registrasi - Sistem Event Unpar</title>
+<title>Verifikasi Akun ASP - Sistem Event Unpar</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <style>
-    /* CSS ini telah disamakan sepenuhnya dengan file register.php yang sudah benar */
     :root {
         --primary-color: #347ab8; --secondary-color: #2c3e50; --text-color: #222;
         --light-text-color: #555; --border-color: rgba(255, 255, 255, 0.4);
@@ -133,9 +130,9 @@ $background_path = '../img/backgroundUnpar.jpeg';
 <body>
   <main class="container">
     <div class="header">
-        <img src="../img/logo.png" alt="Logo Unpar">
-        <h1>Satu Langkah Lagi!</h1>
-        <p>Kode verifikasi telah dikirim ke <strong><?php echo htmlspecialchars($_SESSION['registration_data']['email']); ?></strong></p>
+        <img src="../img/logoASP.png" alt="Logo ASP Unpar">
+        <h1>Verifikasi Akun ASP</h1>
+        <p>Kode verifikasi telah dikirim ke <strong><?php echo htmlspecialchars($_SESSION['reg_data_asp']['email']); ?></strong></p>
     </div>
 
     <?php if (!empty($errors)) : ?>
@@ -173,7 +170,7 @@ $background_path = '../img/backgroundUnpar.jpeg';
         <div class="form-group" style="margin-top: 20px;">
             <label for="captcha">Verifikasi Anti-Bot</label>
             <div class="captcha-container">
-                <img src="captcha.php" alt="CAPTCHA Image" id="captcha-image">
+                <img src="../mahasiswa/captcha.php" alt="CAPTCHA Image" id="captcha-image">
                 <button type="button" class="reload-btn" onclick="reloadCaptcha()" title="Muat ulang gambar"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
@@ -227,7 +224,7 @@ function togglePasswordVisibility(inputId, iconId) {
 }
 
 function reloadCaptcha() {
-    document.getElementById('captcha-image').src = 'captcha.php?v=' + new Date().getTime();
+    document.getElementById('captcha-image').src = '../mahasiswa/captcha.php?v=' + new Date().getTime();
 }
 </script>
 </body>
