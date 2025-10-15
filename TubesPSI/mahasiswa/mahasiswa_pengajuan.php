@@ -91,17 +91,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
 
     $pengaju_tipe = 'mahasiswa'; // Tentukan tipe pengaju karena ini form mahasiswa
 
-    if ($message_type !== 'error') {
-        $stmt = $conn->prepare("
+if ($message_type !== 'error') {
+    $stmt = $conn->prepare("
         INSERT INTO pengajuan_event (
             pengajuan_namaEvent, pengaju_tipe, pengaju_id, pengajuan_TypeKegiatan,
             pengajuan_event_jam_mulai, pengajuan_event_jam_selesai,
             pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai,
             tanggal_persiapan, tanggal_beres,
             jadwal_event_rundown_file, pengajuan_event_proposal_file,
-            pengajuan_status, pengajuan_tanggalEdit
+            pengajuan_status_ditmawa, pengajuan_tanggalEdit
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
     ");
+}
 
         $stmt->bind_param("ssisssssssss",
         $pengajuan_namaEvent, $pengaju_tipe, $user_id, $pengajuan_TypeKegiatan,
@@ -130,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
             $message_type = 'error';
         }
         $stmt->close();
-    }
 }
+
 
 // Fetch buildings for the checkboxes
 $gedung_options = [];
@@ -591,7 +592,7 @@ $conn->close();
                     </div>
                     <div class="form-group">
                         <label for="pengajuan_namaEvent">Nama Event</label>
-                        <input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" required>
+                        <input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" required placeholder="Contoh : Seminar in Informatics">>
                     </div>
                     <div class="form-group">
                         <label for="pengajuan_TypeKegiatan">Tipe Kegiatan</label>
@@ -673,7 +674,6 @@ $conn->close();
                         </div>
                         <div class="form-group">
                             <label for="tanggal_beres">Tanggal Pembongkaran Lokasi (Opsional)</label>
-
                             <input type="date" id="tanggal_beres" name="tanggal_beres">
                         </div>
                     </div>
