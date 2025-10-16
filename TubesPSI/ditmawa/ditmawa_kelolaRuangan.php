@@ -148,10 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if(isset($_GET['msg'])) { $message = $_GET['msg']; $message_type = $_GET['type']; }
 if(isset($_GET['tab'])) { $active_tab = $_GET['tab']; }
 
-
-$gedung_list = $conn->query("SELECT * FROM gedung ORDER BY gedung_nama ASC")->fetch_all(MYSQLI_ASSOC);
-$lantai_list = $conn->query("SELECT l.lantai_id, l.lantai_nomor, g.gedung_nama, g.gedung_id FROM lantai l JOIN gedung g ON l.gedung_id = g.gedung_id ORDER BY g.gedung_nama ASC, l.lantai_nomor ASC")->fetch_all(MYSQLI_ASSOC);
-$ruangan_list = $conn->query("SELECT r.ruangan_id, r.ruangan_nama, l.lantai_nomor, l.lantai_id, g.gedung_nama, g.gedung_id FROM ruangan r JOIN lantai l ON r.lantai_id = l.lantai_id JOIN gedung g ON l.gedung_id = g.gedung_id ORDER BY g.gedung_nama ASC, l.lantai_nomor ASC, r.ruangan_nama ASC")->fetch_all(MYSQLI_ASSOC);
+// [MODIFIKASI] Query diubah untuk sorting yang lebih baik (natural sort)
+$gedung_list = $conn->query("SELECT * FROM gedung ORDER BY CAST(SUBSTRING_INDEX(gedung_nama, ' ', -1) AS UNSIGNED), gedung_nama")->fetch_all(MYSQLI_ASSOC);
+$lantai_list = $conn->query("SELECT l.lantai_id, l.lantai_nomor, g.gedung_nama, g.gedung_id FROM lantai l JOIN gedung g ON l.gedung_id = g.gedung_id ORDER BY CAST(SUBSTRING_INDEX(g.gedung_nama, ' ', -1) AS UNSIGNED), g.gedung_nama, l.lantai_nomor ASC")->fetch_all(MYSQLI_ASSOC);
+$ruangan_list = $conn->query("SELECT r.ruangan_id, r.ruangan_nama, l.lantai_nomor, l.lantai_id, g.gedung_nama, g.gedung_id FROM ruangan r JOIN lantai l ON r.lantai_id = l.lantai_id JOIN gedung g ON l.gedung_id = g.gedung_id ORDER BY CAST(SUBSTRING_INDEX(g.gedung_nama, ' ', -1) AS UNSIGNED), g.gedung_nama, l.lantai_nomor ASC, r.ruangan_nama ASC")->fetch_all(MYSQLI_ASSOC);
 $conn->close();
 ?>
 
@@ -189,22 +189,20 @@ $conn->close();
             min-height: 100%;
         }
         .main-content { flex-grow: 1; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color:rgb(255, 255, 255); font-size: 14px; line-height: 1.2; }
-        .navbar-menu { list-style: none; }
-        .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; padding: 5px 0; border-bottom: 2px solid transparent; transition: border-color 0.3s; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: white; border-color: white; }
-        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }
+        .navbar-menu { list-style: none; padding: 0; margin: 0; }
+        .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(255, 255, 255); }
         .icon { font-size: 20px; }
         .container { max-width: 1200px; margin: 30px auto; padding: 0 15px; }
         .page-header { font-size: 2.5em; color: white; margin-bottom: 25px; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         .message { padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; font-size: 1em; text-align: center; }
         .message.success { background-color: #d1e7dd; color: #0f5132; }
         .message.error { background-color: #f8d7da; color: #842029; }
-        
-        /* Tab System Styles */
         .tabs-container {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 15px;
@@ -241,21 +239,17 @@ $conn->close();
         .tab-content.active {
             display: block;
         }
-
-        /* Content inside tabs */
         .content-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 40px;
         }
         @media (min-width: 992px) { .content-grid { grid-template-columns: 350px 1fr; } }
-
         .form-section h3, .table-section h3 {
             font-size: 1.5em;
             color: var(--text-dark);
             margin-bottom: 20px;
         }
-
         .form-group { margin-bottom: 1rem; }
         .form-group label {
             display: block;
@@ -271,12 +265,15 @@ $conn->close();
             font-size: 1em;
             transition: border-color 0.3s, box-shadow 0.3s;
         }
+        .form-group select:disabled {
+            background-color: var(--medium-gray);
+            cursor: not-allowed;
+        }
         .form-group select:focus, .form-group input[type="text"]:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
         }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -299,7 +296,6 @@ $conn->close();
             font-size: 0.9em;
         }
         .btn-delete:hover { background-color: #c82333; }
-
         .filter-bar {
             padding: 15px;
             background-color: var(--light-gray);
@@ -312,7 +308,6 @@ $conn->close();
             flex-grow: 1;
             margin-bottom: 0;
         }
-        
         .table-wrapper { overflow-x: auto; }
         .data-table {
             width: 100%;
@@ -332,8 +327,6 @@ $conn->close();
         .data-table tbody tr:hover {
             background-color: #f1f1f1;
         }
-
-        /* Footer */
         .page-footer { background-color: var(--primary-color); color: #fff; padding: 40px 0; margin-top: 50px; }
         .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
@@ -344,7 +337,6 @@ $conn->close();
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
-
     </style>
 </head>
 <body>
@@ -465,14 +457,22 @@ $conn->close();
                         <h3>Tambah Ruangan Baru</h3>
                         <form action="ditmawa_kelolaRuangan.php" method="POST">
                             <div class="form-group">
-                                <label for="lantai_id_for_ruangan">Pilih Lantai</label>
-                                <select id="lantai_id_for_ruangan" name="lantai_id_for_ruangan" required>
-                                   <option value="" disabled selected>-- Pilih Lantai --</option>
-                                   <?php foreach ($lantai_list as $lantai): ?><option value="<?php echo $lantai['lantai_id']; ?>"><?php echo htmlspecialchars($lantai['gedung_nama'] . ' - Lantai ' . $lantai['lantai_nomor']); ?></option><?php endforeach; ?>
+                                <label for="gedung_id_for_ruangan_add">Langkah 1: Pilih Gedung</label>
+                                <select id="gedung_id_for_ruangan_add" required>
+                                    <option value="" disabled selected>-- Pilih Gedung --</option>
+                                    <?php foreach ($gedung_list as $gedung): ?>
+                                        <option value="<?php echo $gedung['gedung_id']; ?>"><?php echo htmlspecialchars($gedung['gedung_nama']); ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="ruangan_nama">Nama/Nomor Ruangan</label>
+                                <label for="lantai_id_for_ruangan">Langkah 2: Pilih Lantai</label>
+                                <select id="lantai_id_for_ruangan" name="lantai_id_for_ruangan" required disabled>
+                                    <option value="" disabled selected>-- Pilih Gedung Dahulu --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ruangan_nama">Langkah 3: Nama/Nomor Ruangan</label>
                                 <input type="text" id="ruangan_nama" name="ruangan_nama" placeholder="Contoh: R10317" required>
                             </div>
                             <button type="submit" name="add_ruangan" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Ruangan</button>
@@ -533,15 +533,15 @@ $conn->close();
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const allFloorsData = <?php echo json_encode($lantai_list); ?>;
+    
     // --- Tab System Logic ---
     const tabs = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
-
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-
             tabContents.forEach(content => {
                 content.classList.remove('active');
                 if (content.id === tab.dataset.tab) {
@@ -551,10 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- Filter Logic (existing, slightly adapted for new structure) ---
-    const allFloorsData = <?php echo json_encode($lantai_list); ?>;
-    
-    // Filter untuk Tabel Lantai
+    // --- Filter untuk Tabel Lantai ---
     const filterGedungLantai = document.getElementById('filterGedungForLantai');
     const tableBodyLantai = document.getElementById('tableBodyLantai').getElementsByTagName('tr');
     filterGedungLantai.addEventListener('change', function() {
@@ -564,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Filter untuk Tabel Ruangan
+    // --- Filter untuk Tabel Ruangan ---
     const filterGedungRuangan = document.getElementById('filterGedungForRuangan');
     const filterLantaiRuangan = document.getElementById('filterLantaiForRuangan');
     const tableBodyRuangan = document.getElementById('tableBodyRuangan').getElementsByTagName('tr');
@@ -585,7 +582,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.textContent = `Lantai ${lantai_nomor}`;
                 filterLantaiRuangan.appendChild(option);
              });
-             
             filterLantaiRuangan.disabled = false;
         } else {
             filterLantaiRuangan.innerHTML = '<option value="">Pilih Gedung Dulu</option>';
@@ -599,21 +595,39 @@ document.addEventListener('DOMContentLoaded', function() {
     function applyRuanganFilter() {
         const selectedGedung = filterGedungRuangan.value;
         const selectedLantai = filterLantaiRuangan.value;
-
         for (let row of tableBodyRuangan) {
             const rowGedung = row.dataset.gedungId;
             const rowLantai = row.dataset.lantaiId;
-            
             const showByGedung = selectedGedung === "" || rowGedung === selectedGedung;
             const showByLantai = selectedLantai === "" || rowLantai === selectedLantai;
-
-            if (showByGedung && showByLantai) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
+            row.style.display = (showByGedung && showByLantai) ? "" : "none";
         }
     }
+
+    // [MODIFIKASI] Logika untuk form TAMBAH RUANGAN
+    const addGedungSelect = document.getElementById('gedung_id_for_ruangan_add');
+    const addLantaiSelect = document.getElementById('lantai_id_for_ruangan');
+
+    addGedungSelect.addEventListener('change', function() {
+        const selectedGedungId = this.value;
+        addLantaiSelect.innerHTML = '<option value="" disabled selected>-- Memuat Lantai... --</option>';
+        addLantaiSelect.disabled = true;
+
+        if (!selectedGedungId) {
+            addLantaiSelect.innerHTML = '<option value="" disabled selected>-- Pilih Gedung Dahulu --</option>';
+            return;
+        }
+
+        const relevantFloors = allFloorsData.filter(floor => floor.gedung_id == selectedGedungId);
+        addLantaiSelect.innerHTML = '<option value="" disabled selected>-- Pilih Lantai --</option>';
+        relevantFloors.forEach(floor => {
+            const option = document.createElement('option');
+            option.value = floor.lantai_id;
+            option.textContent = `Lantai ${floor.lantai_nomor}`;
+            addLantaiSelect.appendChild(option);
+        });
+        addLantaiSelect.disabled = false;
+    });
 });
 </script>
 
