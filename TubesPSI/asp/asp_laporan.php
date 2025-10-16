@@ -49,10 +49,9 @@ $conn->close();
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* [PERUBAHAN] Mengadopsi CSS modern dengan tema warna ASP */
         :root {
-            --primary-color: #0A2342; /* Warna Biru ASP */
-            --hover-color: #FFD700;   /* Warna Emas untuk Hover */
+            --primary-color: #0A2342;
+            --hover-color: #FFD700;
             --text-dark: #2c3e50;
             --text-light: #8895a7;
             --border-color: #e5e7eb;
@@ -61,7 +60,7 @@ $conn->close();
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
         body {
-            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-image: url('../img/backgroundASP.jpeg');
             background-size: cover;
             background-position: center;
@@ -70,18 +69,20 @@ $conn->close();
             display: flex;
             flex-direction: column;
             min-height: 100%;
+            padding-top: 80px; /* Ditambahkan agar konten tidak tertutup navbar fixed */
         }
         
-        /* Navbar & Footer dengan tema ASP */
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 1000; }
+        /* [MODIFIKASI] CSS Navbar disamakan dengan Dashboard */
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: fixed; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
-        .navbar-right { gap: 15px; color: var(--white); }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: var(--white); font-size: 14px; line-height: 1.2; }
         .navbar-menu { list-style: none; }
         .navbar-menu a { text-decoration: none; color: #E0E0E0; font-weight: 500; transition: color 0.3s; }
         .navbar-menu a.active, .navbar-menu a:hover { color: var(--hover-color); }
-        .icon { font-size: 20px; color: white; }
+        .navbar-right { display: flex; align-items: center; gap: 15px; color: var(--white); }
+        .navbar-right a { color: var(--white); }
+        .icon { font-size: 20px; cursor: pointer; }
         a { text-decoration: none; }
 
         .page-footer { background-color: var(--primary-color); color: #E0E0E0; padding: 40px 0; margin-top: auto; }
@@ -92,38 +93,25 @@ $conn->close();
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
 
-        /* Main Content & Container */
-        .main-content { flex-grow: 1; padding: 30px 0; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .main-content { flex-grow: 1; padding-top: 30px; } /* Menghapus padding atas agar tidak double */
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; } /* Disesuaikan padding */
         .page-header { margin-bottom: 30px; padding: 1.5rem; text-align: center; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 12px; }
         .page-header h1 { font-size: 2.25rem; font-weight: 700; color: var(--text-dark); }
         .page-header p { font-size: 1.1rem; color: #5a6a7a; margin-top: 5px;}
 
-        /* Kartu Laporan dengan Label */
-        .laporan-card {
-            background: var(--white);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
+        .laporan-card { background: var(--white); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); margin-bottom: 1.5rem; overflow: hidden; }
         .card-content { padding: 1.5rem; display: grid; gap: 1.25rem; }
         .info-item { display: flex; flex-direction: column; gap: 0.25rem; }
         .info-label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
         .info-value { font-size: 1rem; font-weight: 500; }
-        .info-value.event-title { font-size: 1.35rem; font-weight: 700; color: var(--primary-color); } /* Judul acara pakai warna biru ASP */
-        
+        .info-value.event-title { font-size: 1.35rem; font-weight: 700; color: var(--primary-color); }
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-weight: 600; font-size: 0.75rem; text-transform: capitalize; display: inline-block; }
         .status-badge.menunggu-persetujuan { background-color: #fef3c7; color: #92400e; }
         .status-badge.ditolak { background-color: #fee2e2; color: #991b1b; }
         .status-badge.disetujui { background-color: #d1fae5; color: #065f46; }
-        
         .keterangan-block { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 6px; font-style: italic; color: #b91c1c;}
         .download-button { background-color: #3b82f6; color: var(--white); padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; transition: background-color 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
         .download-button:hover { background-color: #2563eb; }
-        
-        /* Empty State */
         .no-data-message { text-align: center; padding: 3rem; background: rgba(255,255,255,0.9); border-radius: 12px; border: 1px dashed var(--border-color); }
         .no-data-message i { font-size: 3rem; color: var(--text-light); margin-bottom: 1rem; }
         .no-data-message p { font-size: 1.1rem; color: var(--text-light); }
@@ -143,7 +131,9 @@ $conn->close();
         <li><a href="asp_laporan.php" class="active">Laporan</a></li>
     </ul>
     <div class="navbar-right">
-        <a href="asp_profile.php" style="color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
+        <a href="asp_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
+        </a>
         <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
@@ -166,19 +156,16 @@ $conn->close();
                                 <span class="info-label">Nama Acara</span>
                                 <p class="info-value event-title"><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></p>
                             </div>
-
                             <div class="info-item">
                                 <span class="info-label">Nama Mahasiswa</span>
                                 <p class="info-value"><?php echo htmlspecialchars($row['mahasiswa_nama']); ?> (<?php echo htmlspecialchars($row['mahasiswa_npm']); ?>)</p>
                             </div>
-
                             <div class="info-item">
                                 <span class="info-label">Status LPJ</span>
                                 <div class="info-value">
                                     <span class="status-badge <?php echo $status_class; ?>"><?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?></span>
                                 </div>
                             </div>
-                            
                             <?php if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])): ?>
                                 <div class="info-item">
                                     <span class="info-label">Keterangan dari Ditmawa</span>
@@ -187,7 +174,6 @@ $conn->close();
                                     </div>
                                 </div>
                             <?php endif; ?>
-
                             <div class="info-item">
                                 <span class="info-label">Dokumen LPJ</span>
                                 <div class="info-value">
@@ -200,8 +186,7 @@ $conn->close();
                                     <?php endif; ?>
                                 </div>
                             </div>
-
-                            </div>
+                        </div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
