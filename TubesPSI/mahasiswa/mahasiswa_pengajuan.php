@@ -644,17 +644,6 @@ $conn->close();
                         </div>
                         <span class="loader" id="ruangan_loader"></span>
                     </div>
-                    
-                    <div class="date-grid">
-                        <div class="form-group">
-                            <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
-                            <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
-                            <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required>
-                        </div>
-                    </div>
 
                     <div class="date-grid">
                         <div class="form-group">
@@ -666,7 +655,16 @@ $conn->close();
                             <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required>
                         </div>
                     </div>
-
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
+                            <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
+                            <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required>
+                        </div>
+                    </div>
                     <div class="date-grid">
                         <div class="form-group">
                             <label for="tanggal_persiapan">Tanggal Persiapan Lokasi (Opsional)</label>
