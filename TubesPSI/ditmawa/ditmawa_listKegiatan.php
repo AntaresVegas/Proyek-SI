@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
 
 require_once('../config/db_connection.php');
 
-// [PENAMBAHAN] Logika untuk menangani penghapusan event
+// Logika untuk menangani penghapusan event
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
     $pengajuan_id_to_delete = $_POST['pengajuan_id'];
 
@@ -35,11 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
     header("Location: ditmawa_listKegiatan.php");
     exit();
 }
-// Akhir blok penghapusan
 
 $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
+// [MODIFIKASI] Mengambil nilai filter dan pencarian dari GET request
 $selected_bulan = $_GET['bulan'] ?? '';
 $selected_tahun = $_GET['tahun'] ?? '';
+$search_event = $_GET['search_event'] ?? '';
 $kegiatan_data = [];
 
 $sort_by = $_GET['sort'] ?? 'pengajuan'; 
@@ -54,7 +55,7 @@ if ($sort_by === 'event') {
 
 $query_params = $_GET;
 if ($sort_by === 'event') {
-    unset($query_params['sort']);
+    $query_params['sort'] = 'pengajuan';
 } else {
     $query_params['sort'] = 'event';
 }
@@ -85,8 +86,16 @@ try {
         $params = [];
         $types = "";
 
+        // [MODIFIKASI] Menambahkan kondisi filter dan pencarian ke query SQL
         if (!empty($selected_bulan)) { $conditions[] = "MONTH(pe.pengajuan_event_tanggal_mulai) = ?"; $params[] = $selected_bulan; $types .= "i"; }
         if (!empty($selected_tahun)) { $conditions[] = "YEAR(pe.pengajuan_event_tanggal_mulai) = ?"; $params[] = $selected_tahun; $types .= "i"; }
+        if (!empty($search_event)) {
+            $conditions[] = "LOWER(pe.pengajuan_namaEvent) LIKE LOWER(?)";
+            $search_param = "%" . $search_event . "%";
+            $params[] = $search_param;
+            $types .= "s";
+        }
+
 
         if (count($conditions) > 0) { $sql .= " WHERE " . implode(' AND ', $conditions); }
         
@@ -140,8 +149,8 @@ $years = range($current_year, $current_year - 5);
         .view-graph-button:hover { background-color: #218838; }
         .view-sort-button { background-color: #17a2b8; }
         .view-sort-button:hover { background-color: #138496; }
-        .filter-form { display: flex; gap: 15px; margin-bottom: 25px; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
-        .filter-form select, .filter-form button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ced4da; }
+        .filter-form { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
+        .filter-form select, .filter-form input, .filter-form button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ced4da; }
         .filter-form button { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .kegiatan-table-container { overflow-x: auto; }
         .kegiatan-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -168,8 +177,6 @@ $years = range($current_year, $current_year - 5);
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
-        
-        /* [PENAMBAHAN] CSS untuk Modal Konfirmasi */
         .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background-color: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
         .modal-header h3 { font-size: 1.5em; color: #333; margin-bottom: 15px; }
@@ -215,7 +222,26 @@ $years = range($current_year, $current_year - 5);
             <div class="message error"><?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?></div>
         <?php endif; ?>
 
-        <form method="GET" class="filter-form"></form>
+        <form method="GET" class="filter-form">
+            <label for="bulan">Bulan:</label>
+            <select name="bulan" id="bulan">
+                <option value="">Semua Bulan</option>
+                <?php $months = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+                foreach ($months as $num => $name) { echo '<option value="' . $num . '" ' . ($selected_bulan == $num ? 'selected' : '') . '>' . $name . '</option>'; } ?>
+            </select>
+            <label for="tahun">Tahun:</label>
+            <select name="tahun" id="tahun">
+                <option value="">Semua Tahun</option>
+                <?php foreach ($years as $year) { echo '<option value="' . $year . '" ' . ($selected_tahun == $year ? 'selected' : '') . '>' . $year . '</option>'; } ?>
+            </select>
+             <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
+            <input type="text" id="search_event" name="search_event" placeholder="Masukkan nama event..." value="<?php echo htmlspecialchars($search_event); ?>">
+            <?php if (isset($_GET['sort'])): ?>
+                <input type="hidden" name="sort" value="<?php echo htmlspecialchars($_GET['sort']); ?>">
+            <?php endif; ?>
+            <button type="submit">Filter & Cari</button>
+        </form>
+
         <div class="kegiatan-table-container">
             <table class="kegiatan-table">
                 <thead>
@@ -312,9 +338,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function (e) {
-            e.preventDefault(); // Mencegah form submit langsung
-            formToSubmit = this.closest('form'); // Simpan form yang diklik
-            modal.style.display = 'flex'; // Tampilkan modal
+            e.preventDefault();
+            formToSubmit = this.closest('form');
+            modal.style.display = 'flex';
         });
     });
 
@@ -325,11 +351,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     confirmBtn.addEventListener('click', function () {
         if (formToSubmit) {
-            formToSubmit.submit(); // Submit form yang sudah disimpan
+            formToSubmit.submit();
         }
     });
 
-    // Menutup modal jika klik di luar area konten
     window.addEventListener('click', function (e) {
         if (e.target == modal) {
             modal.style.display = 'none';

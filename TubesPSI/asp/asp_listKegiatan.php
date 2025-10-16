@@ -37,8 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
 }
 
 $nama = $_SESSION['nama'] ?? 'Staff ASP';
+// [MODIFIKASI] Mengambil nilai filter dan pencarian dari GET request
 $selected_bulan = $_GET['bulan'] ?? '';
 $selected_tahun = $_GET['tahun'] ?? '';
+$search_event = $_GET['search_event'] ?? ''; // Penambahan
 $kegiatan_data = [];
 
 $sort_by = $_GET['sort'] ?? 'pengajuan';
@@ -75,8 +77,15 @@ try {
         $params = [];
         $types = "";
 
+        // [MODIFIKASI] Menambahkan kondisi filter dan pencarian ke query SQL
         if (!empty($selected_bulan)) { $conditions[] = "MONTH(pe.pengajuan_event_tanggal_mulai) = ?"; $params[] = $selected_bulan; $types .= "i"; }
         if (!empty($selected_tahun)) { $conditions[] = "YEAR(pe.pengajuan_event_tanggal_mulai) = ?"; $params[] = $selected_tahun; $types .= "i"; }
+        if (!empty($search_event)) { // Penambahan
+            $conditions[] = "LOWER(pe.pengajuan_namaEvent) LIKE LOWER(?)";
+            $search_param = "%" . $search_event . "%";
+            $params[] = $search_param;
+            $types .= "s";
+        }
 
         if (count($conditions) > 0) { $sql .= " AND " . implode(' AND ', $conditions); }
         
@@ -131,8 +140,8 @@ $years = range($current_year, $current_year - 5);
         .view-sort-button:hover { background-color: #138496; }
         .view-graph-button { background-color: #28a745; }
         .view-graph-button:hover { background-color: #218838; }
-        .filter-form { display: flex; gap: 15px; margin-bottom: 25px; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
-        .filter-form select, .filter-form button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ced4da; }
+        .filter-form { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; justify-content: center; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
+        .filter-form select, .filter-form input, .filter-form button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ced4da; }
         .filter-form button { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .kegiatan-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .kegiatan-table th, .kegiatan-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; }
@@ -155,8 +164,6 @@ $years = range($current_year, $current_year - 5);
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #FFFFFF; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-
-        /* [PENAMBAHAN] CSS untuk Modal Konfirmasi */
         .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background-color: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
         .modal-header h3 { font-size: 1.5em; color: #333; margin-bottom: 15px; }
@@ -213,10 +220,13 @@ $years = range($current_year, $current_year - 5);
                 <option value="">Semua Tahun</option>
                 <?php foreach ($years as $year) { echo '<option value="' . $year . '" ' . ($selected_tahun == $year ? 'selected' : '') . '>' . $year . '</option>'; } ?>
             </select>
+            <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
+            <input type="text" id="search_event" name="search_event" placeholder="Masukkan nama event..." value="<?php echo htmlspecialchars($search_event); ?>">
+
             <?php if (isset($_GET['sort'])): ?>
                 <input type="hidden" name="sort" value="<?php echo htmlspecialchars($_GET['sort']); ?>">
             <?php endif; ?>
-            <button type="submit">Filter</button>
+            <button type="submit">Filter & Cari</button>
         </form>
         <div class="kegiatan-table-container">
             <table class="kegiatan-table">
@@ -257,7 +267,7 @@ $years = range($current_year, $current_year - 5);
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="9" style="text-align:center; padding: 20px;">Tidak ada pengajuan yang memerlukan persetujuan ASP saat ini.</td></tr>
+                        <tr><td colspan="9" style="text-align:center; padding: 20px;">Tidak ada pengajuan yang cocok dengan kriteria filter Anda.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>

@@ -91,17 +91,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
 
     $pengaju_tipe = 'mahasiswa'; // Tentukan tipe pengaju karena ini form mahasiswa
 
-    if ($message_type !== 'error') {
-        $stmt = $conn->prepare("
+if ($message_type !== 'error') {
+    $stmt = $conn->prepare("
         INSERT INTO pengajuan_event (
             pengajuan_namaEvent, pengaju_tipe, pengaju_id, pengajuan_TypeKegiatan,
             pengajuan_event_jam_mulai, pengajuan_event_jam_selesai,
             pengajuan_event_tanggal_mulai, pengajuan_event_tanggal_selesai,
             tanggal_persiapan, tanggal_beres,
             jadwal_event_rundown_file, pengajuan_event_proposal_file,
-            pengajuan_status, pengajuan_tanggalEdit
+            pengajuan_status_ditmawa, pengajuan_tanggalEdit
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Diajukan', NOW())
     ");
+}
 
         $stmt->bind_param("ssisssssssss",
         $pengajuan_namaEvent, $pengaju_tipe, $user_id, $pengajuan_TypeKegiatan,
@@ -130,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['form_step']) && $_POS
             $message_type = 'error';
         }
         $stmt->close();
-    }
 }
+
 
 // Fetch buildings for the checkboxes
 $gedung_options = [];
@@ -579,19 +580,19 @@ $conn->close();
                     </div>
                     <div class="form-group">
                         <label for="npm">NPM</label>
-                        <input type="text" id="npm" name="npm" value="<?php echo htmlspecialchars($mahasiswa_npm); ?>" readonly>
+                        <input type="text" id="npm" name="npm" value="<?php echo htmlspecialchars($mahasiswa_npm); ?>" readonly >
                     </div>
                     <div class="form-group">
                         <label for="nama_unit">Nama Unit</label>
-                        <input type="text" id="nama_unit" name="nama_unit" value="<?php echo htmlspecialchars($mahasiswa_unit_nama); ?>" placeholder="Contoh: Fakultas Ilmu Komputer">
+                        <input type="text" id="nama_unit" name="nama_unit" value="<?php echo htmlspecialchars($mahasiswa_unit_nama); ?>" placeholder="Contoh: Fakultas Ilmu Komputer" required>
                     </div>
                     <div class="form-group">
                         <label for="organisasi_penyelenggara">Organisasi Penyelenggara</label>
-                        <input type="text" id="organisasi_penyelenggara" name="organisasi_penyelenggara" value="<?php echo htmlspecialchars($mahasiswa_organisasi_nama); ?>" placeholder="Contoh: Himpunan Mahasiswa Informatika">
+                        <input type="text" id="organisasi_penyelenggara" name="organisasi_penyelenggara" value="<?php echo htmlspecialchars($mahasiswa_organisasi_nama); ?>" placeholder="Contoh: Himpunan Mahasiswa Informatika" required>
                     </div>
                     <div class="form-group">
                         <label for="pengajuan_namaEvent">Nama Event</label>
-                        <input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" required>
+                        <input type="text" id="pengajuan_namaEvent" name="pengajuan_namaEvent" required placeholder="Contoh : Seminar in Informatics" required>
                     </div>
                     <div class="form-group">
                         <label for="pengajuan_TypeKegiatan">Tipe Kegiatan</label>
@@ -623,7 +624,7 @@ $conn->close();
                         <div id="gedung_selection" class="checkbox-group-modern">
                             <?php foreach ($gedung_options as $gedung): ?>
                                 <div class="checkbox-item">
-                                    <input type="checkbox" class="gedung-checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>">
+                                    <input type="checkbox" class="gedung-checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>" required>
                                     <label for="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>"><?php echo htmlspecialchars($gedung['gedung_nama']); ?></label>
                                 </div>
                             <?php endforeach; ?>
@@ -745,7 +746,6 @@ $conn->close();
         formStepInput.value = `step${step}`;
     }
 
-// --- PERUBAHAN JAVASCRIPT: Fungsi nextStep dengan validasi berurutan dan spesifik ---
     function nextStep() {
         // Ambil semua elemen input dan nilainya
         const namaUnitInput = document.getElementById('nama_unit');
@@ -754,58 +754,22 @@ $conn->close();
         const typeKegiatanSelect = document.getElementById('pengajuan_TypeKegiatan');
         const typeLainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
 
-        const namaUnitValue = namaUnitInput.value.trim();
-        const organisasiValue = organisasiInput.value.trim();
-        const namaEventValue = namaEventInput.value.trim();
-        const typeKegiatanValue = typeKegiatanSelect.value;
-        const typeLainnyaValue = typeLainnyaInput.value.trim();
-
-        // Pengecekan berurutan untuk setiap input
-        if (namaUnitValue === '' && organisasiValue === '' && namaEventValue === '' && typeKegiatanValue === '' && (typeKegiatanValue === 'Lainnya' && typeLainnyaValue === '')) {
-            alert('Harap lengkapi semua data yang wajib diisi pada Langkah 1.');
-            return; // Hentikan fungsi jika ada yang kosong
-        }
-        else if (namaUnitValue === '') {
-            alert('Nama Unit wajib diisi.');
-            namaUnitInput.focus();
-            return;
-        } 
+        // Jika semua field punya atribut required di HTML, kamu cukup validasi bawaan browser
+        const inputs = [namaUnitInput, organisasiInput, namaEventInput, typeKegiatanSelect, typeLainnyaInput];
         
-        else if (organisasiValue === '') {
-            alert('Organisasi Penyelenggara wajib diisi.');
-            organisasiInput.focus();
-            return;
-        } 
-        
-        else if (namaEventValue === '') {
-            alert('Nama Event wajib diisi.');
-            namaEventInput.focus();
-            return;
-        } 
-        
-        else if (typeKegiatanValue === '') {
-            alert('Harap pilih Tipe Kegiatan.');
-            typeKegiatanSelect.focus();
-            return;
-        } 
-        
-        else if (typeKegiatanValue === 'Lainnya' && typeLainnyaValue === '') {
-            alert('Harap sebutkan tipe kegiatan lainnya.');
-            typeLainnyaInput.focus();
-            return;
-        } 
-        
-        // TERAKHIR: Cek panjang Nama Event (hanya jika semua kolom sudah terisi)
-        else if (namaEventValue.length < 4) {
-            alert('Nama Event harus memiliki minimal 4   karakter.');
-            namaEventInput.focus();
-            return;
+        for (const input of inputs) {
+            if (!input.checkValidity()) {
+                // Panggil tooltip bawaan Chrome
+                input.reportValidity();
+                return; // hentikan agar user perbaiki inputnya dulu
+            }
         }
 
-        // Jika semua pengecekan di atas lolos, lanjutkan ke langkah berikutnya
+        // Kalau semua valid, lanjut ke step berikutnya
         currentStep++;
         showStep(currentStep);
     }
+
     // --- AKHIR PERUBAHAN JAVASCRIPT ---
 
     function prevStep() {
