@@ -10,12 +10,45 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
 $nama = $_SESSION['nama'] ?? 'User';
 $user_id = $_SESSION['user_id'];
 
+// [BARU] Variabel Paginasi
+$limit = 20; // 20 baris per halaman
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, $page); // Pastikan halaman tidak kurang dari 1
+$offset = ($page - 1) * $limit;
+
+// [BARU] Logika untuk menghitung total data
+$total_rows = 0;
+$total_pages = 0;
+if ($user_id !== 'No ID') {
+    try {
+        $count_stmt = $conn->prepare("
+            SELECT COUNT(pe.pengajuan_id) as total
+            FROM pengajuan_event pe
+            WHERE
+                pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa' 
+                AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
+        ");
+        $count_stmt->bind_param("i", $user_id);
+        $count_stmt->execute();
+        $count_result = $count_stmt->get_result();
+        if ($count_result) {
+            $total_rows = $count_result->fetch_assoc()['total'];
+            $total_pages = ceil($total_rows / $limit);
+        }
+        $count_stmt->close();
+    } catch (Exception $e) {
+        error_log("Error counting history laporan: " . $e->getMessage());
+    }
+}
+
+
 $laporan_pertanggungjawaban = [];
 
 if ($user_id !== 'No ID') {
     // ================================================
     // ## KODE DIPERBAIKI: Menggunakan skema database baru ##
     // Query disesuaikan untuk menggunakan pengaju_id dan pengaju_tipe.
+    // [DIUBAH] Query ditambahkan LIMIT ? OFFSET ?
     // ================================================
     $stmt = $conn->prepare("
         SELECT
@@ -32,8 +65,10 @@ if ($user_id !== 'No ID') {
             AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
         ORDER BY
             pe.pengajuan_event_tanggal_selesai DESC
+        LIMIT ? OFFSET ?
     ");
-    $stmt->bind_param("i", $user_id);
+    // [DIUBAH] Bind param ditambah "ii" untuk limit dan offset
+    $stmt->bind_param("iii", $user_id, $limit, $offset);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
@@ -54,6 +89,11 @@ $conn->close();
     <style>
         :root {
             --primary-color: rgb(2, 71, 25);
+            /* [BARU] Variabel untuk paginasi (dari admin) */
+            --text-light: #8895a7;
+            --border-color: #e5e7eb;
+            --white: #ffffff;
+            --bg-light: #f9fafb;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
@@ -103,6 +143,49 @@ $conn->close();
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
+
+        /* [BARU] CSS Untuk Paginasi */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1.5rem 0; /* Disesuaikan agar tidak terlalu jauh */
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .pagination-info {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        .pagination-links {
+            display: flex;
+            gap: 5px;
+        }
+        .page-link {
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            color: var(--primary-color); /* Disesuaikan dgn tema hijau */
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .page-link:hover {
+            background-color: #f7fff8;
+            border-color: #d4e9d6;
+        }
+        .page-link.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+        .page-link.disabled {
+            color: var(--text-light);
+            pointer-events: none;
+            background-color: var(--bg-light);
+        }
     </style>
 </head>
 <body>
@@ -183,7 +266,39 @@ $conn->close();
                 <?php endif; ?>
             </tbody>
         </table>
-    </div>
+
+        <?php if ($total_pages > 1 && !empty($laporan_pertanggungjawaban)): ?>
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Menampilkan <strong><?php echo count($laporan_pertanggungjawaban); ?></strong> dari <strong><?php echo $total_rows; ?></strong> data
+            </div>
+            <div class="pagination-links">
+                <a href="?page=<?php echo $page - 1; ?>" class="page-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                    &laquo;
+                </a>
+                
+                <?php
+                    $window = 2; // Jumlah halaman di kiri dan kanan halaman aktif
+                    for ($i = 1; $i <= $total_pages; $i++):
+                        if ($i == 1 || $i == $total_pages || ($i >= $page - $window && $i <= $page + $window)):
+                ?>
+                    <a href="?page=<?php echo $i; ?>" class="page-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                        <?php echo $i; ?>
+                    </a>
+                <?php
+                        elseif ($i == 2 || $i == $total_pages - 1):
+                            echo '<span class="page-link" style="border:none; background:none;">...</span>';
+                        endif;
+                    endfor;
+                ?>
+                
+                <a href="?page=<?php echo $page + 1; ?>" class="page-link <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                    &raquo;
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
+        </div>
 </div>
 
 <footer class="page-footer">

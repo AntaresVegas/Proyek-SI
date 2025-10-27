@@ -11,9 +11,39 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'asp') {
 
 $nama = $_SESSION['nama'] ?? 'Staff ASP';
 
+// [BARU] Variabel Paginasi
+$limit = 20; // 20 baris per halaman
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, $page); // Pastikan halaman tidak kurang dari 1
+$offset = ($page - 1) * $limit;
+
+
+// [BARU] Logika untuk menghitung total data
+$total_rows = 0;
+$total_pages = 0;
+try {
+    // Query count ini sama dengan query utama di bawah, hanya untuk COUNT(*)
+    $count_sql = "
+        SELECT COUNT(pe.pengajuan_id) as total
+        FROM pengajuan_event pe
+        JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id
+        WHERE pe.pengaju_tipe = 'mahasiswa' 
+          AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
+    ";
+    $count_result = $conn->query($count_sql);
+    if ($count_result) {
+        $total_rows = $count_result->fetch_assoc()['total'];
+        $total_pages = ceil($total_rows / $limit);
+    }
+} catch (Exception $e) {
+    error_log("Error counting reports for ASP: " . $e->getMessage());
+}
+
+
 // 2. Fungsionalitas aksi DIHAPUS, backend hanya mengambil data.
 $laporan_data = [];
 try {
+    // [DIUBAH] SQL disesuaikan dengan paginasi (LIMIT ? OFFSET ?)
     $sql = "
         SELECT 
             pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_LPJ, pe.pengajuan_statusLPJ,
@@ -23,9 +53,13 @@ try {
         WHERE pe.pengaju_tipe = 'mahasiswa' 
           AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
         ORDER BY pe.pengajuan_event_tanggal_selesai DESC
+        LIMIT ? OFFSET ?
     ";
     $stmt = $conn->prepare($sql);
     if ($stmt) {
+        // [BARU] Bind parameter untuk LIMIT dan OFFSET
+        $stmt->bind_param("ii", $limit, $offset);
+        
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
@@ -49,18 +83,24 @@ $conn->close();
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        /* [DIUBAH] :root Menggabungkan style ASP dan Ditmawa */
         :root {
-            --primary-color: #0A2342;
-            --hover-color: #FFD700;
+            --primary-color: #0A2342; /* ASP Theme */
+            --hover-color: #FFD700;   /* ASP Theme */
             --text-dark: #2c3e50;
             --text-light: #8895a7;
             --border-color: #e5e7eb;
             --white: #ffffff;
+            /* Variabel dari Ditmawa yg dibutuhkan tabel */
+            --success: #10b981;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --bg-light: #f9fafb;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', 'Segoe UI', sans-serif; /* Diganti ke Poppins */
             background-image: url('../img/backgroundASP.jpeg');
             background-size: cover;
             background-position: center;
@@ -69,11 +109,11 @@ $conn->close();
             display: flex;
             flex-direction: column;
             min-height: 100%;
-            padding-top: 80px; /* Ditambahkan agar konten tidak tertutup navbar fixed */
+            /* Hapus padding-top, akan dikelola oleh .main-content */
         }
         
-        /* [MODIFIKASI] CSS Navbar disamakan dengan Dashboard */
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: fixed; top: 0; z-index: 1000; }
+        /* [TETAP] CSS Navbar & Footer ASP (Tidak Diubah) */
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: sticky; /* Diubah dari fixed ke sticky */ top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: var(--white); font-size: 14px; line-height: 1.2; }
@@ -92,29 +132,144 @@ $conn->close();
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: var(--white); }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        /* Akhir Navbar & Footer ASP */
 
-        .main-content { flex-grow: 1; padding-top: 30px; } /* Menghapus padding atas agar tidak double */
-        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; } /* Disesuaikan padding */
+
+        /* [DIUBAH] Main Content & Container disamakan dgn Ditmawa */
+        .main-content { flex-grow: 1; padding: 30px 0; }
+        .container { 
+            max-width: 1400px; /* Diperlebar untuk tabel */
+            margin: 0 auto; 
+            padding: 0 20px;
+        }
         .page-header { margin-bottom: 30px; padding: 1.5rem; text-align: center; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 12px; }
         .page-header h1 { font-size: 2.25rem; font-weight: 700; color: var(--text-dark); }
         .page-header p { font-size: 1.1rem; color: #5a6a7a; margin-top: 5px;}
 
-        .laporan-card { background: var(--white); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); margin-bottom: 1.5rem; overflow: hidden; }
-        .card-content { padding: 1.5rem; display: grid; gap: 1.25rem; }
-        .info-item { display: flex; flex-direction: column; gap: 0.25rem; }
-        .info-label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
-        .info-value { font-size: 1rem; font-weight: 500; }
-        .info-value.event-title { font-size: 1.35rem; font-weight: 700; color: var(--primary-color); }
+        /* [DIHAPUS] CSS Kartu Laporan (Diganti Tabel) */
+        /* .laporan-card { ... } */
+        /* .card-content { ... } */
+        /* .info-item { ... } */
+
+        /* [BARU] CSS Tabel (Dari Ditmawa) */
+        .table-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            overflow: hidden; 
+        }
+        .table-responsive-wrapper {
+            overflow-x: auto; 
+        }
+        .laporan-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px; 
+        }
+        .laporan-table th,
+        .laporan-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        .laporan-table th {
+            background-color: var(--bg-light);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .laporan-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .laporan-table tbody tr:hover {
+            background-color: #fcfcfc;
+        }
+        .event-title {
+            font-weight: 600;
+            color: var(--text-dark); /* Disesuaikan agar netral (bukan primary color) */
+        }
+        .keterangan-text { /* Menggantikan .keterangan-block */
+            font-style: italic;
+            color: var(--danger);
+            font-size: 0.9rem;
+            max-width: 250px; 
+            white-space: normal;
+        }
+
+        /* [DIUBAH] Style Status Badge & Button (Dari Ditmawa) */
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-weight: 600; font-size: 0.75rem; text-transform: capitalize; display: inline-block; }
         .status-badge.menunggu-persetujuan { background-color: #fef3c7; color: #92400e; }
         .status-badge.ditolak { background-color: #fee2e2; color: #991b1b; }
         .status-badge.disetujui { background-color: #d1fae5; color: #065f46; }
-        .keterangan-block { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 6px; font-style: italic; color: #b91c1c;}
-        .download-button { background-color: #3b82f6; color: var(--white); padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; transition: background-color 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+
+        .btn { 
+            padding: 0.6rem 1.2rem; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 0.5rem;
+        }
+        .btn i { font-size: 0.8rem; }
+        .download-button { background-color: var(--info); color: var(--white); } 
         .download-button:hover { background-color: #2563eb; }
+
+        /* [TETAP] CSS No Data Message */
         .no-data-message { text-align: center; padding: 3rem; background: rgba(255,255,255,0.9); border-radius: 12px; border: 1px dashed var(--border-color); }
         .no-data-message i { font-size: 3rem; color: var(--text-light); margin-bottom: 1rem; }
         .no-data-message p { font-size: 1.1rem; color: var(--text-light); }
+        
+        /* [BARU] CSS Untuk Paginasi (Dari Ditmawa) */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            background: var(--white);
+            border-radius: 0 0 12px 12px; /* Menempel di bawah tabel */
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.03); 
+            margin-top: -1px; 
+        }
+        .pagination-info {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        .pagination-links {
+            display: flex;
+            gap: 5px;
+        }
+        .page-link {
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            color: var(--primary-color); /* Disesuaikan dgn tema ASP */
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .page-link:hover {
+            background-color: #f7f9fa;
+            border-color: #d0d5db;
+        }
+        .page-link.active {
+            background-color: var(--primary-color); /* Disesuaikan dgn tema ASP */
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+        .page-link.disabled {
+            color: var(--text-light);
+            pointer-events: none;
+            background-color: var(--bg-light);
+        }
     </style>
 </head>
 <body>
@@ -145,57 +300,99 @@ $conn->close();
             <p>Halaman ini menampilkan semua laporan bukti kegiatan yang telah diproses oleh Ditmawa.</p>
         </header>
         
-        <div class="laporan-list">
-            <?php if (!empty($laporan_data)): ?>
-                <?php foreach ($laporan_data as $row):
-                    $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
-                ?>
-                    <div class="laporan-card">
-                        <div class="card-content">
-                            <div class="info-item">
-                                <span class="info-label">Nama Acara</span>
-                                <p class="info-value event-title"><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></p>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Nama Mahasiswa</span>
-                                <p class="info-value"><?php echo htmlspecialchars($row['mahasiswa_nama']); ?> (<?php echo htmlspecialchars($row['mahasiswa_npm']); ?>)</p>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Status LPJ</span>
-                                <div class="info-value">
-                                    <span class="status-badge <?php echo $status_class; ?>"><?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?></span>
-                                </div>
-                            </div>
-                            <?php if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])): ?>
-                                <div class="info-item">
-                                    <span class="info-label">Keterangan dari Ditmawa</span>
-                                    <div class="info-value keterangan-block">
-                                        <?php echo htmlspecialchars($row['pengajuan_komentarLPJ']); ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                            <div class="info-item">
-                                <span class="info-label">Dokumen LPJ</span>
-                                <div class="info-value">
-                                    <?php if (!empty($row['pengajuan_LPJ'])): ?>
-                                         <a href="../<?php echo htmlspecialchars($row['pengajuan_LPJ']); ?>" class="download-button" download>
-                                             <i class="fas fa-download"></i> Download
-                                         </a>
-                                    <?php else: ?>
-                                        <span>- Tidak ada dokumen -</span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="no-data-message">
-                    <i class="fas fa-folder-open"></i>
-                    <p>Belum ada LPJ yang diunggah oleh mahasiswa.</p>
+        <?php if (!empty($laporan_data)): ?>
+            <div class="table-container">
+                <div class="table-responsive-wrapper">
+                    <table class="laporan-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Acara</th>
+                                <th>Nama Mahasiswa</th>
+                                <th>NPM</th>
+                                <th>Status LPJ</th>
+                                <th>Dokumen</th>
+                                <th>Keterangan (dari Ditmawa)</th>
+                                </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($laporan_data as $row):
+                                $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
+                            ?>
+                                <tr>
+                                    <td class="event-title">
+                                        <?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo htmlspecialchars($row['mahasiswa_nama']); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo htmlspecialchars($row['mahasiswa_npm']); ?>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge <?php echo $status_class; ?>">
+                                            <?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($row['pengajuan_LPJ'])): ?>
+                                             <a href="../<?php echo htmlspecialchars($row['pengajuan_LPJ']); ?>" class="btn download-button" download>
+                                                 <i class="fas fa-download"></i> Download
+                                             </a>
+                                        <?php else: ?>
+                                            <span>-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="keterangan-text">
+                                        <?php 
+                                            if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])) {
+                                                echo htmlspecialchars($row['pengajuan_komentarLPJ']);
+                                            } else {
+                                                echo '-';
+                                            }
+                                        ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
+            </div> <?php if ($total_pages > 1): ?>
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Menampilkan <strong><?php echo count($laporan_data); ?></strong> dari <strong><?php echo $total_rows; ?></strong> data
+                </div>
+                <div class="pagination-links">
+                    <a href="?page=<?php echo $page - 1; ?>" class="page-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                        &laquo;
+                    </a>
+                    
+                    <?php
+                        $window = 2; 
+                        for ($i = 1; $i <= $total_pages; $i++):
+                            if ($i == 1 || $i == $total_pages || ($i >= $page - $window && $i <= $page + $window)):
+                    ?>
+                        <a href="?page=<?php echo $i; ?>" class="page-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php
+                            elseif ($i == 2 || $i == $total_pages - 1):
+                                echo '<span class="page-link" style="border:none; background:none;">...</span>';
+                            endif;
+                        endfor;
+                    ?>
+                    
+                    <a href="?page=<?php echo $page + 1; ?>" class="page-link <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                        &raquo;
+                    </a>
+                </div>
+            </div>
             <?php endif; ?>
-        </div>
+            <?php else: ?>
+            <div class="no-data-message">
+                <i class="fas fa-folder-open"></i>
+                <p>Belum ada LPJ yang diunggah oleh mahasiswa.</p>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

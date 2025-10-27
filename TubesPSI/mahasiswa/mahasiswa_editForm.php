@@ -77,8 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insert_peminjaman_stmt->close();
             }
             $conn->commit();
-            header("Location: mahasiswa_history_pengajuan.php?status=re-submitted");
+            
+            // Redirect ke halaman history dengan page number jika ada
+            $page_query = isset($_GET['page']) ? '?page=' . htmlspecialchars($_GET['page']) : '';
+            header("Location: mahasiswa_history_pengajuan.php" . $page_query . "&status=re-submitted");
             exit();
+
         } catch (Exception $e) {
             $conn->rollback();
             $message = "Error: " . $e->getMessage();
@@ -137,7 +141,7 @@ if (!empty($selected_ruangan_ids)) {
     }
     $stmt_list->execute();
     $result_list = $stmt_list->get_result();
-    while($row = $result_list->fetch_assoc()) $selected_locations_list[] = $row;
+    while($row = $result_list->fetch_assoc()) $selected_locations_list[] = $row; // <-- Perbaikan dari kode sebelumnya
     $stmt_list->close();
 }
 $all_locations_data_str = json_encode($all_locations_data);
@@ -145,6 +149,10 @@ $conn->close();
 
 $predefined_types = ['Seminar', 'Workshop', 'Lomba', 'Pameran'];
 $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_types);
+
+// [DIHAPUS] Variabel $page_query_string dihapus karena tidak dipakai lagi oleh tombol 'Kembali'
+// $page_query_string = isset($_GET['page']) ? '?page=' . htmlspecialchars($_GET['page']) : '';
+
 ?>
 
 <!DOCTYPE html>
@@ -155,10 +163,18 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
     <title>Detail & Edit Pengajuan Event</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: rgb(2, 71, 25);
+            --text-light: #8895a7;
+            --border-color: #e5e7eb;
+            --white: #ffffff;
+            --bg-light: #f9fafb;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%;}
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 80px;background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column;}
-        .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background:var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-left { gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
@@ -253,7 +269,7 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
             <div class="status-notice status-notice-disetujui"><h4><i class="fas fa-check-circle"></i> Status: Disetujui</h4><p>Pengajuan telah disetujui dan tidak dapat diubah.</p></div>
         <?php endif; ?>
         
-        <form id="eventForm" method="POST" enctype="multipart/form-data">
+        <form id="eventForm" method="POST" enctype="multipart/form-data" action="mahasiswa_editForm.php?id=<?php echo $pengajuan_id; ?><?php echo isset($_GET['page']) ? '&page=' . htmlspecialchars($_GET['page']) : ''; ?>">
             <div class="form-group"><label>Nama Penanggung Jawab</label><input type="text" value="<?php echo htmlspecialchars($nama); ?>" disabled></div>
             <div class="form-group"><label>Email</label><input type="email" value="<?php echo htmlspecialchars($email); ?>" disabled></div>
             <div class="form-group"><label>NPM</label><input type="text" value="<?php echo htmlspecialchars($event_data['mahasiswa_npm']); ?>" disabled></div>
@@ -324,7 +340,7 @@ $is_type_lainnya = !in_array($event_data['pengajuan_TypeKegiatan'], $predefined_
             </div>
 
             <div class="button-group">
-                <a href="mahasiswa_history_pengajuan.php" class="btn-kembali">Kembali</a>
+                <a href="http://localhost/TubesPSI/mahasiswa/mahasiswa_history_pengajuan.php" class="btn-kembali">Kembali</a>
                 <?php if ($is_editable): ?>
                     <button type="submit" class="btn-submit">Simpan & Ajukan Ulang</button>
                 <?php endif; ?>

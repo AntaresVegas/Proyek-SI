@@ -18,7 +18,19 @@ $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
 $message = '';
 $message_type = '';
 
+// [BARU] Variabel Paginasi
+$limit = 20; // 20 baris per halaman
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, $page); // Pastikan halaman tidak kurang dari 1
+$offset = ($page - 1) * $limit;
+
+// [DIUBAH] Ambil ?page=N dari URL untuk form action
+// Ini penting agar setelah setujui/tolak, user tetap di halaman yang sama
+$page_query_string = isset($_GET['page']) ? '?page=' . htmlspecialchars($_GET['page']) : '';
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
+    // ... (Logika POST untuk setujui/tolak tetap sama persis) ...
     $pengajuan_id = $_POST['pengajuan_id'];
     $new_status = '';
     $komentar_lpj = NULL;
@@ -33,8 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
     if (!empty($new_status)) {
         try {
             // Mengambil informasi mahasiswa dan event sebelum update
+            // [PERBAIKAN] Baris 49 diperbaiki dari 'mahasiswana_email' menjadi 'mahasiswa_email'
             $info_stmt = $conn->prepare(
-                "SELECT m.mahasiswana_email, m.mahasiswa_nama, pe.pengajuan_namaEvent 
+                "SELECT m.mahasiswa_email, m.mahasiswa_nama, pe.pengajuan_namaEvent 
                  FROM pengajuan_event pe 
                  JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id 
                  WHERE pe.pengajuan_id = ?"
@@ -65,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
                 $mail->Port       = 587;
 
                 $mail->setFrom('no-reply@unpar.ac.id', 'Sistem Event Unpar');
+                // Baris ini sekarang akan berfungsi karena query di atas sudah benar
                 $mail->addAddress($info_result['mahasiswa_email'], $info_result['mahasiswa_nama']);
 
                 $mail->isHTML(true);
@@ -107,8 +121,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pengajuan_id'])) {
     }
 }
 
+
+// [BARU] Logika untuk menghitung total data
+$total_rows = 0;
+$total_pages = 0;
+try {
+    $count_sql = "
+        SELECT COUNT(pe.pengajuan_id) as total
+        FROM pengajuan_event pe
+        JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id
+        WHERE pe.pengaju_tipe = 'mahasiswa' 
+          AND pe.pengajuan_LPJ IS NOT NULL AND pe.pengajuan_LPJ != ''
+    ";
+    $count_result = $conn->query($count_sql);
+    if ($count_result) {
+        $total_rows = $count_result->fetch_assoc()['total'];
+        $total_pages = ceil($total_rows / $limit);
+    }
+} catch (Exception $e) {
+    error_log("Error counting reports: " . $e->getMessage());
+}
+
+
 $laporan_data = [];
 try {
+    // [DIUBAH] Query SQL utama ditambahkan LIMIT dan OFFSET
     $sql = "
         SELECT 
             pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_LPJ, pe.pengajuan_statusLPJ,
@@ -125,9 +162,14 @@ try {
                 ELSE 4
             END,
             pe.pengajuan_event_tanggal_selesai DESC
-    ";
+        LIMIT ? OFFSET ?
+    "; // Tambahkan LIMIT ? OFFSET ?
+    
     $stmt = $conn->prepare($sql);
     if ($stmt) {
+        // [BARU] Bind parameter untuk LIMIT dan OFFSET
+        $stmt->bind_param("ii", $limit, $offset);
+        
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
@@ -159,6 +201,8 @@ $conn->close();
             --white: #ffffff;
             --success: #10b981;
             --danger: #ef4444;
+            --info: #3b82f6;
+            --bg-light: #f9fafb;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
@@ -174,7 +218,7 @@ $conn->close();
             min-height: 100%;
         }
         
-        /* Navbar & Footer Konsisten */
+        /* Navbar & Footer Konsisten (TIDAK BERUBAH) */
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: var(--primary-color); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-right { gap: 15px; color: var(--white); }
@@ -193,13 +237,15 @@ $conn->close();
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #2c3e50; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; color: #2c3e50; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        /* AKHIR DARI Navbar & Footer */
+
 
         /* Main Content & Container */
         .main-content { flex-grow: 1; padding: 30px 0; }
         .container { 
-            max-width: 900px; /* Disesuaikan agar lebih fokus */
+            max-width: 1400px; 
             margin: 0 auto; 
-            padding: 20px; 
+            padding: 0 20px; 
         }
         .page-header { margin-bottom: 30px; padding: 1.5rem; text-align: center; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 12px; }
         .page-header h1 { font-size: 2.25rem; font-weight: 700; color: var(--text-dark); }
@@ -210,62 +256,102 @@ $conn->close();
         .message.success { background-color: #d1fae5; color: #065f46; }
         .message.error { background-color: #fee2e2; color: #991b1b; }
         
-        /* [PERUBAHAN] CSS untuk Kartu Laporan dengan Label */
-        .laporan-card {
+        
+        /* Table Styling */
+        .table-container {
             background: var(--white);
-            border: 1px solid var(--border-color);
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            margin-bottom: 1.5rem;
-            overflow: hidden; /* Penting untuk border-radius */
+            overflow: hidden; 
         }
-        .card-content {
-            padding: 1.5rem;
-            display: grid;
-            gap: 1.25rem;
+
+        .table-responsive-wrapper {
+            overflow-x: auto; 
         }
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+
+        .laporan-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px; 
         }
-        .info-label {
-            font-size: 0.8rem;
+
+        .laporan-table th,
+        .laporan-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .laporan-table th {
+            background-color: var(--bg-light);
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-light);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .info-value {
-            font-size: 1rem;
-            font-weight: 500;
+
+        .laporan-table tbody tr:last-child td {
+            border-bottom: none;
         }
-        .info-value.event-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text-dark); /* Diubah menjadi warna teks utama (hitam) */
+
+        .laporan-table tbody tr:hover {
+            background-color: #fcfcfc;
         }
+
+        .event-title {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .keterangan-text {
+            font-style: italic;
+            color: var(--danger);
+            font-size: 0.9rem;
+            max-width: 250px; 
+            white-space: normal;
+        }
+        
+        /* Status Badge */
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-weight: 600; font-size: 0.75rem; text-transform: capitalize; white-space: nowrap; display: inline-block; }
         .status-badge.menunggu-persetujuan { background-color: #fef3c7; color: #92400e; }
         .status-badge.ditolak { background-color: #fee2e2; color: #991b1b; }
         .status-badge.disetujui { background-color: #d1fae5; color: #065f46; }
 
-        .keterangan-block { background-color: #fef2f2; border-left: 4px solid var(--danger); padding: 1rem; border-radius: 6px; font-style: italic; color: #b91c1c;}
-        .action-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        /* Buttons */
+        .btn { 
+            padding: 0.6rem 1.2rem; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 0.5rem;
+        }
         .btn i { font-size: 0.8rem; }
         .btn-approve { background-color: var(--success); color: var(--white); }
         .btn-approve:hover { background-color: #059669; }
         .btn-reject { background-color: var(--danger); color: var(--white); }
         .btn-reject:hover { background-color: #dc2626; }
-        .download-button { background-color: #3b82f6; color: var(--white); }
+        .download-button { background-color: var(--info); color: var(--white); } 
         .download-button:hover { background-color: #2563eb; }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+        }
         
         /* Empty State */
         .no-data-message { text-align: center; padding: 3rem; background: rgba(255,255,255,0.9); border-radius: 12px; border: 1px dashed var(--border-color); }
         .no-data-message i { font-size: 3rem; color: var(--text-light); margin-bottom: 1rem; }
         .no-data-message p { font-size: 1.1rem; color: var(--text-light); }
 
-        /* Modal */
+        /* Modal (TIDAK BERUBAH) */
         .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
         .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 12px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
@@ -273,6 +359,51 @@ $conn->close();
         .close-button { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-body textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; min-height: 120px; margin-bottom: 20px; resize: vertical; }
         .modal-footer { text-align: right; }
+        
+        /* [BARU] CSS Untuk Paginasi */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between; /* Mengatur jarak */
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            background: var(--white);
+            border-radius: 0 0 12px 12px; /* Menempel di bawah tabel */
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.03); /* Bayangan halus di atas */
+            margin-top: -1px; /* Menempel sempurna dengan table-container */
+        }
+        .pagination-info {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        .pagination-links {
+            display: flex;
+            gap: 5px;
+        }
+        .page-link {
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .page-link:hover {
+            background-color: #fdf8f2;
+            border-color: #fcd9b3;
+        }
+        .page-link.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+        .page-link.disabled {
+            color: var(--text-light);
+            pointer-events: none;
+            background-color: var(--bg-light);
+        }
     </style>
 </head>
 <body>
@@ -309,72 +440,115 @@ $conn->close();
             </div>
         <?php endif; ?>
         
-        <div class="laporan-list">
-            <?php if (!empty($laporan_data)): ?>
-                <?php foreach ($laporan_data as $row):
-                    $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
-                ?>
-                    <div class="laporan-card">
-                        <div class="card-content">
-                            <div class="info-item">
-                                <span class="info-label">Nama Acara</span>
-                                <p class="info-value event-title"><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></p>
-                            </div>
-
-                            <div class="info-item">
-                                <span class="info-label">Nama Mahasiswa</span>
-                                <p class="info-value"><?php echo htmlspecialchars($row['mahasiswa_nama']); ?> (<?php echo htmlspecialchars($row['mahasiswa_npm']); ?>)</p>
-                            </div>
-
-                            <div class="info-item">
-                                <span class="info-label">Status LPJ</span>
-                                <div class="info-value">
-                                    <span class="status-badge <?php echo $status_class; ?>"><?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?></span>
-                                </div>
-                            </div>
-                            
-                            <?php if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])): ?>
-                                <div class="info-item">
-                                    <span class="info-label">Keterangan</span>
-                                    <div class="info-value keterangan-block">
-                                        <?php echo htmlspecialchars($row['pengajuan_komentarLPJ']); ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="info-item">
-                                <span class="info-label">Dokumen LPJ</span>
-                                <div class="info-value">
-                                    <?php if (!empty($row['pengajuan_LPJ'])): ?>
-                                         <a href="../<?php echo htmlspecialchars($row['pengajuan_LPJ']); ?>" class="btn download-button" download>
-                                             <i class="fas fa-download"></i> Download
-                                         </a>
-                                    <?php else: ?>
-                                        <span>- Tidak ada dokumen -</span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <span class="info-label">Aksi</span>
-                                <div class="info-value action-buttons">
-                                    <form method="POST" action="ditmawa_laporan.php" style="display:inline;">
-                                        <input type="hidden" name="pengajuan_id" value="<?php echo $row['pengajuan_id']; ?>">
-                                        <button type="submit" name="setujui_lpj" class="btn btn-approve"><i class="fas fa-check"></i> Setujui</button>
-                                    </form>
-                                    <button type="button" class="btn btn-reject" onclick="openRejectModal('<?php echo $row['pengajuan_id']; ?>')"><i class="fas fa-times"></i> Tolak</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="no-data-message">
-                    <i class="fas fa-folder-open"></i>
-                    <p>Belum ada LPJ yang diunggah oleh mahasiswa.</p>
+        <?php if (!empty($laporan_data)): ?>
+            <div class="table-container">
+                <div class="table-responsive-wrapper">
+                    <table class="laporan-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Acara</th>
+                                <th>Nama Mahasiswa</th>
+                                <th>NPM</th>            
+                                <th>Status LPJ</th>
+                                <th>Dokumen</th>
+                                <th>Keterangan (Jika Ditolak)</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($laporan_data as $row):
+                                $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($row['pengajuan_statusLPJ'])));
+                            ?>
+                                <tr>
+                                    <td class="event-title">
+                                        <?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?>
+                                    </td>
+                                    <td> 
+                                        <?php echo htmlspecialchars($row['mahasiswa_nama']); ?>
+                                    </td>
+                                    <td> 
+                                        <?php echo htmlspecialchars($row['mahasiswa_npm']); ?>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge <?php echo $status_class; ?>">
+                                            <?php echo htmlspecialchars($row['pengajuan_statusLPJ']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($row['pengajuan_LPJ'])): ?>
+                                             <a href="../<?php echo htmlspecialchars($row['pengajuan_LPJ']); ?>" class="btn download-button" download>
+                                                 <i class="fas fa-download"></i> Download
+                                             </a>
+                                        <?php else: ?>
+                                            <span>-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="keterangan-text">
+                                        <?php 
+                                            if ($row['pengajuan_statusLPJ'] == 'Ditolak' && !empty($row['pengajuan_komentarLPJ'])) {
+                                                echo htmlspecialchars($row['pengajuan_komentarLPJ']);
+                                            } else {
+                                                echo '-';
+                                            }
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <form method="POST" action="ditmawa_laporan.php<?php echo $page_query_string; ?>" style="display:inline;">
+                                                <input type="hidden" name="pengajuan_id" value="<?php echo $row['pengajuan_id']; ?>">
+                                                <button type="submit" name="setujui_lpj" class="btn btn-approve">
+                                                    <i class="fas fa-check"></i> Setuju
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-reject" onclick="openRejectModal('<?php echo $row['pengajuan_id']; ?>')">
+                                                <i class="fas fa-times"></i> Tolak
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
+            </div> <?php if ($total_pages > 1): ?>
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Menampilkan <strong><?php echo count($laporan_data); ?></strong> dari <strong><?php echo $total_rows; ?></strong> data
+                </div>
+                <div class="pagination-links">
+                    <a href="?page=<?php echo $page - 1; ?>" class="page-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                        &laquo;
+                    </a>
+                    
+                    <?php
+                        $window = 2; // Jumlah halaman di kiri dan kanan halaman aktif
+                        for ($i = 1; $i <= $total_pages; $i++):
+                            // Tampilkan halaman pertama, halaman terakhir, dan halaman di sekitar halaman aktif
+                            if ($i == 1 || $i == $total_pages || ($i >= $page - $window && $i <= $page + $window)):
+                    ?>
+                        <a href="?page=<?php echo $i; ?>" class="page-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php
+                            // Tambahkan '...' jika ada jeda
+                            elseif ($i == 2 || $i == $total_pages - 1):
+                                echo '<span class="page-link" style="border:none; background:none;">...</span>';
+                            endif;
+                        endfor;
+                    ?>
+                    
+                    <a href="?page=<?php echo $page + 1; ?>" class="page-link <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                        &raquo;
+                    </a>
+                </div>
+            </div>
             <?php endif; ?>
-        </div>
+            <?php else: ?>
+            <div class="no-data-message">
+                <i class="fas fa-folder-open"></i>
+                <p>Belum ada LPJ yang diunggah oleh mahasiswa.</p>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -384,11 +558,11 @@ $conn->close();
             <h2>Alasan Penolakan LPJ</h2>
             <span class="close-button" onclick="closeRejectModal()">&times;</span>
         </div>
-        <form id="rejectForm" method="POST" action="ditmawa_laporan.php">
+        <form id="rejectForm" method="POST" action="ditmawa_laporan.php<?php echo $page_query_string; ?>">
             <div class="modal-body">
                 <input type="hidden" id="reject_pengajuan_id" name="pengajuan_id">
                 <label for="alasan_penolakan">Mohon berikan alasan penolakan yang jelas agar mahasiswa dapat melakukan perbaikan:</label>
-                <textarea id="alasan_penolakan" name="alasan_penolakan" required placeholder="Contoh: Terdapat ketidaksesuaian antara anggaran dengan bukti pembayaran pada Bab 3..."></textarea>
+                <textarea id="alasan_penolakan" name="alasan_penolakan" required placeholder="Contoh: ada kesalahan dalam foto tidak sesuai"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="submit" name="tolak_lpj" class="btn btn-reject"><i class="fas fa-paper-plane"></i> Kirim Penolakan</button>
