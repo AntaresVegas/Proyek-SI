@@ -8,37 +8,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
 
 require_once('../config/db_connection.php');
 
-// Logika untuk menangani penghapusan event
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
-    $pengajuan_id_to_delete = $_POST['pengajuan_id'];
-
-    $conn->begin_transaction();
-    try {
-        $stmt1 = $conn->prepare("DELETE FROM peminjaman_ruangan WHERE pengajuan_id = ?");
-        $stmt1->bind_param("i", $pengajuan_id_to_delete);
-        $stmt1->execute();
-        $stmt1->close();
-
-        $stmt2 = $conn->prepare("DELETE FROM pengajuan_event WHERE pengajuan_id = ?");
-        $stmt2->bind_param("i", $pengajuan_id_to_delete);
-        $stmt2->execute();
-        $stmt2->close();
-
-        $conn->commit();
-        $_SESSION['success_message'] = "Event berhasil dihapus secara permanen.";
-
-    } catch (Exception $e) {
-        $conn->rollback();
-        $_SESSION['error_message'] = "Gagal menghapus event: " . $e->getMessage();
-    }
-    
-    // [DIUBAH] Pastikan redirect mempertahankan filter & halaman saat ini
-    unset($_GET['delete_event']); // Hapus aksi delete dari query string
-    $redirect_url = 'ditmawa_listKegiatan.php?' . http_build_query($_GET);
-    header("Location: " . $redirect_url);
-    exit();
-}
-
 $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
 $selected_bulan = $_GET['bulan'] ?? '';
 $selected_tahun = $_GET['tahun'] ?? '';
@@ -116,7 +85,14 @@ try {
             SELECT 
                 pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_event_tanggal_mulai,
                 pe.pengajuan_tanggalEdit, pe.pengajuan_status_ditmawa, pe.pengajuan_status_asp,
-                pe.pengajuan_status_proposal,
+                
+                -- [PERBAIKAN] Terapkan logika status proposal secara dinamis di list
+                CASE 
+                    WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
+                    THEN 'Ditolak' 
+                    ELSE pe.pengajuan_status_proposal 
+                END AS pengajuan_status_proposal,
+                
                 CASE
                     WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_nama
                     WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_nama
@@ -226,11 +202,6 @@ $years = range($current_year, $current_year - 5);
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
-        .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background-color: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
-        .modal-header h3 { font-size: 1.5em; color: #333; margin-bottom: 15px; }
-        .modal-body p { font-size: 1.1em; color: #555; margin-bottom: 25px; }
-        .modal-footer { display: flex; justify-content: center; gap: 15px; }
         .btn-secondary { background-color: #6c757d; }
 
         /* [BARU] CSS Untuk Paginasi */
@@ -364,10 +335,6 @@ $years = range($current_year, $current_year - 5);
                                 <td>
                                     <div class="action-buttons">
                                         <a href="ditmawa_editForm.php?id=<?php echo $row['pengajuan_id']; ?>&page=<?php echo $page; ?>" class="btn btn-view"><i class="fas fa-file-alt"></i> Lihat</a>
-                                        <form method="POST" action="ditmawa_listKegiatan.php?page=<?php echo $page; ?><?php echo $pagination_query_string; ?>" style="display:inline;">
-                                            <input type="hidden" name="pengajuan_id" value="<?php echo $row['pengajuan_id']; ?>">
-                                            <button type="submit" name="delete_event" class="btn btn-delete delete-btn"><i class="fas fa-trash"></i> Hapus</button>
-                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -413,21 +380,6 @@ $years = range($current_year, $current_year - 5);
         </div>
 </div>
 
-<div id="deleteConfirmationModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Konfirmasi Penghapusan</h3>
-        </div>
-        <div class="modal-body">
-            <p>Apakah Anda yakin ingin menghapus event ini secara permanen? Tindakan ini tidak dapat dibatalkan.</p>
-        </div>
-        <div class="modal-footer">
-            <button id="cancelDelete" class="btn btn-secondary">Batal</button>
-            <button id="confirmDelete" class="btn btn-delete">Ya, Hapus</button>
-        </div>
-    </div>
-</div>
-
 <footer class="page-footer">
     <div class="footer-container">
         <div class="footer-left">
@@ -452,41 +404,6 @@ $years = range($current_year, $current_year - 5);
         </div>
     </div>
 </footer>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('deleteConfirmationModal');
-    const cancelBtn = document.getElementById('cancelDelete');
-    const confirmBtn = document.getElementById('confirmDelete');
-    let formToSubmit = null;
-
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function (e) {
-            e.preventDefault();
-            formToSubmit = this.closest('form');
-            modal.style.display = 'flex';
-        });
-    });
-
-    cancelBtn.addEventListener('click', function () {
-        modal.style.display = 'none';
-        formToSubmit = null;
-    });
-
-    confirmBtn.addEventListener('click', function () {
-        if (formToSubmit) {
-            formToSubmit.submit();
-        }
-    });
-
-    window.addEventListener('click', function (e) {
-        if (e.target == modal) {
-            modal.style.display = 'none';
-            formToSubmit = null;
-        }
-    });
-});
-</script>
 
 </body>
 </html>

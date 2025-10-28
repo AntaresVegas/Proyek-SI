@@ -624,7 +624,7 @@ $conn->close();
                         <div id="gedung_selection" class="checkbox-group-modern">
                             <?php foreach ($gedung_options as $gedung): ?>
                                 <div class="checkbox-item">
-                                    <input type="checkbox" class="gedung-checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>" required>
+                                    <input type="checkbox" class="gedung-checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>">
                                     <label for="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>"><?php echo htmlspecialchars($gedung['gedung_nama']); ?></label>
                                 </div>
                             <?php endforeach; ?>

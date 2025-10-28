@@ -356,8 +356,8 @@ $conn->close();
         loader.style.display = 'inline-block';
         const queryString = ids.map(id => `${idKey}[]=${encodeURIComponent(id)}`).join('&');
         
-        // [FIX] Mengubah path fetch dari ../includes/ menjadi ../
-        fetch(`../${endpoint}?${queryString}`)
+        // [PERBAIKAN] Mengubah path fetch dari ../ menjadi ./ (atau dikosongkan)
+        fetch(`${endpoint}?${queryString}`)
             .then(response => {
                 if (!response.ok) { throw new Error('Network response was not ok'); }
                 return response.json();

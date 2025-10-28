@@ -53,7 +53,14 @@ if ($user_id !== 'No ID') {
             pe.komentar_ditmawa,
             pe.pengajuan_status_asp,
             pe.komentar_asp,
-            pe.pengajuan_status_proposal,
+            
+            -- [PERBAIKAN] Terapkan logika status proposal secara dinamis
+            CASE 
+                WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
+                THEN 'Ditolak' 
+                ELSE pe.pengajuan_status_proposal 
+            END AS pengajuan_status_proposal,
+            
             pe.pengajuan_tanggalEdit
         FROM pengajuan_event pe
         WHERE pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'
