@@ -648,11 +648,11 @@ $conn->close();
                     <div class="date-grid">
                         <div class="form-group">
                             <label for="pengajuan_event_tanggal_mulai">Tanggal Mulai Acara</label>
-                            <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" required>
+                            <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" required min="">
                         </div>
                         <div class="form-group">
                             <label for="pengajuan_event_tanggal_selesai">Tanggal Selesai Acara</label>
-                            <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required>
+                            <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required min="">
                         </div>
                     </div>
                     <div class="date-grid">
@@ -668,11 +668,11 @@ $conn->close();
                     <div class="date-grid">
                         <div class="form-group">
                             <label for="tanggal_persiapan">Tanggal Persiapan Lokasi (Opsional)</label>
-                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan">
+                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan" min="">
                         </div>
                         <div class="form-group">
                             <label for="tanggal_beres">Tanggal Pembongkaran Lokasi (Opsional)</label>
-                            <input type="date" id="tanggal_beres" name="tanggal_beres">
+                            <input type="date" id="tanggal_beres" name="tanggal_beres" min="">
                         </div>
                     </div>
 
@@ -730,6 +730,26 @@ $conn->close();
 </footer>
 
 <script>
+    // --- [PERBAIKAN] Mengatur tanggal minimum (hari ini) untuk semua input tanggal ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Buat objek tanggal hari ini
+        const today = new Date();
+        
+        // Format tanggal ke YYYY-MM-DD yang diterima oleh input type="date"
+        // Waktu diatur ke zona waktu lokal (Asia/Jakarta)
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const minDate = `${year}-${month}-${day}`;
+
+        // Terapkan ke semua input tanggal di Step 2
+        document.getElementById('pengajuan_event_tanggal_mulai').min = minDate;
+        document.getElementById('pengajuan_event_tanggal_selesai').min = minDate;
+        document.getElementById('tanggal_persiapan').min = minDate;
+        document.getElementById('tanggal_beres').min = minDate;
+    });
+    // --- Akhir Perbaikan ---
+
     let currentStep = 1;
     const formSteps = document.querySelectorAll('.form-step');
     const formStepInput = document.getElementById('form_step');
@@ -753,7 +773,12 @@ $conn->close();
         const typeLainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
 
         // Jika semua field punya atribut required di HTML, kamu cukup validasi bawaan browser
-        const inputs = [namaUnitInput, organisasiInput, namaEventInput, typeKegiatanSelect, typeLainnyaInput];
+        const inputs = [namaUnitInput, organisasiInput, namaEventInput, typeKegiatanSelect];
+        
+        // Validasi khusus untuk 'Lainnya'
+        if (typeKegiatanSelect.value === 'Lainnya') {
+            inputs.push(typeLainnyaInput);
+        }
         
         for (const input of inputs) {
             if (!input.checkValidity()) {
@@ -889,23 +914,24 @@ $conn->close();
         // 2. Validasi Pemilihan Lokasi
         const gedungChecked = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
         if (gedungChecked === 0) {
-            alert('Error: Anda harus memilih minimal satu Gedung.');
-            event.preventDefault();
-            return;
+            // Kita izinkan jika tidak pilih gedung, tapi jika pilih gedung, harus lengkap
+            // alert('Error: Anda harus memilih minimal satu Gedung.');
+            // event.preventDefault();
+            // return;
         }
 
         const lantaiChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length;
         // Hanya validasi jika container lantai sudah ada isinya (bukan placeholder)
-        if (document.getElementById('lantai_selection') && lantaiChecked === 0) {
-            alert('Error: Anda harus memilih minimal satu Lantai.');
+        if (gedungChecked > 0 && document.getElementById('lantai_selection') && lantaiChecked === 0) {
+            alert('Error: Anda telah memilih Gedung, maka Anda harus memilih minimal satu Lantai.');
             event.preventDefault();
             return;
         }
         
         const ruanganChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length;
         // Hanya validasi jika container ruangan sudah ada isinya
-        if (document.getElementById('ruangan_selection') && ruanganChecked === 0) {
-            alert('Error: Anda harus memilih minimal satu Ruangan.');
+        if (gedungChecked > 0 && document.getElementById('ruangan_selection') && ruanganChecked === 0) {
+            alert('Error: Anda telah memilih Lantai, maka Anda harus memilih minimal satu Ruangan.');
             event.preventDefault();
             return;
         }

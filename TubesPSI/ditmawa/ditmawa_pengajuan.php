@@ -214,16 +214,24 @@ $conn->close();
                 <div class="form-section">
                     <h2>Jadwal dan Ruangan</h2>
                      <div class="form-row">
-                        <div class="form-group"><label for="tanggal_mulai">Tanggal Mulai Event</label><input type="date" id="tanggal_mulai" name="tanggal_mulai" required></div>
-                        <div class="form-group"><label for="tanggal_selesai">Tanggal Selesai Event</label><input type="date" id="tanggal_selesai" name="tanggal_selesai" required></div>
+                        <div class="form-group"><label for="tanggal_mulai">Tanggal Mulai Event</label>
+                            <input type="date" id="tanggal_mulai" name="tanggal_mulai" required min="">
+                        </div>
+                        <div class="form-group"><label for="tanggal_selesai">Tanggal Selesai Event</label>
+                            <input type="date" id="tanggal_selesai" name="tanggal_selesai" required min="">
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label for="jam_mulai">Jam Mulai</label><input type="time" id="jam_mulai" name="jam_mulai" required></div>
                         <div class="form-group"><label for="jam_selesai">Jam Selesai</label><input type="time" id="jam_selesai" name="jam_selesai" required></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label for="tanggal_persiapan">Tgl Persiapan (Opsional)</label><input type="date" id="tanggal_persiapan" name="tanggal_persiapan"></div>
-                        <div class="form-group"><label for="tanggal_beres">Tgl Pembongkaran (Opsional)</label><input type="date" id="tanggal_beres" name="tanggal_beres"></div>
+                        <div class="form-group"><label for="tanggal_persiapan">Tgl Persiapan (Opsional)</label>
+                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan" min="">
+                        </div>
+                        <div class="form-group"><label for="tanggal_beres">Tgl Pembongkaran (Opsional)</label>
+                            <input type="date" id="tanggal_beres" name="tanggal_beres" min="">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Pilih Gedung</label>
@@ -272,6 +280,22 @@ $conn->close();
     </footer>
     
 <script>
+    // --- [PERBAIKAN] Mengatur tanggal minimum (hari ini) ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const minDate = `${year}-${month}-${day}`;
+
+        // Terapkan ke semua input tanggal
+        document.getElementById('tanggal_mulai').min = minDate;
+        document.getElementById('tanggal_selesai').min = minDate;
+        document.getElementById('tanggal_persiapan').min = minDate;
+        document.getElementById('tanggal_beres').min = minDate;
+    });
+    // --- Akhir Perbaikan ---
+
     document.getElementById('event-form').addEventListener('submit', function(event) {
         const stopSubmission = (message, element) => {
             alert('Validasi Gagal: ' + message);
@@ -300,9 +324,10 @@ $conn->close();
 
         const gedungCheckedCount = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
         if (gedungCheckedCount > 0) {
-            const lantaiIsChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length > 0;
+            const lantaiIsChecked = document.querySelectorAll('#lantai_selection input:checked').length > 0;
             if (!lantaiIsChecked) { return stopSubmission('Anda telah memilih Gedung, maka wajib memilih minimal satu Lantai.'); }
-            const ruanganIsChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length > 0;
+            
+            const ruanganIsChecked = document.querySelectorAll('#ruangan_selection input:checked').length > 0;
             if (!ruanganIsChecked) { return stopSubmission('Anda telah memilih Lantai, maka wajib memilih minimal satu Ruangan.'); }
         }
     });
