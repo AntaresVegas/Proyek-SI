@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 08, 2025 at 05:08 AM
+-- Generation Time: Nov 03, 2025 at 03:46 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -86,7 +86,91 @@ INSERT INTO `gedung` (`gedung_id`, `gedung_nama`) VALUES
 (4, 'Gedung 2'),
 (5, 'Gedung 3'),
 (6, 'Gedung 4 5'),
-(8, 'Merdeka 30');
+(8, 'Merdeka 30'),
+(9, 'Parkiran Mekanika Tanah');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `jadwal_kelas`
+--
+
+CREATE TABLE `jadwal_kelas` (
+  `jadwal_id` int(11) NOT NULL,
+  `ruangan_id` int(11) NOT NULL,
+  `hari` enum('Senin','Selasa','Rabu','Kamis','Jumat','Sabtu') NOT NULL,
+  `jam_mulai` time NOT NULL,
+  `jam_selesai` time NOT NULL,
+  `nama_matakuliah` varchar(150) DEFAULT NULL,
+  `semester_tahun` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `jadwal_kelas`
+--
+
+INSERT INTO `jadwal_kelas` (`jadwal_id`, `ruangan_id`, `hari`, `jam_mulai`, `jam_selesai`, `nama_matakuliah`, `semester_tahun`, `created_at`) VALUES
+(1, 1, 'Senin', '07:30:00', '10:00:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(2, 2, 'Senin', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(3, 3, 'Senin', '07:30:00', '10:00:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(4, 4, 'Senin', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(5, 1, 'Senin', '10:00:00', '12:30:00', 'Sistem Digital', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(6, 2, 'Senin', '10:00:00', '12:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(7, 3, 'Senin', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(8, 4, 'Senin', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(9, 1, 'Senin', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(10, 2, 'Senin', '13:00:00', '15:30:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(11, 3, 'Senin', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(12, 4, 'Senin', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(13, 1, 'Senin', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(14, 2, 'Senin', '15:30:00', '18:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(15, 3, 'Selasa', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(16, 5, 'Selasa', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(17, 1, 'Selasa', '10:00:00', '12:30:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(18, 2, 'Selasa', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(19, 3, 'Selasa', '10:00:00', '12:30:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(20, 5, 'Selasa', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(21, 1, 'Selasa', '13:00:00', '15:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(22, 2, 'Selasa', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(23, 3, 'Selasa', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(24, 5, 'Selasa', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(25, 1, 'Selasa', '15:30:00', '18:00:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(26, 2, 'Selasa', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(27, 1, 'Rabu', '07:30:00', '10:00:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(28, 2, 'Rabu', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(29, 3, 'Rabu', '07:30:00', '10:00:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(30, 4, 'Rabu', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(31, 1, 'Rabu', '10:00:00', '12:30:00', 'Sistem Digital', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(32, 2, 'Rabu', '10:00:00', '12:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(33, 3, 'Rabu', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(34, 4, 'Rabu', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(35, 1, 'Rabu', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(36, 2, 'Rabu', '13:00:00', '15:30:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(37, 3, 'Rabu', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(38, 4, 'Rabu', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(39, 1, 'Rabu', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(40, 2, 'Rabu', '15:30:00', '18:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(41, 3, 'Kamis', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(42, 5, 'Kamis', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(43, 1, 'Kamis', '10:00:00', '12:30:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(44, 2, 'Kamis', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(45, 3, 'Kamis', '10:00:00', '12:30:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(46, 5, 'Kamis', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(47, 1, 'Kamis', '13:00:00', '15:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(48, 2, 'Kamis', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(49, 3, 'Kamis', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(50, 5, 'Kamis', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(51, 1, 'Kamis', '15:30:00', '18:00:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(52, 2, 'Kamis', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(53, 1, 'Jumat', '07:30:00', '10:00:00', 'Sistem Digital', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(54, 2, 'Jumat', '07:30:00', '10:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(55, 3, 'Jumat', '07:30:00', '10:00:00', 'Statistik & Probabilitas', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(56, 4, 'Jumat', '07:30:00', '10:00:00', 'Pancasila', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(57, 1, 'Jumat', '13:00:00', '15:30:00', 'Teori Bahasa & Automata', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(58, 2, 'Jumat', '13:00:00', '15:30:00', 'Interaksi Manusia & Komputer', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(59, 3, 'Jumat', '13:00:00', '15:30:00', 'Kecerdasan Buatan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
+(60, 4, 'Jumat', '13:00:00', '15:30:00', 'Agama', 'Ganjil 2025/2026', '2025-10-28 15:06:54');
 
 -- --------------------------------------------------------
 
@@ -110,7 +194,9 @@ INSERT INTO `lantai` (`lantai_id`, `gedung_id`, `lantai_nomor`) VALUES
 (3, 1, '3'),
 (4, 2, '1'),
 (5, 2, '2'),
-(6, 2, '3');
+(6, 2, '3'),
+(7, 4, '1'),
+(8, 4, '2');
 
 -- --------------------------------------------------------
 
@@ -134,7 +220,7 @@ CREATE TABLE `mahasiswa` (
 --
 
 INSERT INTO `mahasiswa` (`mahasiswa_id`, `mahasiswa_nama`, `mahasiswa_npm`, `mahasiswa_email`, `mahasiswa_password`, `mahasiswa_jurusan`, `unit_id`, `organisasi_id`) VALUES
-(0, 'audric', '6182101039', '6182101039@student.unpar.ac.id', '$2y$10$4KChRZ/PvWHl9oeC.JT0NOlrJ10UHswyi7z14bLxgaMcArhMWkAgu', 'informatika', NULL, NULL),
+(0, 'audric', '6182101039', '6182101039@student.unpar.ac.id', '$2y$10$V1F8H6dfilDVZzUF.37Yl.JuEA.k4Uvu3ucXsrkqzDfyzIiuwgw0m', 'informatika', NULL, NULL),
 (1, 'Bram', '6182101043', '6182101043@student.unpar.ac.id', '$2y$10$IdYqZUc2yXFSUbb6U.pm7..sFsddWVu0C9pxvGueVmjepzUDBrenC', 'Informatika', NULL, NULL),
 (4, 'Rafli', '6182101027', '6182101027@student.unpar.ac.id', '$2y$10$yNr97wpx5LeCdB2wURmELO4ezPqUNHYNhNbpPtpUxXgCNakGicj4.', 'Informatika', NULL, NULL),
 (5, 'Afifah', '6182001062', '6182001062@student.unpar.ac.id', '$2y$10$l9xsIGNJNruvMVmmEP0Q6.GWsAiJOltUEG5RCwgcBKbNe9DGGvFNG', 'Informatika', NULL, NULL);
@@ -178,7 +264,8 @@ INSERT INTO `notifications` (`notification_id`, `user_id`, `message`, `link`, `i
 (18, 0, 'Mohon maaf, pengajuan event \'Testing\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=13', 1, '2025-09-18 12:09:38'),
 (19, 0, 'Mohon maaf, pengajuan event \'Testing\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=13', 1, '2025-09-18 13:24:51'),
 (20, 0, 'Mohon maaf, pengajuan event \'Testing\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=13', 1, '2025-09-18 13:32:53'),
-(21, 0, 'Mohon maaf, pengajuan event \'Science Fest\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=15', 0, '2025-09-19 03:11:37');
+(21, 0, 'Mohon maaf, pengajuan event \'Science Fest\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=15', 0, '2025-09-19 03:11:37'),
+(22, 0, 'Mohon maaf, pengajuan event \'Talkshow Inspiratif Bersama Alumni\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=19', 0, '2025-10-28 01:48:20');
 
 -- --------------------------------------------------------
 
@@ -229,7 +316,13 @@ INSERT INTO `peminjaman_ruangan` (`peminjaman_id`, `pengajuan_id`, `ruangan_id`)
 (30, 14, 2),
 (31, 14, 3),
 (32, 15, 2),
-(33, 16, 4);
+(33, 16, 4),
+(34, 22, 2),
+(35, 23, 5),
+(36, 24, 1),
+(37, 24, 2),
+(38, 25, 3),
+(39, 26, 4);
 
 -- --------------------------------------------------------
 
@@ -274,7 +367,7 @@ INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `pengaju_t
 (1, 'Seminar AI Masa Depan', 'mahasiswa', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL),
 (2, 'Workshop Fotografi Dasar', 'mahasiswa', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL),
 (3, 'Lomba Catur Antar Jurusan', 'mahasiswa', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL),
-(4, 'ISEC', 'mahasiswa', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', NULL, NULL, '', '', 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 11:20:39', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'KURANG JELAS'),
+(4, 'ISEC', 'mahasiswa', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', NULL, NULL, '', '', 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 11:20:39', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'ga sesuai'),
 (5, 'Science Fest', 'mahasiswa', 0, 'Lomba', '11:12:00', '16:12:00', '2025-09-18', '2025-09-20', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363863323463333535393735395f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323463333535396334615f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 11:12:37', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL),
 (6, 'ISEC', 'mahasiswa', 0, 'Lomba', '12:10:00', '14:08:00', '2025-10-01', '2025-10-03', '2025-09-30', '2025-10-04', 0x75706c6f6164732f72756e646f776e2f363863323539376337363962665f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323539376337366637385f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 12:09:16', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL),
 (7, 'Thormatics', 'mahasiswa', 0, 'Tutoring', '10:00:00', '13:00:00', '2025-12-10', '2025-12-12', '2025-12-08', '2025-12-14', 0x75706c6f6164732f72756e646f776e2f363863326165633038316266655f36313832313031303339202d204b6567696174616e20322e706466, 0x75706c6f6164732f70726f706f73616c2f363863326165633038323365645f5475676173204d696e676775206b652d312e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 18:13:04', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL),
@@ -289,9 +382,14 @@ INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `pengaju_t
 (16, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '10:14:00', '16:14:00', '2025-09-25', '2025-09-25', '2025-09-24', '2025-09-26', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-09-19 10:14:38', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL),
 (17, 'Seminar Pagi Tentang Teknologi Blockchain', 'mahasiswa', 0, 'Seminar', '08:00:00', '10:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
 (18, 'Workshop Desain Grafis untuk Pemula', 'mahasiswa', 0, 'Workshop', '10:00:00', '12:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
-(19, 'Talkshow Inspiratif Bersama Alumni', 'mahasiswa', 0, 'Talkshow', '13:00:00', '15:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
-(20, 'Lomba Cepat Tepat Cerdas Cermat', 'mahasiswa', 0, 'Lomba', '15:00:00', '17:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
-(21, 'Pentas Seni Malam Apresiasi Budaya', 'mahasiswa', 0, 'Pentas Seni', '19:00:00', '21:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL);
+(19, 'Talkshow Inspiratif Bersama Alumni', 'mahasiswa', 0, 'Talkshow', '13:00:00', '15:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Ditolak', '2025-10-28 02:48:20', '2025-10-04 00:36:35', '', NULL, 'Disetujui', '2025-10-27 09:56:41', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL),
+(20, 'Lomba Cepat Tepat Cerdas Cermat', 'mahasiswa', 0, 'Lomba', '15:00:00', '17:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Ditolak', '2025-10-28 02:34:34', '', NULL, 'Ditolak', NULL, 'Menunggu Persetujuan', NULL),
+(21, 'Pentas Seni Malam Apresiasi Budaya', 'mahasiswa', 0, 'Pentas Seni', '19:00:00', '21:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Ditolak', '2025-10-28 02:34:27', '', NULL, 'Ditolak', NULL, 'Menunggu Persetujuan', NULL),
+(22, 'Science Fest', 'mahasiswa', 0, 'Workshop', '10:07:00', '12:07:00', '2025-10-29', '2025-10-30', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303137343931626565315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303137343931633462335f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 08:07:21', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
+(23, 'Natal Unpar', 'ditmawa', 1, 'Institusional', '10:27:00', '11:27:00', '2025-10-29', '2025-10-30', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-28 08:27:59', '2025-10-28 08:27:59', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
+(24, 'ISECS', 'mahasiswa', 0, 'Lomba Game', '09:05:00', '10:05:00', '2025-10-29', '2025-10-30', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303234656338316462315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303234656338323266615f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 09:05:32', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
+(25, 'Testing', 'mahasiswa', 0, 'Seminar', '09:06:00', '10:06:00', '2025-10-21', '2025-10-22', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303235323563313439315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303235323563323031665f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 09:06:29', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL),
+(26, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '10:09:00', '11:09:00', '2025-10-29', '2025-10-30', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-28 09:09:41', '2025-10-28 09:09:41', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL);
 
 -- --------------------------------------------------------
 
@@ -348,6 +446,13 @@ ALTER TABLE `ditmawa`
 --
 ALTER TABLE `gedung`
   ADD PRIMARY KEY (`gedung_id`);
+
+--
+-- Indexes for table `jadwal_kelas`
+--
+ALTER TABLE `jadwal_kelas`
+  ADD PRIMARY KEY (`jadwal_id`),
+  ADD KEY `ruangan_id` (`ruangan_id`);
 
 --
 -- Indexes for table `lantai`
@@ -423,13 +528,19 @@ ALTER TABLE `ditmawa`
 -- AUTO_INCREMENT for table `gedung`
 --
 ALTER TABLE `gedung`
-  MODIFY `gedung_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `gedung_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `jadwal_kelas`
+--
+ALTER TABLE `jadwal_kelas`
+  MODIFY `jadwal_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT for table `lantai`
 --
 ALTER TABLE `lantai`
-  MODIFY `lantai_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `lantai_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `mahasiswa`
@@ -441,7 +552,7 @@ ALTER TABLE `mahasiswa`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `organisasi`
@@ -453,19 +564,19 @@ ALTER TABLE `organisasi`
 -- AUTO_INCREMENT for table `peminjaman_ruangan`
 --
 ALTER TABLE `peminjaman_ruangan`
-  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `peminjaman_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `pengajuan_event`
 --
 ALTER TABLE `pengajuan_event`
-  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `pengajuan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `ruangan`
 --
 ALTER TABLE `ruangan`
-  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `ruangan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `unit`
@@ -476,6 +587,12 @@ ALTER TABLE `unit`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `jadwal_kelas`
+--
+ALTER TABLE `jadwal_kelas`
+  ADD CONSTRAINT `jadwal_kelas_ibfk_1` FOREIGN KEY (`ruangan_id`) REFERENCES `ruangan` (`ruangan_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `lantai`

@@ -1,8 +1,9 @@
 <?php
 session_start();
 
+// Autentikasi Ditmawa
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'ditmawa') {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/login.php"); // Arahkan ke login jika tidak sesuai
     exit();
 }
 
@@ -12,35 +13,42 @@ $ditmawa_id = $_SESSION['user_id'];
 $message = '';
 $message_type = '';
 
+// Proses Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $namaEvent = trim($_POST['nama_event']);
 
+    // Validasi Nama Event
     if (strlen($namaEvent) < 5) {
         $message = "Nama event harus terdiri dari minimal 5 karakter.";
         $message_type = 'error';
     } else {
+        // Ambil data Tipe Kegiatan
         $tipeKegiatan = $_POST['tipe_kegiatan_select'];
         if ($tipeKegiatan === 'Lainnya') {
-            $tipeKegiatan = !empty($_POST['tipe_kegiatan_lainnya']) ? $_POST['tipe_kegiatan_lainnya'] : 'Lainnya';
+            $tipeKegiatan = !empty($_POST['tipe_kegiatan_lainnya']) ? trim($_POST['tipe_kegiatan_lainnya']) : 'Lainnya'; // Ambil dari input teks jika 'Lainnya' dipilih
         }
         
+        // Ambil data tanggal dan jam
         $tanggalMulai = $_POST['tanggal_mulai'];
         $tanggalSelesai = $_POST['tanggal_selesai'];
         $jamMulai = $_POST['jam_mulai'];
         $jamSelesai = $_POST['jam_selesai'];
         $tanggalPersiapan = !empty($_POST['tanggal_persiapan']) ? $_POST['tanggal_persiapan'] : NULL;
         $tanggalBeres = !empty($_POST['tanggal_beres']) ? $_POST['tanggal_beres'] : NULL;
+        
+        // Ambil ID ruangan yang dipilih
         $selected_ruangan_ids = isset($_POST['ruangan_ids']) ? $_POST['ruangan_ids'] : [];
 
-        // [FIX] Menyesuaikan logika status sesuai aturan baru
+        // Tentukan Status Awal (karena ini form Ditmawa)
         $pengajuTipe = 'ditmawa';
-        $status_ditmawa = 'Disetujui';       // Status untuk Ditmawa langsung disetujui
-        $status_asp = 'Diajukan';           // Status untuk ASP perlu menunggu persetujuan
-        $status_proposal = 'Diajukan';      // Status untuk Proposal juga diatur sebagai diajukan
+        $status_ditmawa = 'Disetujui'; // Otomatis disetujui oleh Ditmawa
+        $status_asp = 'Diajukan';       // Perlu persetujuan ASP
+        $status_proposal = 'Diajukan';  // Status proposal awal
 
+        // Mulai transaksi database
         $conn->begin_transaction();
         try {
-            // [FIX] Mengubah query INSERT untuk memasukkan 3 status terpisah dan tanggal approve ditmawa
+            // Insert data event utama
             $stmt = $conn->prepare(
                 "INSERT INTO pengajuan_event (
                     pengajuan_namaEvent, pengaju_tipe, pengaju_id, pengajuan_TypeKegiatan, 
@@ -48,11 +56,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     pengajuan_event_jam_mulai, pengajuan_event_jam_selesai, 
                     tanggal_persiapan, tanggal_beres, 
                     pengajuan_status_ditmawa, pengajuan_status_asp, pengajuan_status_proposal, 
-                    pengajuan_tanggalEdit, tanggal_approve_ditmawa
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+                    pengajuan_tanggalEdit, tanggal_approve_ditmawa -- Tanggal approve ditmawa diisi NOW()
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())" // Tambah 1 placeholder '?' lagi
             );
             
-            // [FIX] Menyesuaikan tipe data dan parameter yang di-bind
+            // Bind parameter (13 parameter: ssissssssssss)
             $stmt->bind_param("ssissssssssss", 
                 $namaEvent, $pengajuTipe, $ditmawa_id, $tipeKegiatan, 
                 $tanggalMulai, $tanggalSelesai, $jamMulai, $jamSelesai, 
@@ -61,9 +69,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             );
             
             $stmt->execute();
-            $pengajuan_id = $stmt->insert_id;
+            $pengajuan_id = $stmt->insert_id; // Dapatkan ID event yang baru dibuat
             $stmt->close();
             
+            // Insert data peminjaman ruangan jika ada ruangan yang dipilih
             if (!empty($selected_ruangan_ids) && is_array($selected_ruangan_ids)) {
                 $stmt_ruangan = $conn->prepare("INSERT INTO peminjaman_ruangan (pengajuan_id, ruangan_id) VALUES (?, ?)");
                 foreach ($selected_ruangan_ids as $ruangan_id) {
@@ -73,27 +82,48 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt_ruangan->close();
             }
 
-            $conn->commit();
+            $conn->commit(); // Simpan perubahan jika semua berhasil
             $message = "Event institusional berhasil dibuat. Status Ditmawa otomatis disetujui.";
             $message_type = 'success';
 
+             $_POST = array(); 
+
         } catch (Exception $e) {
-            $conn->rollback();
-            $message = "Terjadi kesalahan: " . $e->getMessage();
+            $conn->rollback(); // Batalkan perubahan jika ada error
+            $message = "Terjadi kesalahan saat menyimpan data: " . $e->getMessage();
             $message_type = 'error';
+            error_log("Error insert event Ditmawa: " . $e->getMessage()); // Log error untuk debug
         }
     }
-    $conn->close();
 }
 
-include '../config/db_connection.php';
-$gedung_options = [];
-// [FIX] Memperbaiki urutan gedung menjadi numerik dan lebih aman
-$result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY LENGTH(gedung_nama), gedung_nama");
-while ($row = $result_gedung->fetch_assoc()) {
-    $gedung_options[] = $row;
+// Ambil data gedung untuk ditampilkan di form
+if (!isset($conn) || $conn->connect_errno) {
+     include '../config/db_connection.php'; 
 }
-$conn->close();
+$gedung_options = [];
+// [PERBAIKAN] Mengurutkan secara "natural" (Gedung 0-10 dulu, baru sisanya)
+$result_gedung = $conn->query("
+    SELECT gedung_id, gedung_nama 
+    FROM gedung 
+    ORDER BY
+        -- 1. Pisahkan antara yang nama 'Gedung' dan yang bukan
+        CASE 
+            WHEN gedung_nama LIKE 'Gedung %' THEN 1
+            ELSE 2
+        END ASC,
+        -- 2. Urutkan yang 'Gedung' berdasarkan angkanya
+        CAST(SUBSTRING(gedung_nama FROM 8) AS UNSIGNED) ASC,
+        -- 3. Urutkan sisanya (misal: 'Merdeka', 'Parkiran') secara alfabetis
+        gedung_nama ASC
+");if ($result_gedung) {
+    while ($row = $result_gedung->fetch_assoc()) {
+        $gedung_options[] = $row;
+    }
+    $result_gedung->free();
+} else {
+     error_log("Error fetching gedung: " . $conn->error); 
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -102,8 +132,18 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Pengajuan Event - Ditmawa</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
     <style>
-        :root { --ditmawa-primary: #ff8c00; --ditmawa-secondary: #e67e00; --text-dark: #2c3e50; }
+        /* CSS Lengkap dari versi sebelumnya */
+        :root { 
+            --ditmawa-primary: #ff8c00; 
+            --ditmawa-secondary: #e67e00; 
+            --text-dark: #2c3e50; 
+            --text-light: #555;
+            --light-gray: #f8f9fa;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-image: url('../img/backgroundDitmawa.jpeg'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-attachment: fixed; display: flex; flex-direction: column; min-height: 100vh; }
@@ -125,7 +165,7 @@ $conn->close();
         .checkbox-group-modern { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
         .checkbox-item { display: flex; align-items: center; position: relative; }
         .checkbox-item input[type="checkbox"] { opacity: 0; position: absolute; }
-        .checkbox-item label { display: flex; align-items: center; cursor: pointer; color: #495057; }
+        .checkbox-item label { display: flex; align-items: center; cursor: pointer; color: #495057; transition: color 0.2s; } /* Tambah transisi */
         .checkbox-item label::before { content: ''; width: 20px; height: 20px; border: 2px solid #adb5bd; border-radius: 4px; margin-right: 12px; transition: all 0.2s ease; flex-shrink: 0; }
         .checkbox-item input[type="checkbox"]:checked + label::before { background-color: var(--ditmawa-primary); border-color: var(--ditmawa-primary); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e"); background-position: center; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--ditmawa-primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; display: none; margin-left: 10px; vertical-align: middle; }
@@ -140,7 +180,7 @@ $conn->close();
         .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }  
         .icon { font-size: 20px; cursor: pointer; color: white; }
         a { text-decoration: none; }
-        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: 40px; }
+        .page-footer { background-color: #ff8c00; color: #fff; padding: 40px 0; margin-top: auto; } 
         .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
         .footer-logo { width: 60px; height: 60px; }
@@ -151,6 +191,86 @@ $conn->close();
         .footer-right .social-icons a { color: #2c3e50; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
         .navbar-right a[href="logout.php"] .icon { color: black; transition: color 0.3s; }
+        .konflik-message { color: #dc3545; font-size: 0.8em; font-style: italic; margin-left: 5px; display: block; }
+        .checkbox-item input[type="checkbox"]:disabled + label { cursor: not-allowed; color: #adb5bd !important; }
+        .checkbox-item input[type="checkbox"]:disabled + label::before { background-color: #e9ecef !important; border-color: #adb5bd !important; background-image: none !important; }
+        
+        .form-group input.flatpickr-input {
+            background-color: #ffffff;
+            cursor: pointer;
+        }
+        input[type="date"], input[type="time"] {
+            position: relative;
+        }
+
+        /* [PERUBAHAN BARU] Kustomisasi Tema Flatpickr agar Sesuai Tema Ditmawa */
+        .flatpickr-calendar {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+            border: 1px solid #ddd;
+        }
+        .flatpickr-months .flatpickr-month {
+            color: var(--text-dark);
+            fill: var(--text-dark);
+        }
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--ditmawa-primary);
+        }
+        .flatpickr-weekdays {
+            background: var(--light-gray, #f8f9fa);
+        }
+        span.flatpickr-weekday {
+            color: var(--text-light, #555);
+            font-weight: 600;
+        }
+        .flatpickr-day.selected, 
+        .flatpickr-day.startRange, 
+        .flatpickr-day.endRange {
+            background: var(--ditmawa-primary);
+            border-color: var(--ditmawa-primary);
+            color: #fff;
+        }
+        .flatpickr-day:hover {
+            background: #fdf0e1; /* Light orange hover */
+            border-color: #fdf0e1;
+            color: var(--text-dark);
+        }
+        .flatpickr-day.today {
+            border-color: var(--ditmawa-secondary);
+        }
+        .flatpickr-day.today:hover {
+            background: var(--ditmawa-secondary);
+            border-color: var(--ditmawa-secondary);
+            color: #fff;
+        }
+        .flatpickr-day.disabled, 
+        .flatpickr-day.disabled:hover {
+            color: #ccc;
+            background: #f8f8f8;
+        }
+        /* Time Picker */
+        .flatpickr-time {
+            border-top: 1px solid #ddd;
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:after,
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-color: var(--text-dark);
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:hover:after,
+        .flatpickr-time .numInputWrapper span.arrowDown:hover:after {
+            border-color: var(--ditmawa-primary);
+        }
+        .flatpickr-time input.numInput {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        .flatpickr-time input.numInput:focus {
+            border-color: var(--ditmawa-primary);
+        }
+        /* [AKHIR PERUBAHAN] */
+
     </style>
 </head>
 <body>
@@ -161,15 +281,17 @@ $conn->close();
                 <div class="navbar-title"><span>Pengelolaan</span><br><strong>Event UNPAR</strong></div>
             </div>
             <ul class="navbar-menu">
-                <li><a href="ditmawa_dashboard.php">Home</a></li>
+                 <li><a href="ditmawa_dashboard.php">Home</a></li>
                 <li><a href="ditmawa_pengajuan.php" class="active">Form Pengajuan</a></li>
                 <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
                 <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
+                <li><a href="ditmawa_kalender_gabungan.php">Kalender Gabungan</a></li>
                 <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
-                <li><a href="ditmawa_laporan.php">Laporan</a></li>
+                 <li><a href="ditmawa_import_jadwal.php">Import Jadwal</a></li> 
+                 <li><a href="ditmawa_laporan.php">Laporan</a></li>
             </ul>
             <div class="navbar-right">
-                    <a href="ditmawa_profile.php" style="display: flex; align-items: center; gap: 10px; color: white;">
+                    <a href="ditmawa_profile.php" style="display: flex; align-items: center; gap: 10px; color: white; text-decoration: none;">
                     <span class="user-name"><?php echo htmlspecialchars($nama); ?></span>
                     <i class="fas fa-user-circle icon"></i>
                 </a>
@@ -192,22 +314,22 @@ $conn->close();
                     <h2>Detail Event</h2>
                     <div class="form-group">
                         <label for="nama_event">Nama Event</label>
-                        <input type="text" id="nama_event" name="nama_event" placeholder="Contoh: Rapat Koordinasi Awal Semester" required>
+                        <input type="text" id="nama_event" name="nama_event" placeholder="Contoh: Rapat Koordinasi Awal Semester" required value="<?= htmlspecialchars($_POST['nama_event'] ?? '') ?>">
                     </div>
                     <div class="form-group">
                         <label for="tipe_kegiatan_select">Tipe Kegiatan</label>
                         <select id="tipe_kegiatan_select" name="tipe_kegiatan_select" required>
                             <option value="">-- Pilih Tipe --</option>
-                            <option value="Institusional">Institusional</option>
-                            <option value="Rapat">Rapat</option>
-                            <option value="Seminar">Seminar</option>
-                            <option value="Workshop">Workshop</option>
-                            <option value="Lainnya">Lainnya</option>
+                            <option value="Institusional" <?= ($_POST['tipe_kegiatan_select'] ?? '') == 'Institusional' ? 'selected' : '' ?>>Institusional</option>
+                            <option value="Rapat" <?= ($_POST['tipe_kegiatan_select'] ?? '') == 'Rapat' ? 'selected' : '' ?>>Rapat</option>
+                            <option value="Seminar" <?= ($_POST['tipe_kegiatan_select'] ?? '') == 'Seminar' ? 'selected' : '' ?>>Seminar</option>
+                            <option value="Workshop" <?= ($_POST['tipe_kegiatan_select'] ?? '') == 'Workshop' ? 'selected' : '' ?>>Workshop</option>
+                            <option value="Lainnya" <?= ($_POST['tipe_kegiatan_select'] ?? '') == 'Lainnya' ? 'selected' : '' ?>>Lainnya</option>
                         </select>
                     </div>
-                    <div class="form-group" id="lainnya_container" style="display:none;">
+                    <div class="form-group" id="lainnya_container" style="display:<?= ($_POST['tipe_kegiatan_select'] ?? '') == 'Lainnya' ? 'block' : 'none' ?>;">
                         <label for="tipe_kegiatan_lainnya">Sebutkan Tipe Kegiatan Lainnya</label>
-                        <input type="text" id="tipe_kegiatan_lainnya" name="tipe_kegiatan_lainnya" placeholder="Contoh: Pelatihan Internal Staff">
+                        <input type="text" id="tipe_kegiatan_lainnya" name="tipe_kegiatan_lainnya" placeholder="Contoh: Pelatihan Internal Staff" value="<?= htmlspecialchars($_POST['tipe_kegiatan_lainnya'] ?? '') ?>">
                     </div>
                 </div>
                 
@@ -215,22 +337,26 @@ $conn->close();
                     <h2>Jadwal dan Ruangan</h2>
                      <div class="form-row">
                         <div class="form-group"><label for="tanggal_mulai">Tanggal Mulai Event</label>
-                            <input type="date" id="tanggal_mulai" name="tanggal_mulai" required min="">
+                            <input type="date" id="tanggal_mulai" name="tanggal_mulai" required placeholder="Pilih Tanggal Mulai" value="<?= htmlspecialchars($_POST['tanggal_mulai'] ?? '') ?>">
                         </div>
                         <div class="form-group"><label for="tanggal_selesai">Tanggal Selesai Event</label>
-                            <input type="date" id="tanggal_selesai" name="tanggal_selesai" required min="">
+                            <input type="date" id="tanggal_selesai" name="tanggal_selesai" required placeholder="Pilih Tanggal Selesai" value="<?= htmlspecialchars($_POST['tanggal_selesai'] ?? '') ?>">
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label for="jam_mulai">Jam Mulai</label><input type="time" id="jam_mulai" name="jam_mulai" required></div>
-                        <div class="form-group"><label for="jam_selesai">Jam Selesai</label><input type="time" id="jam_selesai" name="jam_selesai" required></div>
+                        <div class="form-group"><label for="jam_mulai">Jam Mulai</label>
+                            <input type="time" id="jam_mulai" name="jam_mulai" required placeholder="Pilih Jam Mulai" value="<?= htmlspecialchars($_POST['jam_mulai'] ?? '') ?>">
+                        </div>
+                        <div class="form-group"><label for="jam_selesai">Jam Selesai</label>
+                            <input type="time" id="jam_selesai" name="jam_selesai" required placeholder="Pilih Jam Selesai" value="<?= htmlspecialchars($_POST['jam_selesai'] ?? '') ?>">
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label for="tanggal_persiapan">Tgl Persiapan (Opsional)</label>
-                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan" min="">
+                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan" placeholder="Pilih Tanggal Persiapan" value="<?= htmlspecialchars($_POST['tanggal_persiapan'] ?? '') ?>">
                         </div>
                         <div class="form-group"><label for="tanggal_beres">Tgl Pembongkaran (Opsional)</label>
-                            <input type="date" id="tanggal_beres" name="tanggal_beres" min="">
+                            <input type="date" id="tanggal_beres" name="tanggal_beres" placeholder="Pilih Tanggal Pembongkaran" value="<?= htmlspecialchars($_POST['tanggal_beres'] ?? '') ?>">
                         </div>
                     </div>
                     <div class="form-group">
@@ -238,7 +364,7 @@ $conn->close();
                         <div id="gedung_selection" class="checkbox-group-modern">
                             <?php foreach ($gedung_options as $gedung): ?>
                                 <div class="checkbox-item">
-                                    <input type="checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>">
+                                    <input type="checkbox" name="gedung_ids[]" value="<?php echo htmlspecialchars($gedung['gedung_id']); ?>" id="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>" <?= (isset($_POST['gedung_ids']) && in_array($gedung['gedung_id'], $_POST['gedung_ids'])) ? 'checked' : '' ?>>
                                     <label for="gedung_<?php echo htmlspecialchars($gedung['gedung_id']); ?>"><?php echo htmlspecialchars($gedung['gedung_nama']); ?></label>
                                 </div>
                             <?php endforeach; ?>
@@ -258,7 +384,7 @@ $conn->close();
         </div>
     </div>
 
-    <footer class="page-footer">
+     <footer class="page-footer">
         <div class="footer-container">
             <div class="footer-left"><img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
                 <div><h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4><h3 style="font-weight: bold; margin-top: 5px;color :black">DIREKTORAT KEMAHASISWAAN</h3></div>
@@ -279,23 +405,63 @@ $conn->close();
         </div>
     </footer>
     
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <script>
-    // --- [PERBAIKAN] Mengatur tanggal minimum (hari ini) ---
-    document.addEventListener('DOMContentLoaded', function() {
+    // --- Atur Tanggal Minimum ---
+     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date();
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         const minDate = `${year}-${month}-${day}`;
+        
+        // --- Inisialisasi Flatpickr untuk Tanggal ---
+        const tglMulaiPicker = flatpickr("#tanggal_mulai", {
+            dateFormat: "Y-m-d",
+            minDate: minDate,
+            onChange: function(selectedDates, dateStr, instance) {
+                if(tglSelesaiPicker) {
+                    tglSelesaiPicker.set('minDate', dateStr);
+                }
+                checkKonflik(); 
+            }
+        });
 
-        // Terapkan ke semua input tanggal
-        document.getElementById('tanggal_mulai').min = minDate;
-        document.getElementById('tanggal_selesai').min = minDate;
-        document.getElementById('tanggal_persiapan').min = minDate;
-        document.getElementById('tanggal_beres').min = minDate;
+        const tglSelesaiPicker = flatpickr("#tanggal_selesai", {
+            dateFormat: "Y-m-d",
+            minDate: document.getElementById('tanggal_mulai').value || minDate, 
+            onChange: function() { checkKonflik(); }
+        });
+        
+         flatpickr("#tanggal_persiapan", { dateFormat: "Y-m-d", minDate: minDate });
+         flatpickr("#tanggal_beres", { dateFormat: "Y-m-d", minDate: minDate });
+
+        // --- Inisialisasi Flatpickr untuk Jam ---
+        flatpickr("#jam_mulai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true,
+            onChange: function() { checkKonflik(); }
+        });
+
+        flatpickr("#jam_selesai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true,
+            onChange: function() { checkKonflik(); }
+        });
+
+        // Trigger fetch lantai/ruangan jika form sudah terisi
+        const initialGedungChecked = document.querySelectorAll('#gedung_selection input:checked').length > 0;
+        if(initialGedungChecked) {
+             handleGedungChange(); 
+        }
     });
-    // --- Akhir Perbaikan ---
 
+    // --- Validasi Submit Form ---
     document.getElementById('event-form').addEventListener('submit', function(event) {
         const stopSubmission = (message, element) => {
             alert('Validasi Gagal: ' + message);
@@ -317,21 +483,33 @@ $conn->close();
         const tglPersiapan = document.getElementById('tanggal_persiapan').value;
         const tglBeres = document.getElementById('tanggal_beres').value;
 
+         if (!tglMulai || !tglSelesai || !jamMulai || !jamSelesai) {
+             return stopSubmission('Tanggal Mulai/Selesai dan Jam Mulai/Selesai wajib diisi.');
+         }
+
         if (tglSelesai < tglMulai) { return stopSubmission('Tanggal Selesai Event tidak boleh mendahului Tanggal Mulai Event.', document.getElementById('tanggal_selesai')); }
         if (tglMulai === tglSelesai && jamSelesai <= jamMulai) { return stopSubmission('Untuk event di hari yang sama, Jam Selesai harus setelah Jam Mulai.', document.getElementById('jam_selesai')); }
         if (tglBeres && tglSelesai && tglBeres < tglSelesai) { return stopSubmission('Tanggal Selesai Pembongkaran tidak boleh mendahului Tanggal Selesai Event.', document.getElementById('tanggal_beres')); }
         if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) { return stopSubmission('Tanggal Mulai Persiapan tidak boleh setelah Tanggal Mulai Event.', document.getElementById('tanggal_persiapan')); }
 
         const gedungCheckedCount = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
-        if (gedungCheckedCount > 0) {
+        if (gedungCheckedCount > 0) { 
             const lantaiIsChecked = document.querySelectorAll('#lantai_selection input:checked').length > 0;
-            if (!lantaiIsChecked) { return stopSubmission('Anda telah memilih Gedung, maka wajib memilih minimal satu Lantai.'); }
+            if (!lantaiIsChecked && document.getElementById('lantai_selection')) { return stopSubmission('Anda telah memilih Gedung, maka wajib memilih minimal satu Lantai.'); }
             
             const ruanganIsChecked = document.querySelectorAll('#ruangan_selection input:checked').length > 0;
-            if (!ruanganIsChecked) { return stopSubmission('Anda telah memilih Lantai, maka wajib memilih minimal satu Ruangan.'); }
+            const ruanganDisplayed = document.getElementById('ruangan_selection');
+            if(ruanganDisplayed && ruanganIsChecked === 0) {
+                 return stopSubmission('Anda telah memilih Lantai, maka wajib memilih minimal satu Ruangan.');
+            }
+             const konflikRuangan = document.querySelectorAll('#ruangan_selection input:checked:disabled');
+             if (konflikRuangan.length > 0) {
+                return stopSubmission('Ada ruangan yang Anda pilih sedang tidak tersedia (konflik jadwal). Harap batalkan pilihan pada ruangan tersebut atau ubah jadwal Anda.');
+             }
         }
     });
 
+    // --- Dropdown 'Lainnya' ---
     const tipeKegiatanSelect = document.getElementById('tipe_kegiatan_select');
     const lainnyaContainer = document.getElementById('lainnya_container');
     const lainnyaInput = document.getElementById('tipe_kegiatan_lainnya');
@@ -346,79 +524,166 @@ $conn->close();
         }
     });
 
+    // --- Dynamic Checkbox & Cek Konflik Logic ---
     const gedungSelection = document.getElementById('gedung_selection');
     const lantaiContainer = document.getElementById('lantai_selection_container');
     const ruanganContainer = document.getElementById('ruangan_selection_container');
     const lantaiLoader = document.getElementById('lantai_loader');
     const ruanganLoader = document.getElementById('ruangan_loader');
     
-    gedungSelection.addEventListener('change', function() {
+    gedungSelection.addEventListener('change', handleGedungChange); 
+
+     // Variabel global untuk menyimpan state checkbox
+    let initialLantaiState = <?= json_encode($_POST['lantai_ids'] ?? []) ?>;
+    let initialRuanganState = <?= json_encode($_POST['ruangan_ids'] ?? []) ?>;
+
+     function handleGedungChange() {
         const selectedGedungIds = Array.from(gedungSelection.querySelectorAll('input:checked')).map(cb => cb.value);
         lantaiContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Gedung terlebih dahulu.</div>';
         ruanganContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div>';
         const oldLantaiSelection = document.getElementById('lantai_selection');
-        if (oldLantaiSelection) {
-            oldLantaiSelection.removeEventListener('change', handleLantaiChange);
-        }
-        if (selectedGedungIds.length > 0) {
-            fetchData('lantai', selectedGedungIds);
-        }
-    });
-
-    function handleLantaiChange() {
-        const selectedLantaiIds = Array.from(document.querySelectorAll('#lantai_selection input:checked')).map(cb => cb.value);
-        ruanganContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div>';
-        if (selectedLantaiIds.length > 0) {
-            fetchData('ruangan', selectedLantaiIds);
-        }
+        if (oldLantaiSelection) oldLantaiSelection.removeEventListener('change', handleLantaiChange);
+        
+        resetKonflikUI(); 
+        
+        if (selectedGedungIds.length > 0) fetchLantai(selectedGedungIds);
+        else checkKonflik(); 
     }
 
-    function fetchData(type, ids) {
-        const loader = (type === 'lantai') ? lantaiLoader : ruanganLoader;
-        const container = (type === 'lantai') ? lantaiContainer : ruanganContainer;
-        const idKey = (type === 'lantai') ? 'gedung_ids' : 'lantai_ids';
-        const endpoint = (type === 'lantai') ? 'get_lantai.php' : 'get_ruangan.php';
-        loader.style.display = 'inline-block';
-        const queryString = ids.map(id => `${idKey}[]=${encodeURIComponent(id)}`).join('&');
-        
-        // [PERBAIKAN] Mengubah path fetch dari ../ menjadi ./ (atau dikosongkan)
-        fetch(`${endpoint}?${queryString}`)
-            .then(response => {
-                if (!response.ok) { throw new Error('Network response was not ok'); }
-                return response.json();
-            })
+    function fetchLantai(gedungIds) {
+        lantaiLoader.style.display = 'inline-block';
+        const queryString = gedungIds.map(id => `gedung_ids[]=${id}`).join('&');
+        fetch(`get_lantai.php?${queryString}`) 
+            .then(response => response.json())
             .then(data => {
-                if (data.error) { throw new Error(data.error); }
                 if (data.length > 0) {
-                    let html = `<div id="${type}_selection" class="checkbox-group-modern">`;
-                    data.forEach(item => {
-                        const id = item.id;
-                        const name = item.name;
-                        // [FIX] Menyederhanakan nama input checkbox
-                        const inputName = (type === 'lantai') ? 'lantai_ids[]' : 'ruangan_ids[]';
+                    let html = '<div id="lantai_selection" class="checkbox-group-modern">';
+                    data.forEach(lantai => {
+                        const isChecked = initialLantaiState.includes(String(lantai.lantai_id));
                         html += `
                             <div class="checkbox-item">
-                                <input type="checkbox" name="${inputName}" value="${id}" id="${type}_${id}">
-                                <label for="${type}_${id}">${name}</label>
+                                <input type="checkbox" class="lantai-checkbox" name="lantai_ids[]" value="${lantai.lantai_id}" id="lantai_${lantai.lantai_id}" ${isChecked ? 'checked' : ''}>
+                                <label for="lantai_${lantai.lantai_id}">Lantai ${lantai.lantai_nomor} (${lantai.gedung_nama})</label>
                             </div>`;
                     });
                     html += '</div>';
-                    container.innerHTML = html;
-                    if (type === 'lantai') {
-                        document.getElementById('lantai_selection').addEventListener('change', handleLantaiChange);
-                    }
+                    lantaiContainer.innerHTML = html;
+                    document.getElementById('lantai_selection').addEventListener('change', handleLantaiChange);
+                    handleLantaiChange(); 
                 } else {
-                    container.innerHTML = `<div class="checkbox-placeholder">Tidak ada ${type} ditemukan.</div>`;
+                    lantaiContainer.innerHTML = '<div class="checkbox-placeholder"><p>Tidak ada lantai ditemukan.</p></div>';
                 }
             })
-            .catch(error => {
-                console.error(`Error fetching ${type}:`, error);
-                container.innerHTML = `<div class="checkbox-placeholder" style="color:red;">Gagal memuat data ${type}.</div>`;
-            })
-            .finally(() => {
-                loader.style.display = 'none';
-            });
+            .catch(error => { console.error('Error fetching lantai:', error); lantaiContainer.innerHTML = '<div class="checkbox-placeholder"><p style="color: red;">Gagal memuat data lantai.</p></div>'; })
+            .finally(() => { lantaiLoader.style.display = 'none'; }); 
     }
+
+    function handleLantaiChange() { 
+        const selectedLantaiIds = Array.from(document.querySelectorAll('#lantai_selection input:checked')).map(cb => cb.value);
+        ruanganContainer.innerHTML = '<div class="checkbox-placeholder">Pilih Lantai terlebih dahulu.</div>';
+         resetKonflikUI(); 
+        if (selectedLantaiIds.length > 0) fetchRuangan(selectedLantaiIds);
+        else checkKonflik(); 
+    }
+
+    function fetchRuangan(lantaiIds) { 
+        ruanganLoader.style.display = 'inline-block';
+        const queryString = lantaiIds.map(id => `lantai_ids[]=${id}`).join('&');
+        fetch(`get_ruangan.php?${queryString}`) 
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    let html = '<div id="ruangan_selection" class="checkbox-group-modern">';
+                    data.forEach(ruangan => {
+                        const isChecked = initialRuanganState.includes(String(ruangan.ruangan_id));
+                        html += `
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="ruangan_ids[]" value="${ruangan.ruangan_id}" id="ruangan_${ruangan.ruangan_id}" class="ruangan-checkbox" ${isChecked ? 'checked' : ''}>
+                                <label for="ruangan_${ruangan.ruangan_id}">${ruangan.ruangan_nama} (Lantai ${ruangan.lantai_nomor}, ${ruangan.gedung_nama})</label>
+                                <span class="konflik-message" id="konflik_ruangan_${ruangan.ruangan_id}"></span>
+                            </div>`;
+                    });
+                    html += '</div>';
+                    ruanganContainer.innerHTML = html;
+                     document.getElementById('ruangan_selection').addEventListener('change', checkKonflik); 
+                     initialLantaiState = []; 
+                     initialRuanganState = [];
+                } else {
+                    ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p>Tidak ada ruangan tersedia.</p></div>';
+                }
+            })
+            .catch(error => { console.error('Error fetching ruangan:', error); ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p style="color: red;">Gagal memuat data ruangan.</p></div>'; })
+            .finally(() => { ruanganLoader.style.display = 'none'; checkKonflik(); }); 
+    }
+
+    let conflictCheckTimeout; 
+
+    function checkKonflik() { 
+        clearTimeout(conflictCheckTimeout);
+        conflictCheckTimeout = setTimeout(() => {
+            // Ambil nilai dari input, meskipun inputnya dari Flatpickr, .value tetap berfungsi
+            const tanggalMulai = document.getElementById('tanggal_mulai').value;
+            const tanggalSelesai = document.getElementById('tanggal_selesai').value;
+            const jamMulai = document.getElementById('jam_mulai').value;
+            const jamSelesai = document.getElementById('jam_selesai').value;
+            const selectedRuanganCheckboxes = document.querySelectorAll('#ruangan_selection input.ruangan-checkbox');
+            
+            if (!tanggalMulai || !tanggalSelesai || !jamMulai || !jamSelesai || selectedRuanganCheckboxes.length === 0) {
+                 resetKonflikUI(); return;
+            }
+            
+             const allRuanganIds = Array.from(selectedRuanganCheckboxes).map(cb => cb.value);
+
+            const formData = new FormData();
+            formData.append('tanggal_mulai', tanggalMulai);
+            formData.append('tanggal_selesai', tanggalSelesai);
+            formData.append('jam_mulai', jamMulai);
+            formData.append('jam_selesai', jamSelesai);
+            allRuanganIds.forEach(id => formData.append('ruangan_ids[]', id));
+
+             resetKonflikUI(); 
+
+            fetch('cek_konflik_jadwal.php', { method: 'POST', body: formData }) 
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => updateKonflikUI(data.konflik))
+            .catch(error => { console.error('Error checking konflik:', error); alert('Gagal memeriksa ketersediaan ruangan. Periksa koneksi atau hubungi admin.'); })
+        }, 500); 
+    }
+
+    function resetKonflikUI() { 
+         const ruanganCheckboxes = document.querySelectorAll('#ruangan_selection input.ruangan-checkbox');
+         ruanganCheckboxes.forEach(checkbox => {
+             checkbox.disabled = false; 
+             const konflikSpan = document.getElementById(`konflik_${checkbox.id}`); 
+              if (konflikSpan) konflikSpan.textContent = ''; 
+              else { 
+                  const spanByCheckboxId = document.getElementById(`konflik_ruangan_${checkbox.value}`);
+                  if(spanByCheckboxId) spanByCheckboxId.textContent = '';
+              }
+         });
+    }
+
+    function updateKonflikUI(konflikList) { 
+        konflikList.forEach(konflik => {
+            const checkbox = document.getElementById(`ruangan_${konflik.ruangan_id}`);
+            if (checkbox) {
+                checkbox.disabled = true; 
+                checkbox.checked = false; // Otomatis uncheck jika konflik
+                const konflikSpan = document.getElementById(`konflik_ruangan_${konflik.ruangan_id}`);
+                if (konflikSpan) {
+                     let detailSingkat = konflik.detail;
+                     if (konflik.tipe === 'kelas') detailSingkat = konflik.detail.replace(/ - .+$/, ''); 
+                     else if (konflik.tipe === 'event') detailSingkat = konflik.detail.replace(/ - .+$/, '');
+                    konflikSpan.textContent = `(Dipakai: ${detailSingkat})`; 
+                }
+            }
+        });
+    }
+    // --- AKHIR LOGIKA CEK KONFLIK ---
+
 </script>
 
 </body>

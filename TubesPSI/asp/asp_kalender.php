@@ -231,6 +231,7 @@ $calendar_events_json = json_encode($calendar_events);
         <li><a href="asp_dashboard.php">Home</a></li>
         <li><a href="asp_listKegiatan.php">Persetujuan Event</a></li>
         <li><a href="asp_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="asp_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="asp_kalender.php" class="active">Kalender Peminjaman</a></li>
         <li><a href="asp_laporan.php">Laporan</a></li>
     </ul>

@@ -417,7 +417,9 @@ $conn->close();
         <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="ditmawa_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
+        <li><a href="ditmawa_import_jadwal.php">Import Jadwal</a></li>
         <li><a href="ditmawa_laporan.php" class="active">Laporan</a></li>
     </ul>
     <div class="navbar-right">

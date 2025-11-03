@@ -137,8 +137,21 @@ if ($message_type !== 'error') {
 // Fetch buildings for the checkboxes
 $gedung_options = [];
 // BARU (Mengurutkan berdasarkan angka setelah kata 'Gedung ')
-$result_gedung = $conn->query("SELECT gedung_id, gedung_nama FROM gedung ORDER BY CAST(SUBSTRING(gedung_nama, 7) AS UNSIGNED) ASC");
-while ($row = $result_gedung->fetch_assoc()) {
+// [PERBAIKAN] Mengurutkan secara "natural" (Gedung 0-10 dulu, baru sisanya)
+$result_gedung = $conn->query("
+    SELECT gedung_id, gedung_nama 
+    FROM gedung 
+    ORDER BY
+        -- 1. Pisahkan antara yang nama 'Gedung' dan yang bukan
+        CASE 
+            WHEN gedung_nama LIKE 'Gedung %' THEN 1
+            ELSE 2
+        END ASC,
+        -- 2. Urutkan yang 'Gedung' berdasarkan angkanya
+        CAST(SUBSTRING(gedung_nama FROM 8) AS UNSIGNED) ASC,
+        -- 3. Urutkan sisanya (misal: 'Merdeka', 'Parkiran') secara alfabetis
+        gedung_nama ASC
+");while ($row = $result_gedung->fetch_assoc()) {
     $gedung_options[] = $row;
 }
 $conn->close();
@@ -151,8 +164,19 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Pengajuan Event - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <style>
-        /* CSS Umum dan Layout (Tidak ada perubahan di sini) */
+        /* CSS Umum dan Layout */
+        :root { 
+            --primary-color: #007bff; /* Tema Biru Mahasiswa */
+            --primary-dark: #0056b3;
+            --text-dark: #2c3e50; 
+            --text-light: #555;
+            --light-gray: #f8f9fa;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -294,6 +318,15 @@ $conn->close();
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
 
+        /* [PERUBAHAN 2] Style untuk input Flatpickr agar terlihat sama */
+        .form-group input.flatpickr-input {
+            background-color: #f8f8f8;
+            cursor: pointer;
+        }
+        .form-group input.flatpickr-input:focus {
+            background-color: #fff; /* Ubah background saat fokus */
+        }
+
         .button-group {
             display: flex;
             justify-content: space-between;
@@ -365,7 +398,7 @@ $conn->close();
             100% { transform: rotate(360deg); }
         }
 
-        /* ===== START: DESAIN CHECKBOX KUSTOM MODERN ===== */
+        /* ===== START: DESAIN CHECKBOX KUSTOM MODERN (TEMA BIRU) ===== */
         .checkbox-placeholder {
             background-color: #f8f9fa;
             border-radius: 5px;
@@ -414,8 +447,8 @@ $conn->close();
         }
 
         .checkbox-item input[type="checkbox"]:checked + label::before {
-            background-color: #007bff;
-            border-color: #007bff;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: center;
@@ -423,13 +456,36 @@ $conn->close();
         }
 
         .checkbox-item label:hover::before {
-            border-color: #007bff;
+            border-color: var(--primary-color);
         }
         
         .checkbox-item input[type="checkbox"]:focus + label::before {
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
         /* ===== END: DESAIN CHECKBOX KUSTOM MODERN ===== */
+
+        /* --- [PERUBAHAN] CSS untuk Status Konflik --- */
+        .konflik-message {
+            color: #dc3545; /* Merah */
+            font-size: 0.85em;
+            font-weight: 500;
+            margin-left: 8px;
+            display: block;
+        }
+
+        .checkbox-item input[type="checkbox"]:disabled + label {
+            cursor: not-allowed;
+            color: #adb5bd !important; /* Abu-abu */
+            text-decoration: line-through;
+        }
+
+        .checkbox-item input[type="checkbox"]:disabled + label::before {
+            background-color: #e9ecef !important;
+            border-color: #adb5bd !important;
+            background-image: none !important;
+        }
+        /* --- AKHIR PERUBAHAN CSS --- */
+
 
         /* Custom File Upload Styling */
         .custom-file-upload {
@@ -444,7 +500,7 @@ $conn->close();
 
         .hidden-file-input { display: none; }
         .upload-button {
-            background-color: #007bff;
+            background-color: var(--primary-color);
             color: white;
             padding: 8px 15px;
             border: none;
@@ -454,7 +510,7 @@ $conn->close();
             transition: background-color 0.3s ease;
             flex-shrink: 0;
         }
-        .upload-button:hover { background-color: #0056b3; }
+        .upload-button:hover { background-color: var(--primary-dark); }
         .file-name {
             flex-grow: 1;
             color: #555;
@@ -522,6 +578,73 @@ $conn->close();
             transition: color 0.3s;
         }
         .footer-right .social-icons a:hover { color: #fff; }
+
+        /* [PERUBAHAN 3] Kustomisasi Tema Flatpickr (Tema Biru, disamakan dengan Ditmawa) */
+        .flatpickr-calendar {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+            border: 1px solid #ddd;
+        }
+        .flatpickr-months .flatpickr-month {
+            color: var(--text-dark);
+            fill: var(--text-dark);
+        }
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--primary-color);
+        }
+        .flatpickr-weekdays {
+            background: var(--light-gray);
+        }
+        span.flatpickr-weekday {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+        .flatpickr-day.selected, 
+        .flatpickr-day.startRange, 
+        .flatpickr-day.endRange {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+        .flatpickr-day:hover {
+            background: #e6f2ff; /* Light blue hover */
+            border-color: #e6f2ff;
+            color: var(--text-dark);
+        }
+        .flatpickr-day.today {
+            border-color: var(--primary-dark);
+        }
+        .flatpickr-day.today:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            color: #fff;
+        }
+        .flatpickr-day.disabled, 
+        .flatpickr-day.disabled:hover {
+            color: #ccc;
+            background: #f8f8f8;
+        }
+        /* Time Picker */
+        .flatpickr-time {
+            border-top: 1px solid #ddd;
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:after,
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-color: var(--text-dark);
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:hover:after,
+        .flatpickr-time .numInputWrapper span.arrowDown:hover:after {
+            border-color: var(--primary-color);
+        }
+        .flatpickr-time input.numInput {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        .flatpickr-time input.numInput:focus {
+            border-color: var(--primary-color);
+        }
         
     </style>
 </head>
@@ -539,7 +662,8 @@ $conn->close();
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php" class="active">Form</a></li>
-        <li><a href="mahasiswa_event.php">Event</a></li>
+        <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 
+        <li><a href="mahasiswa_event.php">Kalender Event</a></li>
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
@@ -619,6 +743,36 @@ $conn->close();
             <div class="form-step" id="step2">
                 <div class="form-section">
                     <h2>Langkah 2: Detail Jadwal dan Ruangan</h2>
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="pengajuan_event_tanggal_mulai">Tanggal Mulai Acara</label>
+                            <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" required placeholder="Pilih Tanggal Mulai">
+                        </div>
+                        <div class="form-group">
+                            <label for="pengajuan_event_tanggal_selesai">Tanggal Selesai Acara</label>
+                            <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required placeholder="Pilih Tanggal Selesai">
+                        </div>
+                    </div>
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
+                            <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" required placeholder="Pilih Jam Mulai">
+                        </div>
+                        <div class="form-group">
+                            <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
+                            <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required placeholder="Pilih Jam Selesai">
+                        </div>
+                    </div>
+                    <div class="date-grid">
+                        <div class="form-group">
+                            <label for="tanggal_persiapan">Tanggal Persiapan Lokasi (Opsional)</label>
+                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan" placeholder="Pilih Tanggal Persiapan">
+                        </div>
+                        <div class="form-group">
+                            <label for="tanggal_beres">Tanggal Pembongkaran Lokasi (Opsional)</label>
+                            <input type="date" id="tanggal_beres" name="tanggal_beres" placeholder="Pilih Tanggal Pembongkaran">
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>Pilih Gedung (bisa lebih dari satu)</label>
                         <div id="gedung_selection" class="checkbox-group-modern">
@@ -644,38 +798,6 @@ $conn->close();
                         </div>
                         <span class="loader" id="ruangan_loader"></span>
                     </div>
-
-                    <div class="date-grid">
-                        <div class="form-group">
-                            <label for="pengajuan_event_tanggal_mulai">Tanggal Mulai Acara</label>
-                            <input type="date" id="pengajuan_event_tanggal_mulai" name="pengajuan_event_tanggal_mulai" required min="">
-                        </div>
-                        <div class="form-group">
-                            <label for="pengajuan_event_tanggal_selesai">Tanggal Selesai Acara</label>
-                            <input type="date" id="pengajuan_event_tanggal_selesai" name="pengajuan_event_tanggal_selesai" required min="">
-                        </div>
-                    </div>
-                    <div class="date-grid">
-                        <div class="form-group">
-                            <label for="pengajuan_event_jam_mulai">Jam Mulai</label>
-                            <input type="time" id="pengajuan_event_jam_mulai" name="pengajuan_event_jam_mulai" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="pengajuan_event_jam_selesai">Jam Selesai</label>
-                            <input type="time" id="pengajuan_event_jam_selesai" name="pengajuan_event_jam_selesai" required>
-                        </div>
-                    </div>
-                    <div class="date-grid">
-                        <div class="form-group">
-                            <label for="tanggal_persiapan">Tanggal Persiapan Lokasi (Opsional)</label>
-                            <input type="date" id="tanggal_persiapan" name="tanggal_persiapan" min="">
-                        </div>
-                        <div class="form-group">
-                            <label for="tanggal_beres">Tanggal Pembongkaran Lokasi (Opsional)</label>
-                            <input type="date" id="tanggal_beres" name="tanggal_beres" min="">
-                        </div>
-                    </div>
-
                     <div class="form-group">
                         <label for="jadwal_event_rundown_file">Rundown Acara (PDF, DOCX)</label>
                         <div class="custom-file-upload">
@@ -729,26 +851,56 @@ $conn->close();
     </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <script>
-    // --- [PERBAIKAN] Mengatur tanggal minimum (hari ini) untuk semua input tanggal ---
+    // --- [PERUBAHAN 5] Mengganti setup tanggal & jam standar dengan Flatpickr ---
     document.addEventListener('DOMContentLoaded', function() {
-        // Buat objek tanggal hari ini
         const today = new Date();
-        
-        // Format tanggal ke YYYY-MM-DD yang diterima oleh input type="date"
-        // Waktu diatur ke zona waktu lokal (Asia/Jakarta)
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+        const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         const minDate = `${year}-${month}-${day}`;
+        
+        // --- Inisialisasi Flatpickr untuk Tanggal (ID disesuaikan dengan form Mahasiswa) ---
+        const tglMulaiPicker = flatpickr("#pengajuan_event_tanggal_mulai", {
+            dateFormat: "Y-m-d",
+            minDate: minDate,
+            onChange: function(selectedDates, dateStr, instance) {
+                if(tglSelesaiPicker) {
+                    tglSelesaiPicker.set('minDate', dateStr);
+                }
+                checkKonflik(); // Panggil fungsi cek konflik
+            }
+        });
 
-        // Terapkan ke semua input tanggal di Step 2
-        document.getElementById('pengajuan_event_tanggal_mulai').min = minDate;
-        document.getElementById('pengajuan_event_tanggal_selesai').min = minDate;
-        document.getElementById('tanggal_persiapan').min = minDate;
-        document.getElementById('tanggal_beres').min = minDate;
+        const tglSelesaiPicker = flatpickr("#pengajuan_event_tanggal_selesai", {
+            dateFormat: "Y-m-d",
+            minDate: document.getElementById('pengajuan_event_tanggal_mulai').value || minDate, 
+            onChange: function() { checkKonflik(); }
+        });
+        
+        flatpickr("#tanggal_persiapan", { dateFormat: "Y-m-d", minDate: minDate });
+        flatpickr("#tanggal_beres", { dateFormat: "Y-m-d", minDate: minDate });
+
+        // --- Inisialisasi Flatpickr untuk Jam (ID disesuaikan dengan form Mahasiswa) ---
+        flatpickr("#pengajuan_event_jam_mulai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true,
+            onChange: function() { checkKonflik(); }
+        });
+
+        flatpickr("#pengajuan_event_jam_selesai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true,
+            onChange: function() { checkKonflik(); }
+        });
     });
-    // --- Akhir Perbaikan ---
+    // --- Akhir Perubahan 5 ---
 
     let currentStep = 1;
     const formSteps = document.querySelectorAll('.form-step');
@@ -792,8 +944,6 @@ $conn->close();
         currentStep++;
         showStep(currentStep);
     }
-
-    // --- AKHIR PERUBAHAN JAVASCRIPT ---
 
     function prevStep() {
         currentStep--;
@@ -843,7 +993,7 @@ $conn->close();
         fileNameSpan.textContent = this.files.length > 0 ? this.files[0].name : 'Belum ada file dipilih';
     });
     
-    // --- PENAMBAHAN JAVASCRIPT: Logika untuk Dropdown 'Lainnya' ---
+    // --- Logika untuk Dropdown 'Lainnya' ---
     document.getElementById('pengajuan_TypeKegiatan').addEventListener('change', function() {
         const lainnyaContainer = document.getElementById('type_kegiatan_lainnya_container');
         const lainnyaInput = document.getElementById('pengajuan_TypeKegiatan_Lainnya');
@@ -856,31 +1006,28 @@ $conn->close();
             lainnyaInput.value = ''; // Kosongkan nilainya jika pilihan diubah
         }
     });
-    // --- AKHIR PENAMBAHAN JAVASCRIPT ---
 
-    // --- PENAMBAHAN JAVASCRIPT: Validasi Tanggal dan Lokasi Sebelum Submit ---
+    // --- Validasi Tanggal dan Lokasi Sebelum Submit ---
     document.getElementById('eventForm').addEventListener('submit', function(event) {
         // 1. Validasi Tanggal
         const tglMulai = document.getElementById('pengajuan_event_tanggal_mulai').value;
         const tglSelesai = document.getElementById('pengajuan_event_tanggal_selesai').value;
         const tglPersiapan = document.getElementById('tanggal_persiapan').value;
         const tglBeres = document.getElementById('tanggal_beres').value;
-        
-        // ============================================================================================
-        // ## FIX: Tambahkan deklarasi variabel untuk jamMulai dan jamSelesai di sini ##
-        // ============================================================================================
         const jamMulai = document.getElementById('pengajuan_event_jam_mulai').value;
         const jamSelesai = document.getElementById('pengajuan_event_jam_selesai').value;
 
-
+        if (!tglMulai || !tglSelesai || !jamMulai || !jamSelesai) {
+             alert('Error: Tanggal Mulai/Selesai dan Jam Mulai/Selesai wajib diisi.');
+             event.preventDefault();
+             return;
+        }
         if (tglMulai && tglSelesai && tglSelesai < tglMulai) {
             alert('Error: Tanggal Selesai Acara tidak boleh mendahului Tanggal Mulai Acara.');
             event.preventDefault(); // Mencegah form untuk submit
             return;
         }
 
-        // --- PENAMBAHAN BARU (YANG KINI SUDAH BENAR): Validasi Jam Mulai vs Jam Selesai ---
-        // Pengecekan ini hanya berlaku jika acara berlangsung di hari yang sama.
         if (tglMulai && tglSelesai && tglMulai === tglSelesai) {
             if (jamMulai && jamSelesai && jamSelesai <= jamMulai) {
                 alert('Error: Untuk acara di hari yang sama, Jam Selesai harus setelah Jam Mulai.');
@@ -902,9 +1049,6 @@ $conn->close();
             }
         }
         
-        // Permintaan: "kalau tanggal persiapan mendahului tanggal mulai acara maka akan error"
-        // Interpretasi logis: Tanggal persiapan tidak boleh SETELAH tanggal mulai acara. 
-        // Persiapan harus sebelum atau pada hari H.
         if (tglPersiapan && tglMulai && tglPersiapan > tglMulai) {
             alert('Error: Tanggal Persiapan tidak boleh setelah Tanggal Mulai Acara.');
             event.preventDefault();
@@ -913,15 +1057,7 @@ $conn->close();
 
         // 2. Validasi Pemilihan Lokasi
         const gedungChecked = document.querySelectorAll('input[name="gedung_ids[]"]:checked').length;
-        if (gedungChecked === 0) {
-            // Kita izinkan jika tidak pilih gedung, tapi jika pilih gedung, harus lengkap
-            // alert('Error: Anda harus memilih minimal satu Gedung.');
-            // event.preventDefault();
-            // return;
-        }
-
         const lantaiChecked = document.querySelectorAll('input[name="lantai_ids[]"]:checked').length;
-        // Hanya validasi jika container lantai sudah ada isinya (bukan placeholder)
         if (gedungChecked > 0 && document.getElementById('lantai_selection') && lantaiChecked === 0) {
             alert('Error: Anda telah memilih Gedung, maka Anda harus memilih minimal satu Lantai.');
             event.preventDefault();
@@ -929,16 +1065,22 @@ $conn->close();
         }
         
         const ruanganChecked = document.querySelectorAll('input[name="ruangan_ids[]"]:checked').length;
-        // Hanya validasi jika container ruangan sudah ada isinya
         if (gedungChecked > 0 && document.getElementById('ruangan_selection') && ruanganChecked === 0) {
             alert('Error: Anda telah memilih Lantai, maka Anda harus memilih minimal satu Ruangan.');
             event.preventDefault();
             return;
         }
-    });
-    // --- AKHIR PENAMBAHAN JAVASCRIPT ---
 
-    // --- DYNAMIC HIERARCHICAL CHECKBOX LOGIC (Tidak ada perubahan) ---
+        // --- Validasi Terakhir: Cek jika ada ruangan terkonflik yang dicentang ---
+        const konflikRuangan = document.querySelectorAll('#ruangan_selection input:checked:disabled');
+        if (konflikRuangan.length > 0) {
+            alert('Error: Ada ruangan yang Anda pilih sedang tidak tersedia (konflik jadwal). Harap batalkan pilihan pada ruangan tersebut atau ubah jadwal Anda.');
+            event.preventDefault();
+            return;
+        }
+    });
+
+    // --- DYNAMIC HIERARCHICAL CHECKBOX LOGIC ---
     const gedungSelection = document.getElementById('gedung_selection');
     const lantaiContainer = document.getElementById('lantai_selection_container');
     const ruanganContainer = document.getElementById('ruangan_selection_container');
@@ -955,6 +1097,8 @@ $conn->close();
         if (oldLantaiSelection) {
             oldLantaiSelection.removeEventListener('change', lantaiChangeListener);
         }
+        
+        resetKonflikUI(); // Reset konflik saat ganti gedung
 
         if (selectedGedungIds.length > 0) {
             lantaiLoader.style.display = 'inline-block';
@@ -995,6 +1139,7 @@ $conn->close();
         const selectedLantaiIds = Array.from(lantaiSelection.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
             
         ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p>Pilih Lantai terlebih dahulu.</p></div>';
+        resetKonflikUI(); // Reset konflik saat ganti lantai
 
         if (selectedLantaiIds.length > 0) {
             ruanganLoader.style.display = 'inline-block';
@@ -1006,15 +1151,20 @@ $conn->close();
                     if (data.length > 0) {
                         let html = '<div id="ruangan_selection" class="checkbox-group-modern">';
                         data.forEach(ruangan => {
+                            // Menambahkan class dan span untuk konflik
                             html += `
                                 <div class="checkbox-item">
-                                    <input type="checkbox" name="ruangan_ids[]" value="${ruangan.ruangan_id}" id="ruangan_${ruangan.ruangan_id}">
+                                    <input type="checkbox" name="ruangan_ids[]" value="${ruangan.ruangan_id}" id="ruangan_${ruangan.ruangan_id}" class="ruangan-checkbox">
                                     <label for="ruangan_${ruangan.ruangan_id}">${ruangan.ruangan_nama} (Lantai ${ruangan.lantai_nomor}, ${ruangan.gedung_nama})</label>
+                                    <span class="konflik-message" id="konflik_ruangan_${ruangan.ruangan_id}"></span>
                                 </div>
                             `;
                         });
                         html += '</div>';
                         ruanganContainer.innerHTML = html;
+                        
+                        // Panggil checkKonflik setelah ruangan dimuat
+                        checkKonflik();
                     } else {
                         ruanganContainer.innerHTML = '<div class="checkbox-placeholder"><p>Tidak ada ruangan tersedia untuk lantai yang dipilih.</p></div>';
                     }
@@ -1031,6 +1181,97 @@ $conn->close();
 
     // Initial step display
     showStep(currentStep);
+
+    // --- Fungsi-fungsi untuk Cek Konflik ---
+
+    let conflictCheckTimeout; // Variabel untuk debounce
+
+    function checkKonflik() {
+        clearTimeout(conflictCheckTimeout);
+        conflictCheckTimeout = setTimeout(() => {
+            const tanggalMulai = document.getElementById('pengajuan_event_tanggal_mulai').value;
+            const tanggalSelesai = document.getElementById('pengajuan_event_tanggal_selesai').value;
+            const jamMulai = document.getElementById('pengajuan_event_jam_mulai').value;
+            const jamSelesai = document.getElementById('pengajuan_event_jam_selesai').value;
+            const selectedRuanganCheckboxes = document.querySelectorAll('#ruangan_selection input.ruangan-checkbox');
+
+            if (!tanggalMulai || !tanggalSelesai || !jamMulai || !jamSelesai || selectedRuanganCheckboxes.length === 0) {
+                resetKonflikUI();
+                return;
+            }
+            
+            const allRuanganIds = Array.from(selectedRuanganCheckboxes).map(cb => cb.value);
+
+            const formData = new FormData();
+            formData.append('tanggal_mulai', tanggalMulai);
+            formData.append('tanggal_selesai', tanggalSelesai);
+            formData.append('jam_mulai', jamMulai);
+            formData.append('jam_selesai', jamSelesai);
+            allRuanganIds.forEach(id => formData.append('ruangan_ids[]', id));
+
+            resetKonflikUI(); 
+
+            // [PENTING] Pastikan path 'cek_konflik_jadwal.php' benar.
+            // Jika file ini ada di folder 'mahasiswa/', path ini sudah benar.
+            // Jika ada di folder 'ditmawa/', pathnya harus '../ditmawa/cek_konflik_jadwal.php'
+            fetch('cek_konflik_jadwal.php', { method: 'POST', body: formData })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateKonflikUI(data.konflik || []);
+            })
+            .catch(error => {
+                console.error('Error checking konflik:', error);
+                alert('Gagal memeriksa ketersediaan ruangan. Periksa koneksi atau hubungi admin.');
+            });
+        }, 500); // Debounce 500ms
+    }
+
+    function resetKonflikUI() {
+        const ruanganCheckboxes = document.querySelectorAll('#ruangan_selection input.ruangan-checkbox');
+        ruanganCheckboxes.forEach(checkbox => {
+            checkbox.disabled = false;
+            const konflikSpan = document.getElementById(`konflik_ruangan_${checkbox.value}`);
+            if (konflikSpan) {
+                konflikSpan.textContent = '';
+            }
+        });
+    }
+
+    /**
+     * [PERUBAHAN 6] Logika JavaScript untuk menampilkan detail konflik DIBENARKAN.
+     */
+    function updateKonflikUI(konflikList) {
+        konflikList.forEach(konflik => {
+            const checkbox = document.getElementById(`ruangan_${konflik.ruangan_id}`);
+            if (checkbox) {
+                checkbox.disabled = true;
+                checkbox.checked = false; // Otomatis uncheck jika konflik
+                const konflikSpan = document.getElementById(`konflik_ruangan_${konflik.ruangan_id}`);
+                if (konflikSpan) {
+                    
+                    let detailSingkat = konflik.detail; // Ini berisi "Rabu, 07:30-10:00 - Kewarganegaraan"
+
+                    // [FIX] Ambil bagian SEBELUM " - " (sesuai permintaan Anda)
+                    if (konflik.tipe === 'kelas') {
+                         // Menghapus " - NamaMatkul"
+                        detailSingkat = detailSingkat.replace(/ - .+$/, ''); 
+                    } else if (konflik.tipe === 'event') {
+                        // Menghapus " - NamaEvent"
+                        detailSingkat = detailSingkat.replace(/ - .+$/, '');
+                    }
+                    
+                    konflikSpan.textContent = `(Dipakai: ${detailSingkat})`;
+                }
+            }
+        });
+    }
+    // --- AKHIR FUNGSI CEK KONFLIK ---
+
 </script>
 </body>
 </html>

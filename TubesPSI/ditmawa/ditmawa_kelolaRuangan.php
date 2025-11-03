@@ -16,8 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // === KELOLA GEDUNG ===
     if (isset($_POST['add_gedung'])) {
         $active_tab = 'gedung';
-        $gedung_nama = trim($_POST['gedung_nama']);
-        if (!empty($gedung_nama)) {
+        
+        // [FIX] Validasi diubah agar menerima '0'
+        $gedung_nama_raw = $_POST['gedung_nama'] ?? null;
+        $gedung_nama = is_null($gedung_nama_raw) ? null : trim($gedung_nama_raw);
+        
+        if ($gedung_nama !== null && $gedung_nama !== '') {
             $check_stmt = $conn->prepare("SELECT COUNT(*) FROM gedung WHERE UPPER(gedung_nama) = UPPER(?)");
             $check_stmt->bind_param("s", $gedung_nama);
             $check_stmt->execute();
@@ -34,8 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->execute()) { $message = "Gedung '{$gedung_nama}' berhasil ditambahkan!"; $message_type = "success"; } else { $message = "Gagal: " . $stmt->error; $message_type = "error"; }
                 $stmt->close();
             }
+        } else {
+            $message = "Gagal: Nama Gedung tidak boleh kosong.";
+            $message_type = "error";
         }
     }
+    
     if (isset($_POST['delete_gedung'])) {
         $active_tab = 'gedung';
         $gedung_id = $_POST['gedung_id'];
@@ -58,9 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // === KELOLA LANTAI ===
     if (isset($_POST['add_lantai'])) {
         $active_tab = 'lantai';
-        $lantai_nomor = trim($_POST['lantai_nomor']);
-        $gedung_id = $_POST['gedung_id_for_lantai'];
-        if (!empty($lantai_nomor) && !empty($gedung_id)) {
+        
+        // [FIX] Validasi diubah agar menerima '0'
+        $lantai_nomor_raw = $_POST['lantai_nomor'] ?? null;
+        $lantai_nomor = is_null($lantai_nomor_raw) ? null : trim($lantai_nomor_raw);
+        $gedung_id = $_POST['gedung_id_for_lantai'] ?? '';
+        
+        if ($lantai_nomor !== null && $lantai_nomor !== '' && !empty($gedung_id)) {
             $check_stmt = $conn->prepare("SELECT COUNT(*) FROM lantai WHERE gedung_id = ? AND UPPER(lantai_nomor) = UPPER(?)");
             $check_stmt->bind_param("is", $gedung_id, $lantai_nomor);
             $check_stmt->execute();
@@ -77,8 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->execute()) { $message = "Lantai baru berhasil ditambahkan!"; $message_type = "success"; } else { $message = "Gagal: " . $stmt->error; $message_type = "error"; }
                 $stmt->close();
             }
+        } else {
+            $message = "Gagal: Anda harus memilih Gedung dan mengisi Nomor Lantai.";
+            $message_type = "error";
         }
     }
+    
     if (isset($_POST['delete_lantai'])) {
         $active_tab = 'lantai';
         $lantai_id = $_POST['lantai_id'];
@@ -101,9 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // === KELOLA RUANGAN ===
     if (isset($_POST['add_ruangan'])) {
         $active_tab = 'ruangan';
-        $ruangan_nama = trim($_POST['ruangan_nama']);
-        $lantai_id = $_POST['lantai_id_for_ruangan'];
-        if (!empty($ruangan_nama) && !empty($lantai_id)) {
+        
+        // [FIX] Validasi diubah agar menerima '0'
+        $ruangan_nama_raw = $_POST['ruangan_nama'] ?? null;
+        $ruangan_nama = is_null($ruangan_nama_raw) ? null : trim($ruangan_nama_raw);
+        $lantai_id = $_POST['lantai_id_for_ruangan'] ?? '';
+        
+        if ($ruangan_nama !== null && $ruangan_nama !== '' && !empty($lantai_id)) {
             $check_stmt = $conn->prepare("SELECT COUNT(*) FROM ruangan WHERE lantai_id = ? AND UPPER(ruangan_nama) = UPPER(?)");
             $check_stmt->bind_param("is", $lantai_id, $ruangan_nama);
             $check_stmt->execute();
@@ -120,24 +140,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->execute()) { $message = "Ruangan baru berhasil ditambahkan!"; $message_type = "success"; } else { $message = "Gagal: " . $stmt->error; $message_type = "error"; }
                 $stmt->close();
             }
+        } else {
+            $message = "Gagal: Anda harus memilih Gedung, Lantai, dan mengisi Nama Ruangan.";
+            $message_type = "error";
         }
     }
+    
     if (isset($_POST['delete_ruangan'])) {
         $active_tab = 'ruangan';
         $ruangan_id = $_POST['ruangan_id'];
-        $check_stmt = $conn->prepare("SELECT COUNT(*) FROM peminjaman_ruangan WHERE ruangan_id = ?");
-        $check_stmt->bind_param("i", $ruangan_id);
-        $check_stmt->execute();
-        $check_stmt->bind_result($count);
-        $check_stmt->fetch();
-        $check_stmt->close();
-        if ($count > 0) {
-            $message = "Gagal menghapus! Ruangan ini terdaftar pada sebuah event."; $message_type = "error";
-        } else {
-            $delete_stmt = $conn->prepare("DELETE FROM ruangan WHERE ruangan_id = ?");
-            $delete_stmt->bind_param("i", $ruangan_id);
-            if ($delete_stmt->execute()) { $message = "Ruangan berhasil dihapus."; $message_type = "success"; } else { $message = "Gagal: " . $delete_stmt->error; $message_type = "error"; }
-            $delete_stmt->close();
+        
+        $conn->begin_transaction();
+        try {
+            $check_stmt1 = $conn->prepare("SELECT COUNT(*) FROM peminjaman_ruangan WHERE ruangan_id = ?");
+            $check_stmt1->bind_param("i", $ruangan_id); $check_stmt1->execute();
+            $check_stmt1->bind_result($count1); $check_stmt1->fetch(); $check_stmt1->close();
+            
+            $check_stmt2 = $conn->prepare("SELECT COUNT(*) FROM jadwal_kelas WHERE ruangan_id = ?");
+            $check_stmt2->bind_param("i", $ruangan_id); $check_stmt2->execute();
+            $check_stmt2->bind_result($count2); $check_stmt2->fetch(); $check_stmt2->close();
+
+            if ($count1 > 0 || $count2 > 0) {
+                $message = "Gagal menghapus! Ruangan ini terdaftar pada sebuah event atau jadwal kelas."; $message_type = "error";
+            } else {
+                $delete_stmt = $conn->prepare("DELETE FROM ruangan WHERE ruangan_id = ?");
+                $delete_stmt->bind_param("i", $ruangan_id);
+                if ($delete_stmt->execute()) { $message = "Ruangan berhasil dihapus."; $message_type = "success"; } else { $message = "Gagal: " . $delete_stmt->error; $message_type = "error"; }
+                $delete_stmt->close();
+            }
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            $message = "Gagal: Terjadi error database. " . $e->getMessage(); $message_type = "error";
         }
     }
 
@@ -148,7 +182,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if(isset($_GET['msg'])) { $message = $_GET['msg']; $message_type = $_GET['type']; }
 if(isset($_GET['tab'])) { $active_tab = $_GET['tab']; }
 
-// [MODIFIKASI] Query diubah untuk sorting yang lebih baik (natural sort)
 $gedung_list = $conn->query("SELECT * FROM gedung ORDER BY CAST(SUBSTRING_INDEX(gedung_nama, ' ', -1) AS UNSIGNED), gedung_nama")->fetch_all(MYSQLI_ASSOC);
 $lantai_list = $conn->query("SELECT l.lantai_id, l.lantai_nomor, g.gedung_nama, g.gedung_id FROM lantai l JOIN gedung g ON l.gedung_id = g.gedung_id ORDER BY CAST(SUBSTRING_INDEX(g.gedung_nama, ' ', -1) AS UNSIGNED), g.gedung_nama, l.lantai_nomor ASC")->fetch_all(MYSQLI_ASSOC);
 $ruangan_list = $conn->query("SELECT r.ruangan_id, r.ruangan_nama, l.lantai_nomor, l.lantai_id, g.gedung_nama, g.gedung_id FROM ruangan r JOIN lantai l ON r.lantai_id = l.lantai_id JOIN gedung g ON l.gedung_id = g.gedung_id ORDER BY CAST(SUBSTRING_INDEX(g.gedung_nama, ' ', -1) AS UNSIGNED), g.gedung_nama, l.lantai_nomor ASC, r.ruangan_nama ASC")->fetch_all(MYSQLI_ASSOC);
@@ -351,7 +384,9 @@ $conn->close();
         <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php" class="active">Kelola Ruangan</a></li>
+        <li><a href="ditmawa_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
+         <li><a href="ditmawa_import_jadwal.php">Import Jadwal</a></li> 
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">
@@ -533,15 +568,21 @@ $conn->close();
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Data ini diambil dari PHP untuk dipakai oleh JavaScript
     const allFloorsData = <?php echo json_encode($lantai_list); ?>;
     
-    // --- Tab System Logic ---
+    // --- Logika Sistem Tab ---
     const tabs = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
+            
+            // Mengubah URL tanpa reload halaman
+            const newUrl = window.location.pathname + '?tab=' + tab.dataset.tab;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+            
             tabContents.forEach(content => {
                 content.classList.remove('active');
                 if (content.id === tab.dataset.tab) {
@@ -568,14 +609,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     filterGedungRuangan.addEventListener('change', function() {
         const selectedGedung = this.value;
-        filterLantaiRuangan.innerHTML = '<option value="">Semua Lantai</option>';
+        filterLantaiRuangan.innerHTML = '<option value="">Semua Lantai</Tampilkan>';
         filterLantaiRuangan.value = ""; 
         
         if (selectedGedung) {
              const uniqueFloors = {};
+             // Filter data lantai berdasarkan gedung_id
              allFloorsData.filter(floor => floor.gedung_id == selectedGedung)
                          .forEach(floor => { uniqueFloors[floor.lantai_id] = floor.lantai_nomor; });
              
+             // Buat opsi untuk dropdown lantai
              Object.entries(uniqueFloors).forEach(([lantai_id, lantai_nomor]) => {
                 const option = document.createElement('option');
                 option.value = lantai_id;
@@ -587,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
             filterLantaiRuangan.innerHTML = '<option value="">Pilih Gedung Dulu</option>';
             filterLantaiRuangan.disabled = true;
         }
-        applyRuanganFilter();
+        applyRuanganFilter(); // Terapkan filter setelah mengubah gedung
     });
 
     filterLantaiRuangan.addEventListener('change', applyRuanganFilter);
@@ -604,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // [MODIFIKASI] Logika untuk form TAMBAH RUANGAN
+    // --- Logika untuk form TAMBAH RUANGAN ---
     const addGedungSelect = document.getElementById('gedung_id_for_ruangan_add');
     const addLantaiSelect = document.getElementById('lantai_id_for_ruangan');
 
@@ -618,7 +661,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Cari lantai yang relevan dari data yang sudah ada
         const relevantFloors = allFloorsData.filter(floor => floor.gedung_id == selectedGedungId);
+        
         addLantaiSelect.innerHTML = '<option value="" disabled selected>-- Pilih Lantai --</option>';
         relevantFloors.forEach(floor => {
             const option = document.createElement('option');

@@ -405,7 +405,8 @@ try {
         <li><a href="mahasiswa_dashboard.php" class="active">Home</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
-        <li><a href="mahasiswa_event.php">Event</a></li>
+        <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 
+        <li><a href="mahasiswa_event.php">Kalender Event</a></li>
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
