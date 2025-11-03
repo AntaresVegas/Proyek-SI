@@ -23,12 +23,14 @@ $total_events = 0;
 
 try {
     if (isset($conn)) {
+        // [PERBAIKAN] Mengganti query WHERE agar sesuai dengan struktur database Anda
         $sql = "
             SELECT 
                 MONTH(pengajuan_event_tanggal_mulai) as bulan, 
                 COUNT(*) as jumlah_event
             FROM pengajuan_event
-            WHERE pengajuan_status = 'Disetujui'
+            WHERE pengajuan_status_ditmawa = 'Disetujui'
+              AND pengajuan_status_asp = 'Disetujui' -- Event dianggap 'Disetujui' jika KEDUANYA setuju
               AND YEAR(pengajuan_event_tanggal_mulai) BETWEEN ? AND ?
             GROUP BY MONTH(pengajuan_event_tanggal_mulai)
             ORDER BY bulan ASC
@@ -70,16 +72,15 @@ $year_range = range(date('Y'), date('Y') - 10);
             background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
-            /* Perubahan utama di sini untuk stick-footer */
-            display: flex; /* */
-            flex-direction: column; /* */
-            min-height: 100vh; /* */
-            padding-top: 80px; /* Jaga padding atas untuk navbar fixed */
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+            padding-top: 80px; 
         }   
         :root { --primary-color: #ff8c00; --danger-color: #dc3545; --success-color: #198754; --light-gray: #f8f9fa; --border-color: #dee2e6; --text-dark: #2c3e50; }     
         .main-content { 
-            flex-grow: 1; /* */
-            width: 100%; /* */
+            flex-grow: 1; 
+            width: 100%; 
         }
         .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
@@ -92,14 +93,12 @@ $year_range = range(date('Y'), date('Y') - 10);
         .icon { font-size: 20px; cursor: pointer; }
         .chart-container { max-width: 1000px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; }
 
-        /* --- PERBAIKAN CSS HEADER --- */
         .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .title-group { text-align: left; }
         .title-group h1 { font-size: 32px; color: #2c3e50; margin: 0; }
         .title-group h2 { font-size: 24px; color: #555; font-weight: 400; margin: 0; }
         .back-button { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; transition: background-color 0.3s; }
         .back-button:hover { background-color: #218838; }
-        /* --- AKHIR PERBAIKAN CSS --- */
         
         .filter-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
         .filter-group { text-align: center; }
@@ -131,7 +130,9 @@ $year_range = range(date('Y'), date('Y') - 10);
         <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php" class="active">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="ditmawa_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
+        <li><a href="ditmawa_import_jadwal.php">Import Jadwal</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">

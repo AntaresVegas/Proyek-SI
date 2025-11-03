@@ -221,7 +221,9 @@ $conn->close();
         <li><a href="ditmawa_pengajuan.php">Form Pengajuan</a></li>
         <li><a href="ditmawa_listKegiatan.php"class="active">Data Event</a></li>
         <li><a href="ditmawa_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="ditmawa_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="ditmawa_dataEvent.php">Kalender Event</a></li>
+        <li><a href="ditmawa_import_jadwal.php">Import Jadwal</a></li>
         <li><a href="ditmawa_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">
@@ -298,21 +300,26 @@ $conn->close();
             </dd>
         </dl>
         
-        <?php if ($event_data['pengajuan_status_ditmawa'] == 'Diajukan'): ?>
-            <form method="POST" action="" class="action-form">
-                <hr>
-                <h2>Tindakan Persetujuan</h2>
-                <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
-                <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Komentar/Alasan (Wajib diisi jika menolak):</label>
-                <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan persetujuan/penolakan..."></textarea>
-                <div class="button-group">
-                    <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
-                    <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>
-                </div>
-            </form>
-        <?php else: ?>
+<?php // [PERBAIKAN] Kondisi 'if' dihapus agar form tindakan selalu muncul ?>
+        <form method="POST" action="" class="action-form">
             <hr>
-            <h2>Detail Persetujuan</h2>
+            <h2>Tindakan Persetujuan (Ubah Keputusan)</h2>
+            <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
+            <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Komentar/Alasan (Wajib diisi jika menolak):</label>
+            
+            <?php // [PERBAIKAN] Menampilkan komentar yang sudah ada di textarea ?>
+            <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan persetujuan/penolakan..."><?php echo htmlspecialchars($event_data['komentar_ditmawa'] ?? ''); ?></textarea>
+            
+            <div class="button-group">
+                <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
+                <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>
+            </div>
+        </form>
+
+        <?php // [PERBAIKAN] Bagian 'else' diubah menjadi blok terpisah untuk menampilkan detail jika ada ?>
+        <?php if (!empty($event_data['tanggal_approve_ditmawa'])): ?>
+            <hr>
+            <h2>Detail Keputusan Sebelumnya</h2>
             <dl class="detail-grid">
                 <dt>Komentar</dt>
                 <dd><?php echo !empty($event_data['komentar_ditmawa']) ? htmlspecialchars($event_data['komentar_ditmawa']) : 'Tidak ada komentar.'; ?></dd>

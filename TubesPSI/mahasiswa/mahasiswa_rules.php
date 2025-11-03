@@ -268,7 +268,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <li><a href="mahasiswa_dashboard.php">Home</a></li> 
         <li><a href="mahasiswa_rules.php" class="active">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
-        <li><a href="mahasiswa_event.php">Event</a></li>
+        <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 
+        <li><a href="mahasiswa_event.php">Kalender Event</a></li>
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
 

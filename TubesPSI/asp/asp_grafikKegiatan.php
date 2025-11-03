@@ -106,6 +106,7 @@ $year_range = range(date('Y'), date('Y') - 10);
         <li><a href="asp_dashboard.php">Home</a></li>
         <li><a href="asp_listKegiatan.php" class="active">Persetujuan Event</a></li>
         <li><a href="asp_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="asp_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="asp_kalender.php">Kalender Peminjaman</a></li>
         <li><a href="asp_laporan.php">Laporan</a></li>
     </ul>
