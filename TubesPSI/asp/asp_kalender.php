@@ -149,19 +149,21 @@ $calendar_events_json = json_encode($calendar_events);
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
-        /* 3. Visual diubah ke tema ASP */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-image: url('../img/backgroundASP.jpeg'); background-size: cover; background-position: center; background-attachment: fixed; min-height: 100%; padding-top: 80px; display: flex; flex-direction: column; }
-        .main-content { flex-grow: 1; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #0A2342; width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); position: fixed; top: 0; left: 0; z-index: 1000; }
+        
+        /* [MODIFIKASI] CSS Navbar disamakan dengan Dashboard */
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #0A2342; width: 100%; padding: 10px 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); position: fixed; top: 0; z-index: 1000; }
         .navbar-left, .navbar-right, .navbar-menu { display: flex; align-items: center; gap: 25px; }
         .navbar-logo { width: 50px; height: 50px; }
         .navbar-title { color: #FFFFFF; font-size: 14px; line-height: 1.2; }
-        .navbar-menu { list-style: none; padding: 0; margin: 0; }
-        .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; }
+        .navbar-menu { list-style: none; }
+        .navbar-menu li a { text-decoration: none; color: #E0E0E0; font-weight: 500; transition: color 0.3s; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #FFD700; }
         .navbar-right { display: flex; align-items: center; gap: 15px; color: #FFFFFF; }
         .navbar-right a {color: #FFFFFF;}
         .icon { font-size: 20px; cursor: pointer; }
+
+        .main-content { flex-grow: 1; }
         .page-header { background: linear-gradient(135deg, #0A2342 0%, #1a4a8a 100%); color: white; padding: 25px; margin: 20px auto; max-width: 1100px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .page-header h1 { margin-bottom: 10px; font-size: 28px; }
         .page-header p { opacity: 0.9; font-size: 16px; }
@@ -229,11 +231,14 @@ $calendar_events_json = json_encode($calendar_events);
         <li><a href="asp_dashboard.php">Home</a></li>
         <li><a href="asp_listKegiatan.php">Persetujuan Event</a></li>
         <li><a href="asp_kelolaRuangan.php">Kelola Ruangan</a></li>
+        <li><a href="asp_kalender_gabungan.php">Kalender Gabungan</a></li>
         <li><a href="asp_kalender.php" class="active">Kalender Peminjaman</a></li>
         <li><a href="asp_laporan.php">Laporan</a></li>
     </ul>
     <div class="navbar-right">
-        <a href="asp_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
+        <a href="asp_profile.php" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
+            <span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i>
+        </a>
         <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
     </div>
 </nav>
@@ -296,7 +301,6 @@ $calendar_events_json = json_encode($calendar_events);
 </footer>
 
 <script>
-    // 4. Data dan fungsionalitas JavaScript tetap sama
     const calendarEventsData = <?php echo $calendar_events_json; ?>;
 </script>
 

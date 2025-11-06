@@ -262,7 +262,8 @@ $calendar_events_json = json_encode($calendar_events);
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
-        <li><a href="mahasiswa_event.php" class="active">Event</a></li>
+        <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 
+        <li><a href="mahasiswa_event.php" class="active">Kalender Event</a></li>
         <li><a href="mahasiswa_laporan.php">Laporan</a></li>
         <li><a href="mahasiswa_history.php">History</a></li>
     </ul>
