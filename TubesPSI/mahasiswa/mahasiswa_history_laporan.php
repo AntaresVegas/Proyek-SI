@@ -84,7 +84,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Laporan - Event Management Unpar</title>
+    <title>Riwayat Laporan Bukti Kegiatan - Event Management Unpar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
@@ -213,7 +213,7 @@ $conn->close();
 <div class="content-wrapper">
     <div class="container">
         <div class="header">
-            <h1>Riwayat Laporan Pertanggungjawaban</h1>
+            <h1>Riwayat Laporan Bukti Kegiatan</h1>
             <a href="mahasiswa_history.php" class="kembali-button">Kembali</a>
         </div>
 
@@ -222,14 +222,15 @@ $conn->close();
                 <tr>
                     <th>TANGGAL UPLOAD</th>
                     <th>NAMA ACARA</th>
-                    <th>STATUS LPJ</th>
+                    <th>STATUS LAPORAN</th>
                     <th>KETERANGAN</th>
-                    <th>DOKUMEN LPJ</th>
-                </tr>
+                    <th>DOKUMEN LAPORAN</th>
+                    </tr>
             </thead>
             <tbody>
                 <?php if (!empty($laporan_pertanggungjawaban)): ?>
                     <?php foreach ($laporan_pertanggungjawaban as $laporan):
+                        // Kolom DB 'pengajuan_statusLPJ' tetap digunakan untuk logika
                         $status_class = str_replace(' ', '-', strtolower(htmlspecialchars($laporan['pengajuan_statusLPJ'])));
                     ?>
                         <tr>
@@ -262,8 +263,8 @@ $conn->close();
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" class="no-data">Belum ada LPJ yang pernah diunggah.</td>
-                    </tr>
+                        <td colspan="5" class="no-data">Belum ada Laporan Bukti Kegiatan yang pernah diunggah.</td>
+                        </tr>
                 <?php endif; ?>
             </tbody>
         </table>
