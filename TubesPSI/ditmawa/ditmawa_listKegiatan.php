@@ -12,6 +12,7 @@ $nama = $_SESSION['nama'] ?? 'Staff Ditmawa';
 $selected_bulan = $_GET['bulan'] ?? '';
 $selected_tahun = $_GET['tahun'] ?? '';
 $search_event = $_GET['search_event'] ?? '';
+$selected_status_proposal = $_GET['status_proposal'] ?? '';
 $kegiatan_data = [];
 
 // [BARU] Logika Paginasi
@@ -56,6 +57,22 @@ if (!empty($search_event)) {
     $params[] = $search_param;
     $types .= "s";
 }
+
+// [PERBAIKAN] Logika filter status proposal disesuaikan dengan logika TAMPILAN
+if (!empty($selected_status_proposal)) {
+    if ($selected_status_proposal === 'Ditolak') {
+        // Jika filter 'Ditolak', cari semua yang statusnya Ditolak (baik oleh Ditmawa, ASP, atau Proposal itu sendiri)
+        // Ini mencerminkan logika CASE di SQL: (CASE WHEN ... = 'Ditolak' OR ... = 'Ditolak' THEN 'Ditolak' ELSE ...)
+        $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak')";
+    } elseif ($selected_status_proposal === 'Disetujui') {
+        // Jika filter 'Disetujui', Ditmawa DAN ASP tidak boleh Ditolak, DAN status proposal harus 'Disetujui'
+        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui')";
+    } elseif ($selected_status_proposal === 'Diajukan') {
+        // Jika filter 'Diajukan', Ditmawa DAN ASP tidak boleh Ditolak, DAN status proposal harus 'Diajukan'
+        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan')";
+    }
+}
+
 
 try {
     if (isset($conn)) {
@@ -299,6 +316,15 @@ $years = range($current_year, $current_year - 5);
                 <option value="">Semua Tahun</option>
                 <?php foreach ($years as $year) { echo '<option value="' . $year . '" ' . ($selected_tahun == $year ? 'selected' : '') . '>' . $year . '</option>'; } ?>
             </select>
+            
+            <label for="status_proposal">Status Proposal:</label>
+            <select name="status_proposal" id="status_proposal">
+                <option value="">Semua Status</option>
+                <option value="Diajukan" <?php echo ($selected_status_proposal == 'Diajukan' ? 'selected' : ''); ?>>Diajukan</option>
+                <option value="Disetujui" <?php echo ($selected_status_proposal == 'Disetujui' ? 'selected' : ''); ?>>Disetujui</option>
+                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak</option>
+            </select>
+            
              <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
             <input type="text" id="search_event" name="search_event" placeholder="Masukkan nama event..." value="<?php echo htmlspecialchars($search_event); ?>">
             <?php if (isset($_GET['sort'])): ?>
@@ -401,7 +427,7 @@ $years = range($current_year, $current_year - 5);
                 <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                 <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                 <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="https.www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
             </div>
         </div>
     </div>

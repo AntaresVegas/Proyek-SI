@@ -33,9 +33,39 @@ $nama_ditmawa = $_SESSION['nama'] ?? 'Staff Ditmawa';
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; color: #fff; text-align: center; font-weight: bold; }
         .alert.success { background-color: #28a745; }
         .alert.error { background-color: #dc3545; }
-        .notes { background-color: #e9ecef; border-left: 5px solid var(--ditmawa-primary); padding: 15px; margin-top: 25px; border-radius: 5px; font-size: 14px; color: #495057; }
-        .notes ul { margin-left: 20px; padding-left: 10px; }
-        .notes li { margin-bottom: 8px; }
+
+        /* [PERUBAHAN] CSS untuk Catatan Penting */
+        .notes { 
+            background-color: #fffbe6; /* Warna kuning muda untuk peringatan */
+            border: 1px solid #ffeeba; /* Border kuning */
+            border-left: 5px solid #ffc107; /* Border kiri kuning tua */
+            padding: 20px; /* Padding lebih besar */
+            margin-top: 30px; /* Jarak atas lebih besar */
+            border-radius: 8px; 
+            font-size: 15px; /* Font sedikit lebih besar */
+            color: #664d03; /* Warna teks lebih gelap agar kontras */
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08); /* Bayangan agar sedikit terangkat */
+        }
+        .notes strong {
+            display: block; /* Buat judul jadi block */
+            font-size: 18px; /* Judul lebih besar */
+            font-weight: 700;
+            color: #856404; /* Warna judul kuning tua */
+            margin-bottom: 15px; /* Jarak ke list */
+        }
+        .notes strong .fas { /* Atur style ikon */
+            margin-right: 10px;
+            color: #ffc107; /* Warna ikon */
+        }
+        .notes ul { 
+            margin-left: 20px; 
+            padding-left: 10px; 
+        }
+        .notes li { 
+            margin-bottom: 10px; /* Jarak antar list item */
+            line-height: 1.5; /* Spasi baris agar lebih mudah dibaca */
+        }
+        /* [AKHIR PERUBAHAN] */
 
          .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ff8c00; width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
@@ -165,20 +195,19 @@ $nama_ditmawa = $_SESSION['nama'] ?? 'Staff Ditmawa';
                     <input type="checkbox" id="hapus_jadwal_lama" name="hapus_jadwal_lama" value="1">
                     <label for="hapus_jadwal_lama">Hapus jadwal lama untuk semester ini sebelum import?</label>
                 </div>
-
-                <button type="submit" class="btn-submit">Import Jadwal</button>
-            </form>
-
             <div class="notes">
-                <strong>Catatan Penting:</strong>
+                <strong><i class="fas fa-exclamation-triangle"></i> <b> Catatan Penting:</b></strong>
                 <ul>
-                    <li>Pastikan file Excel Anda memiliki kolom: **Nama Ruangan**, **Hari** (Senin-Sabtu), **Jam Mulai** (HH:MM), **Jam Selesai** (HH:MM), **Nama Matakuliah** (Opsional).</li>
+                    <li>Pastikan file Excel Anda memiliki kolom: <b>Nama Ruangan</b>,  <b> Hari (Senin-Sabtu)</b>, <b>Jam Mulai (HH:MM)</b>, <b>Jam Selesai (HH:MM)</b>,<b> Nama Matakuliah (Opsional).</b></li>
                     <li>Baris pertama diasumsikan sebagai header dan akan dilewati.</li>
-                    <li>Nama Ruangan di Excel harus **sama persis** dengan nama ruangan yang ada di sistem database. Jika tidak cocok, baris tersebut akan dilewati.</li>
-                     <li>Format jam harus **HH:MM** (contoh: 08:00, 14:30).</li>
+                    <li>Nama Ruangan di Excel harus <b>SAMA</b> dengan nama ruangan yang ada di sistem database. Jika tidak cocok, baris tersebut akan dilewati.</li>
+                     <li>Format jam harus <b>HH:MM</b> (contoh: 08:00, 14:30).</li>
                     <li>Jika mencentang "Hapus jadwal lama", semua data jadwal kelas untuk semester/tahun yang dimasukkan akan dihapus terlebih dahulu.</li>
                 </ul>
             </div>
+                <button type="submit" class="btn-submit">Import Jadwal</button>
+            </form>
+
         </div>
     </div>
 
