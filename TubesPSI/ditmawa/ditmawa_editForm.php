@@ -126,17 +126,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // 3. PENGAMBILAN DATA EVENT DARI DATABASE
 $pengajuan_id = $_GET['id'] ?? null;
 if ($pengajuan_id) {
-    // [PERBAIKAN] Query SQL diperbarui untuk mengambil nama gedung dan ruangan dengan benar
+    // [MODIFIKASI] Query ditambah 'pe.surat_izin_kegiatan_file'
     $sql = "SELECT 
-                pe.*, 
-                m.mahasiswa_nama, 
-                m.mahasiswa_email, 
-                m.mahasiswa_npm, 
-                m.mahasiswa_jurusan,
+                pe.*,
+                pe.surat_izin_kegiatan_file, -- <--- DITAMBAHKAN
+                CASE 
+                    WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_nama
+                    WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_nama
+                    ELSE 'N/A'
+                END AS nama_pengaju,
+                CASE 
+                    WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_email
+                    WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_email
+                    ELSE 'N/A'
+                END AS email_pengaju,
+                CASE 
+                    WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_npm
+                    WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_NIK
+                    ELSE 'N/A'
+                END AS identitas_pengaju,
+                CASE 
+                    WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_jurusan
+                    WHEN pe.pengaju_tipe = 'ditmawa' THEN 'Direktorat Kemahasiswaan'
+                    ELSE 'N/A'
+                END AS unit_pengaju,
                 GROUP_CONCAT(DISTINCT g.gedung_nama SEPARATOR ', ') AS nama_gedung,
                 GROUP_CONCAT(DISTINCT r.ruangan_nama SEPARATOR ', ') AS nama_ruangan
             FROM pengajuan_event pe
             LEFT JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id AND pe.pengaju_tipe = 'mahasiswa'
+            LEFT JOIN ditmawa d ON pe.pengaju_id = d.ditmawa_id AND pe.pengaju_tipe = 'ditmawa'
             LEFT JOIN peminjaman_ruangan pr ON pe.pengajuan_id = pr.pengajuan_id
             LEFT JOIN ruangan r ON pr.ruangan_id = r.ruangan_id
             LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
@@ -191,11 +209,13 @@ $conn->close();
         .detail-grid { display: grid; grid-template-columns: 250px 1fr; gap: 15px 20px; margin-bottom: 30px; }
         .detail-grid dt { font-weight: 600; color: #555; }
         .detail-grid dd { color: #333; display: flex; align-items: center; }
-        .download-link { text-decoration: none; color: #007bff; font-weight: 500; margin-left: 10px; }
-        .download-link:hover { color: #0056b3; }
+        .download-link { text-decoration: none; color: #007bff; font-weight: 500; }
         .download-link i { margin-right: 5px; }
-        .action-form hr { border: 0; border-top: 1px solid #e0e0e0; margin: 30px 0; }
-        .action-form h2 { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: 600;}
+        
+        /* [MODIFIKASI] CSS hr dan h2 dibuat global */
+        hr { border: 0; border-top: 1px solid #e0e0e0; margin: 30px 0; }
+        h2 { font-size: 20px; color: #333; margin-bottom: 15px; font-weight: 600;}
+
         .action-form textarea { width: 100%; padding: 12px; font-family: 'Segoe UI', sans-serif; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; resize: vertical; min-height: 100px; margin-bottom: 20px; }
         .button-group { display: flex; gap: 15px; justify-content: flex-end; }
         .button-group button { padding: 10px 25px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; color: white; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
@@ -207,6 +227,7 @@ $conn->close();
         .status-badge.disetujui { background-color: #28a745; }
         .status-badge.ditolak { background-color: #dc3545; }
         .status-badge.diajukan { background-color: #ffc107; color: #333; }
+        .info-message { padding: 15px; background-color: #f8f9fa; border-radius: 8px; color: #555; text-align: center; border: 1px solid #e0e0e0; }
     </style>
 </head>
 <body>
@@ -246,14 +267,16 @@ $conn->close();
         <dl class="detail-grid">
             <dt>Status Saat Ini</dt>
             <dd><span class="status-badge <?php echo strtolower(htmlspecialchars($event_data['pengajuan_status_ditmawa'])); ?>"><?php echo htmlspecialchars($event_data['pengajuan_status_ditmawa']); ?></span></dd>
+            
             <dt>Nama Pengaju</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_nama'] ?? 'N/A'); ?></dd>
+            <dd><?php echo htmlspecialchars($event_data['nama_pengaju'] ?? 'N/A'); ?></dd>
             <dt>Email</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_email'] ?? 'N/A'); ?></dd>
-            <dt>NPM</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_npm'] ?? 'N/A'); ?></dd>
-            <dt>Jurusan</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_jurusan'] ?? 'N/A'); ?></dd>
+            <dd><?php echo htmlspecialchars($event_data['email_pengaju'] ?? 'N/A'); ?></dd>
+            <dt>NPM / NIK</dt>
+            <dd><?php echo htmlspecialchars($event_data['identitas_pengaju'] ?? 'N/A'); ?></dd>
+            <dt>Jurusan / Unit</dt>
+            <dd><?php echo htmlspecialchars($event_data['unit_pengaju'] ?? 'N/A'); ?></dd>
+            
             <dt>Nama Event</dt>
             <dd><?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?></dd>
             <dt>Tipe Kegiatan</dt>
@@ -300,33 +323,48 @@ $conn->close();
             </dd>
         </dl>
         
-<?php // [PERBAIKAN] Kondisi 'if' dihapus agar form tindakan selalu muncul ?>
-        <form method="POST" action="" class="action-form">
-            <hr>
-            <h2>Tindakan Persetujuan (Ubah Keputusan)</h2>
-            <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
-            <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Komentar/Alasan (Wajib diisi jika menolak):</label>
-            
-            <?php // [PERBAIKAN] Menampilkan komentar yang sudah ada di textarea ?>
-            <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan persetujuan/penolakan..."><?php echo htmlspecialchars($event_data['komentar_ditmawa'] ?? ''); ?></textarea>
-            
-            <div class="button-group">
-                <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
-                <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>
-            </div>
-        </form>
+        <hr><h2>Surat Izin Kegiatan (SIK)</h2>
+        <dl class="detail-grid">
+            <dt>Status SIK</dt>
+            <?php if (!empty($event_data['surat_izin_kegiatan_file'])): ?>
+                <dd>
+                    <a href="../<?php echo htmlspecialchars($event_data['surat_izin_kegiatan_file']); ?>" class="download-link" target="_blank">
+                        <i class="fas fa-check-circle" style="color: green; margin-right: 8px;"></i> 
+                        <strong>Telah Diterbitkan. Klik untuk melihat.</strong>
+                    </a>
+                </dd>
+            <?php else: ?>
+                <dd>
+                    <i class="fas fa-clock" style="color: #ffc107; margin-right: 8px;"></i>
+                    <em>SIK belum diterbitkan oleh Sekretariat.</em>
+                </dd>
+            <?php endif; ?>
+        </dl>
 
-        <?php // [PERBAIKAN] Bagian 'else' diubah menjadi blok terpisah untuk menampilkan detail jika ada ?>
-        <?php if (!empty($event_data['tanggal_approve_ditmawa'])): ?>
+        <?php // Hanya tampilkan form aksi jika pengaju adalah 'mahasiswa' ?>
+        <?php if ($event_data['pengaju_tipe'] === 'mahasiswa'): ?>
+            <form method="POST" action="" class="action-form">
+                <hr>
+                <h2>Tindakan Persetujuan (Ubah Keputusan)</h2>
+                <input type="hidden" name="pengajuan_id" value="<?php echo htmlspecialchars($event_data['pengajuan_id']); ?>">
+                <label for="komentar" style="font-weight: 600; color: #555; display: block; margin-bottom: 8px;">Komentar/Alasan (Wajib diisi jika menolak):</label>
+                
+                <textarea name="komentar" id="komentar" placeholder="Berikan komentar atau alasan persetujuan/penolakan..."><?php echo htmlspecialchars($event_data['komentar_ditmawa'] ?? ''); ?></textarea>
+                
+                <div class="button-group">
+                    <button type="submit" name="action" value="setujui" class="btn-approve">SETUJUI</button>
+                    <button type="submit" name="action" value="tolak" class="btn-reject">TOLAK</button>
+                </div>
+            </form>
+        <?php else: ?>
+            <?php // Tampilkan pesan jika event diajukan oleh Ditmawa ?>
             <hr>
-            <h2>Detail Keputusan Sebelumnya</h2>
-            <dl class="detail-grid">
-                <dt>Komentar</dt>
-                <dd><?php echo !empty($event_data['komentar_ditmawa']) ? htmlspecialchars($event_data['komentar_ditmawa']) : 'Tidak ada komentar.'; ?></dd>
-                <dt>Tanggal Keputusan</dt>
-                <dd><?php echo htmlspecialchars(date('d F Y H:i', strtotime($event_data['tanggal_approve_ditmawa']))); ?></dd>
-            </dl>
+            <h2>Tindakan Persetujuan</h2>
+            <p class="info-message">
+                Ini adalah event yang Anda ajukan atas nama Ditmawa. Tindakan persetujuan tidak diperlukan.
+            </p>
         <?php endif; ?>
+        
     <?php endif; ?>
 </div>
 

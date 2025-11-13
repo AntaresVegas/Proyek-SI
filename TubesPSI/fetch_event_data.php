@@ -31,7 +31,7 @@ try {
         LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
         LEFT JOIN gedung g ON l.gedung_id = g.gedung_id
         WHERE 
-            pe.pengajuan_status_ditmawa = 'Disetujui' -- [FIX] Menggunakan kolom status yang benar
+            pe.pengajuan_status_proposal = 'Disetujui'
             AND (
                 (pe.pengajuan_event_tanggal_mulai BETWEEN ? AND ?) OR
                 (pe.pengajuan_event_tanggal_selesai BETWEEN ? AND ?) OR

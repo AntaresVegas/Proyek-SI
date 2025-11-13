@@ -65,9 +65,12 @@ try {
 
     $row = $result->fetch_assoc();
 
-    // Verify the password (plain text comparison based on the provided .sql file)
-    if ($password === $row['asp_password']) {
-        // Set session variables upon successful login
+    // ============================================
+    // PERBAIKAN DI SINI
+    // ============================================
+    // Verifikasi password menggunakan fungsi password_verify()
+    if (password_verify($password, $row['asp_password'])) {
+        // Password benar, set session variables
         $_SESSION['user_id'] = $row['asp_id'];
         $_SESSION['username'] = $row['asp_email'];
         $_SESSION['nama'] = $row['asp_nama'];

@@ -180,6 +180,7 @@ $conn->close();
     </div>
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
+        <li><a href="mahasiswa_fasilitas.php">Fasilitas</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
         <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 

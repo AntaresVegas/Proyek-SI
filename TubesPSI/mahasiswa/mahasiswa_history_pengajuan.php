@@ -10,23 +10,59 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
 $nama = $_SESSION['nama'] ?? 'User';
 $user_id = $_SESSION['user_id'] ?? 'No ID';
 
+// [MODIFIKASI] Mengambil parameter filter
+$search_event = $_GET['search_event'] ?? '';
+$selected_status_proposal = $_GET['status_proposal'] ?? '';
+
 // [BARU] Variabel Paginasi
-$limit = 20; // 20 baris per halaman
+$limit = 10; // Mengurangi jadi 10 agar lebih rapi
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$page = max(1, $page); // Pastikan halaman tidak kurang dari 1
+$page = max(1, $page);
 $offset = ($page - 1) * $limit;
 
-// [BARU] Logika untuk menghitung total data
+// [BARU] Membangun query string untuk paginasi (mempertahankan filter)
+$pagination_query_params = $_GET;
+unset($pagination_query_params['page']);
+$pagination_query_string = http_build_query($pagination_query_params);
+if (!empty($pagination_query_string)) {
+    $pagination_query_string = '&' . $pagination_query_string;
+}
+
+
+$pengajuan_events = [];
 $total_rows = 0;
 $total_pages = 0;
+
 if ($user_id !== 'No ID') {
+    // [MODIFIKASI] Membangun kondisi WHERE dinamis
+    $conditions = ["pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'"];
+    $params = [$user_id];
+    $types = "i";
+
+    if (!empty($search_event)) {
+        $conditions[] = "LOWER(pe.pengajuan_namaEvent) LIKE LOWER(?)";
+        $search_param = "%" . $search_event . "%";
+        $params[] = $search_param;
+        $types .= "s";
+    }
+
+    if (!empty($selected_status_proposal)) {
+        if ($selected_status_proposal === 'Ditolak') {
+            $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak')";
+        } elseif ($selected_status_proposal === 'Disetujui') {
+            $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui')";
+        } elseif ($selected_status_proposal === 'Diajukan') {
+            $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan')";
+        }
+    }
+    
+    $where_clause = " WHERE " . implode(' AND ', $conditions);
+
     try {
-        $count_stmt = $conn->prepare("
-            SELECT COUNT(pe.pengajuan_id) as total
-            FROM pengajuan_event pe
-            WHERE pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'
-        ");
-        $count_stmt->bind_param("i", $user_id);
+        // [MODIFIKASI] Query COUNT dengan filter
+        $count_sql = "SELECT COUNT(pe.pengajuan_id) as total FROM pengajuan_event pe" . $where_clause;
+        $count_stmt = $conn->prepare($count_sql);
+        $count_stmt->bind_param($types, ...$params);
         $count_stmt->execute();
         $count_result = $count_stmt->get_result();
         if ($count_result) {
@@ -34,47 +70,47 @@ if ($user_id !== 'No ID') {
             $total_pages = ceil($total_rows / $limit);
         }
         $count_stmt->close();
+
+        // [MODIFIKASI] Query SELECT utama dengan filter dan SIK
+        $stmt = $conn->prepare("
+            SELECT
+                pe.pengajuan_id,
+                pe.pengajuan_event_tanggal_mulai,
+                pe.pengajuan_namaEvent,
+                pe.pengajuan_status_ditmawa,
+                pe.komentar_ditmawa,
+                pe.pengajuan_status_asp,
+                pe.komentar_asp,
+                pe.surat_izin_kegiatan_file, -- <--- DITAMBAHKAN
+                
+                CASE 
+                    WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
+                    THEN 'Ditolak' 
+                    ELSE pe.pengajuan_status_proposal 
+                END AS pengajuan_status_proposal,
+                
+                pe.pengajuan_tanggalEdit
+            FROM pengajuan_event pe
+            " . $where_clause . "
+            ORDER BY pe.pengajuan_id DESC
+            LIMIT ? OFFSET ?
+        ");
+        
+        // Menambahkan LIMIT dan OFFSET ke parameter
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $pengajuan_events[] = $row;
+        }
+        $stmt->close();
     } catch (Exception $e) {
-        error_log("Error counting history pengajuan: " . $e->getMessage());
+        error_log("Error fetching history pengajuan: " . $e->getMessage());
     }
-}
-
-
-$pengajuan_events = [];
-
-if ($user_id !== 'No ID') {
-    // [DIUBAH] Query ditambahkan LIMIT ? OFFSET ?
-    $stmt = $conn->prepare("
-        SELECT
-            pe.pengajuan_id,
-            pe.pengajuan_event_tanggal_mulai,
-            pe.pengajuan_namaEvent,
-            pe.pengajuan_status_ditmawa,
-            pe.komentar_ditmawa,
-            pe.pengajuan_status_asp,
-            pe.komentar_asp,
-            
-            -- [PERBAIKAN] Terapkan logika status proposal secara dinamis
-            CASE 
-                WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
-                THEN 'Ditolak' 
-                ELSE pe.pengajuan_status_proposal 
-            END AS pengajuan_status_proposal,
-            
-            pe.pengajuan_tanggalEdit
-        FROM pengajuan_event pe
-        WHERE pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'
-        ORDER BY pe.pengajuan_id DESC
-        LIMIT ? OFFSET ?
-    ");
-    // [DIUBAH] Bind param ditambah "ii" untuk limit dan offset
-    $stmt->bind_param("iii", $user_id, $limit, $offset);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $pengajuan_events[] = $row;
-    }
-    $stmt->close();
 }
 $conn->close();
 ?>
@@ -89,7 +125,13 @@ $conn->close();
     <style>
         :root {
             --primary-color: rgb(2, 71, 25);
-            /* [BARU] Variabel untuk paginasi (dari admin) */
+            --primary-light: #f7fff8;
+            --primary-border: #d4e9d6;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --grey-color: #6c757d;
             --text-light: #8895a7;
             --border-color: #e5e7eb;
             --white: #ffffff;
@@ -116,31 +158,90 @@ $conn->close();
         .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color:white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #87CEEB; } /* Light blue hover */
         .navbar-right { display: flex; align-items: center; gap: 15px; color:white; }
         .icon { font-size: 20px; cursor: pointer; }
-        .container { max-width: 1200px; margin: 20px auto 30px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
+        
+        /* [MODIFIKASI] Container diperlebar */
+        .container { 
+            max-width: 1200px; 
+            margin: 20px auto 30px; 
+            background: rgba(255, 255, 255, 0.98); /* Lebih solid */
+            backdrop-filter: blur(5px); 
+            border-radius: 15px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
+            padding: 30px; 
+        }
         .header { background:rgb(44, 62, 80); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; margin: -30px -30px 30px -30px; border-radius: 15px 15px 0 0; }
         .header h1 { font-size: 24px; }
         .kembali-button { background-color: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; }
+        
+        /* [BARU] CSS Untuk Filter Form */
+        .filter-form { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            margin-bottom: 25px; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px; 
+            background-color: var(--bg-light); 
+            border-radius: 10px; 
+        }
+        .filter-form label { font-weight: 600; color: #555; }
+        .filter-form select, .filter-form input, .filter-form button { 
+            padding: 10px 14px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            font-size: 14px;
+        }
+        .filter-form input[type="text"] { min-width: 250px; }
+        .filter-form button { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .filter-form button:hover { background-color: rgb(3, 100, 36); }
+        
+        .data-table-container { overflow-x: auto; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .data-table th, .data-table td { border-bottom: 1px solid #ddd; padding: 12px 15px; text-align: left; vertical-align: top; }
         .data-table th { background-color: #f8f9fa; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
         .data-table tr:hover { background-color: #f1f1f1; }
         .no-data { text-align: center; padding: 20px; color: #777; }
         .status-badge { padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; text-align: center; font-size: 12px; text-transform: capitalize; display: inline-block; }
-        .status-badge.disetujui { background-color: #28a745; }
-        .status-badge.ditolak { background-color: #dc3545; }
-        .status-badge.diajukan { background-color: #ffc107; color: #333; }
-        .action-button { background-color: #007bff; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; border: none; font-family: 'Segoe UI'; }
-        .action-button:hover { background-color: #0056b3; }
-        .action-disabled { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 5px; background-color: #6c757d; color: white; font-size: 14px; font-weight: 500; cursor: not-allowed; }
+        .status-badge.disetujui { background-color: var(--success-color); }
+        .status-badge.ditolak { background-color: var(--danger-color); }
+        .status-badge.diajukan { background-color: var(--warning-color); color: #333; }
+        
+        /* [MODIFIKASI] CSS Tombol Aksi */
+        .btn-action { 
+            color: white; 
+            padding: 8px 15px; 
+            border-radius: 5px; 
+            text-decoration: none; 
+            font-size: 14px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 5px; 
+            border: none; 
+            font-family: 'Segoe UI';
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        .btn-edit { background-color: #007bff; }
+        .btn-edit:hover { background-color: #0056b3; }
+        .btn-detail { background-color: var(--info-color); }
+        .btn-detail:hover { background-color: #138496; }
+        .btn-download-sik { background-color: var(--success-color); }
+        .btn-download-sik:hover { background-color: #218838; }
+        .action-disabled { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 5px; background-color: var(--grey-color); color: white; font-size: 14px; font-weight: 500; cursor: not-allowed; }
+        
         .alasan-ditolak { font-size: 13px; color: #dc3545; margin-top: 5px; font-style: italic; max-width: 250px; }
         .modified-info { font-size: 12px; color: #666; margin-top: 5px; }
-        .action-button-view { background-color: #17a2b8; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; border: none; font-family: 'Segoe UI'; }
-        .action-button-view:hover { background-color: #138496; }
 
-        /* --- CSS FOOTER DIMULAI --- */
         .page-footer { background-color: var(--primary-color); color: #e9ecef; padding: 40px 0; margin-top: auto; }
         .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
         .footer-left { display: flex; align-items: center; gap: 20px; }
@@ -151,50 +252,14 @@ $conn->close();
         .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
         .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
         .footer-right .social-icons a:hover { color: #fff; }
-         /* --- CSS FOOTER SELESAI --- */
          
-        /* [BARU] CSS Untuk Paginasi */
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            padding: 1.5rem 0; /* Disesuaikan agar tidak terlalu jauh */
-            margin-top: 20px;
-            border-top: 1px solid var(--border-color);
-        }
-        .pagination-info {
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-        .pagination-links {
-            display: flex;
-            gap: 5px;
-        }
-        .page-link {
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border-color);
-            background: var(--white);
-            color: var(--primary-color); /* Disesuaikan dgn tema hijau */
-            border-radius: 8px;
-            font-weight: 500;
-            transition: background 0.2s, color 0.2s;
-        }
-        .page-link:hover {
-            background-color: #f7fff8;
-            border-color: #d4e9d6;
-        }
-        .page-link.active {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border-color: var(--primary-color);
-        }
-        .page-link.disabled {
-            color: var(--text-light);
-            pointer-events: none;
-            background-color: var(--bg-light);
-        }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 1.5rem 0; margin-top: 20px; border-top: 1px solid var(--border-color); }
+        .pagination-info { color: var(--text-light); font-size: 0.9rem; }
+        .pagination-links { display: flex; gap: 5px; }
+        .page-link { text-decoration: none; padding: 0.5rem 1rem; border: 1px solid var(--border-color); background: var(--white); color: var(--primary-color); border-radius: 8px; font-weight: 500; transition: background 0.2s, color 0.2s; }
+        .page-link:hover { background-color: var(--primary-light); border-color: var(--primary-border); }
+        .page-link.active { background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
+        .page-link.disabled { color: var(--text-light); pointer-events: none; background-color: var(--bg-light); }
     </style>
 </head>
 <body>
@@ -206,6 +271,7 @@ $conn->close();
     </div>
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
+        <li><a href="mahasiswa_fasilitas.php">Fasilitas</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
         <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 
@@ -226,86 +292,109 @@ $conn->close();
     <div class="container">
         <div class="header">
             <h1>History Pengajuan Event</h1>
-            <a href="mahasiswa_history.php" class="kembali-button">Kembali</a>
+            <a href="mahasiswa_history.php" class="kembali-button"><i class="fas fa-arrow-left"></i> Kembali</a>
         </div>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>TANGGAL & NAMA EVENT</th>
-                    <th>STATUS DITMAWA</th>
-                    <th>STATUS ASP</th>
-                    <th>STATUS PROPOSAL</th>
-                    <th>LAST MODIFIED</th>
-                    <th>ACTION</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (!empty($pengajuan_events)): ?>
-                    <?php foreach ($pengajuan_events as $event): ?>
-                        <tr>
-                            <td>
-                                <strong><?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?></strong>
-                                <div class="modified-info"><?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?></div>
-                            </td>
-                            <td>
-                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_ditmawa'])); ?>">
-                                    <?php echo htmlspecialchars($event['pengajuan_status_ditmawa']); ?>
-                                </span>
-                                <?php if ($event['pengajuan_status_ditmawa'] == 'Ditolak' && !empty($event['komentar_ditmawa'])): ?>
-                                    <div class="alasan-ditolak">
-                                        <strong>Alasan:</strong> <?php echo htmlspecialchars($event['komentar_ditmawa']); ?>
-                                    </div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_asp'])); ?>">
-                                    <?php echo htmlspecialchars($event['pengajuan_status_asp']); ?>
-                                </span>
-                                 <?php if ($event['pengajuan_status_asp'] == 'Ditolak' && !empty($event['komentar_asp'])): ?>
-                                    <div class="alasan-ditolak">
-                                        <strong>Alasan:</strong> <?php echo htmlspecialchars($event['komentar_asp']); ?>
-                                    </div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_proposal'])); ?>">
-                                    <?php echo htmlspecialchars($event['pengajuan_status_proposal']); ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php if (!empty($event['pengajuan_tanggalEdit'])): ?>
-                                    <div class="modified-info">
-                                        <?php echo htmlspecialchars(date('d M Y H:i', strtotime($event['pengajuan_tanggalEdit']))); ?>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="modified-info">N/A</div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($event['pengajuan_status_proposal'] == 'Disetujui'): ?>
-                                    <span class="action-disabled" title="Pengajuan yang sudah disetujui tidak dapat diubah.">
-                                        <i class="fas fa-lock"></i> Terkunci
-                                    </span>
-                                <?php elseif ($event['pengajuan_status_proposal'] == 'Ditolak'): ?>
-                                    <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?>" class="action-button">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                <?php else: // Status 'Diajukan' ?>
-                                    <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?>" class="action-button-view">
-                                        <i class="fas fa-eye"></i> Detail
-                                    </a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
+        <form method="GET" class="filter-form">
+            <label for="status_proposal">Status Proposal:</label>
+            <select name="status_proposal" id="status_proposal">
+                <option value="">Semua Status</option>
+                <option value="Diajukan" <?php echo ($selected_status_proposal == 'Diajukan' ? 'selected' : ''); ?>>Diajukan</option>
+                <option value="Disetujui" <?php echo ($selected_status_proposal == 'Disetujui' ? 'selected' : ''); ?>>Disetujui</option>
+                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak</option>
+            </select>
+            
+            <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
+            <input type="text" id="search_event" name="search_event" placeholder="Masukkan nama event..." value="<?php echo htmlspecialchars($search_event); ?>">
+            
+            <button type="submit"><i class="fas fa-filter"></i> Filter & Cari</button>
+        </form>
+
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td colspan="6" class="no-data">Belum ada pengajuan event.</td>
+                        <th>TANGGAL & NAMA EVENT</th>
+                        <th>STATUS DITMAWA</th>
+                        <th>STATUS ASP</th>
+                        <th>STATUS PROPOSAL</th>
+                        <th>LAST MODIFIED</th>
+                        <th>ACTION</th>
                     </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php if (!empty($pengajuan_events)): ?>
+                        <?php foreach ($pengajuan_events as $event): ?>
+                            <tr>
+                                <td>
+                                    <strong><?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?></strong>
+                                    <div class="modified-info"><?php echo htmlspecialchars(date('d M Y', strtotime($event['pengajuan_event_tanggal_mulai']))); ?></div>
+                                </td>
+                                <td>
+                                    <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_ditmawa'])); ?>">
+                                        <?php echo htmlspecialchars($event['pengajuan_status_ditmawa']); ?>
+                                    </span>
+                                    <?php if ($event['pengajuan_status_ditmawa'] == 'Ditolak' && !empty($event['komentar_ditmawa'])): ?>
+                                        <div class="alasan-ditolak">
+                                            <strong>Alasan:</strong> <?php echo htmlspecialchars($event['komentar_ditmawa']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_asp'])); ?>">
+                                        <?php echo htmlspecialchars($event['pengajuan_status_asp']); ?>
+                                    </span>
+                                    <?php if ($event['pengajuan_status_asp'] == 'Ditolak' && !empty($event['komentar_asp'])): ?>
+                                        <div class="alasan-ditolak">
+                                            <strong>Alasan:</strong> <?php echo htmlspecialchars($event['komentar_asp']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_proposal'])); ?>">
+                                        <?php echo htmlspecialchars($event['pengajuan_status_proposal']); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (!empty($event['pengajuan_tanggalEdit'])): ?>
+                                        <div class="modified-info">
+                                            <?php echo htmlspecialchars(date('d M Y H:i', strtotime($event['pengajuan_tanggalEdit']))); ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="modified-info">N/A</div>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($event['pengajuan_status_proposal'] == 'Disetujui'): ?>
+                                        <?php if (!empty($event['surat_izin_kegiatan_file'])): ?>
+                                            <a href="../<?php echo htmlspecialchars($event['surat_izin_kegiatan_file']); ?>" class="btn-action btn-download-sik" download>
+                                                <i class="fas fa-file-download"></i> Unduh SIK
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="action-disabled" title="Event Disetujui, menunggu SIK diterbitkan oleh Sekretariat.">
+                                                <i class="fas fa-hourglass-half"></i> Menunggu SIK
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php elseif ($event['pengajuan_status_proposal'] == 'Ditolak'): ?>
+                                        <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?><?php echo $pagination_query_string; ?>" class="btn-action btn-edit">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    <?php else: // Status 'Diajukan' ?>
+                                        <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?><?php echo $pagination_query_string; ?>" class="btn-action btn-detail">
+                                            <i class="fas fa-eye"></i> Detail
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="6" class="no-data">Belum ada pengajuan event yang cocok dengan kriteria Anda.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
 
         <?php if ($total_pages > 1 && !empty($pengajuan_events)): ?>
         <div class="pagination-container">
@@ -313,7 +402,7 @@ $conn->close();
                 Menampilkan <strong><?php echo count($pengajuan_events); ?></strong> dari <strong><?php echo $total_rows; ?></strong> data
             </div>
             <div class="pagination-links">
-                <a href="?page=<?php echo $page - 1; ?>" class="page-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                <a href="?page=<?php echo $page - 1; ?><?php echo $pagination_query_string; ?>" class="page-link <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
                     &laquo;
                 </a>
                 
@@ -322,7 +411,7 @@ $conn->close();
                     for ($i = 1; $i <= $total_pages; $i++):
                         if ($i == 1 || $i == $total_pages || ($i >= $page - $window && $i <= $page + $window)):
                 ?>
-                    <a href="?page=<?php echo $i; ?>" class="page-link <?php echo ($i == $page) ? 'active' : ''; ?>">
+                    <a href="?page=<?php echo $i; ?><?php echo $pagination_query_string; ?>" class="page-link <?php echo ($i == $page) ? 'active' : ''; ?>">
                         <?php echo $i; ?>
                     </a>
                 <?php
@@ -332,7 +421,7 @@ $conn->close();
                     endfor;
                 ?>
                 
-                <a href="?page=<?php echo $page + 1; ?>" class="page-link <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                <a href="?page=<?php echo $page + 1; ?><?php echo $pagination_query_string; ?>" class="page-link <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
                     &raquo;
                 </a>
             </div>
