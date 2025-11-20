@@ -170,6 +170,7 @@ $conn->close();
     <div class="navbar-left"><img src="../img/logo.png" alt="Logo UNPAR" class="navbar-logo"><div class="navbar-title"><span>Pengelolaan</span><br><strong>Event UNPAR</strong></div></div>
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
+        <li><a href="mahasiswa_fasilitas.php">Fasilitas</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
         <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 

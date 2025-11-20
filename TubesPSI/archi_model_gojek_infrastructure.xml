@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://www.opengroup.org/xsd/archimate/3.0/" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:archimate="http://www.opengroup.org/xsd/archimate/3.0/" 
+       identifier="model-gojek-infra-2026" 
+       version="1.0">
+  
+  <name>Gojek Infrastruktur TI - Baseline &amp; Target</name>
+
+  [cite: 23, 36]
+  <elements>
+    <element identifier="biz_actor_platform_ops" xsi:type="archimate:BusinessActor" name="Platform Engineering / DevOps"/>
+    <element identifier="biz_actor_data_eng" xsi:type="archimate:BusinessActor" name="Data Engineering"/>
+
+    [cite: 26, 34]
+    <element identifier="app_api_gateway_baseline" xsi:type="archimate:ApplicationComponent" name="API Gateway (Baseline)"/>
+    <element identifier="app_microservices_baseline" xsi:type="archimate:ApplicationComponent" name="Microservices (Baseline)"/>
+    <element identifier="app_message_broker_baseline" xsi:type="archimate:ApplicationComponent" name="Kafka (Baseline)"/>
+    <element identifier="app_db_baseline" xsi:type="archimate:ApplicationComponent" name="Cloud SQL (Baseline)"/>
+
+    [cite: 26, 33]
+    <element identifier="tech_gke_baseline" xsi:type="archimate:Node" name="GKE Cluster (Region Jakarta)"/>
+    <element identifier="tech_vpc_baseline" xsi:type="archimate:Network" name="VPC Internal (Jakarta)"/>
+    <element identifier="tech_storage_baseline" xsi:type="archimate:Artifact" name="Persistent Disk / Cloud Storage (Baseline)"/>
+    <element identifier="tech_firewall_baseline" xsi:type="archimate:Device" name="Cloud Firewall (Baseline)"/>
+
+    [cite: 41, 42, 48]
+    <element identifier="app_api_gateway_target" xsi:type="archimate:ApplicationComponent" name="API Gateway (Target - Multi-region)"/>
+    <element identifier="app_microservices_target" xsi:type="archimate:ApplicationComponent" name="Microservices (Target)"/>
+    <element identifier="app_service_mesh" xsi:type="archimate:ApplicationComponent" name="Service Mesh (Istio)"/>
+    <element identifier="app_message_broker_target" xsi:type="archimate:ApplicationComponent" name="Kafka / PubSub (Target)"/>
+    <element identifier="app_db_target" xsi:type="archimate:ApplicationComponent" name="Cloud Spanner (Multi-region)"/>
+
+    [cite: 40, 43, 47]
+    <element identifier="tech_gke_jakarta" xsi:type="archimate:Node" name="GKE Cluster (Jakarta)"/>
+    <element identifier="tech_gke_singapore" xsi:type="archimate:Node" name="GKE Cluster (Singapore)"/>
+    <element identifier="tech_vpc_multi" xsi:type="archimate:Network" name="VPC (Multi-region peering)"/>
+    <element identifier="tech_loadbalancer" xsi:type="archimate:Device" name="Global Load Balancer"/>
+    <element identifier="tech_storage_replica" xsi:type="archimate:Artifact" name="Multi-zone Persistent Storage"/>
+    <element identifier="tech_iam" xsi:type="archimate:SystemSoftware" name="IAM &amp; IAP (Zero Trust)"/>
+    <element identifier="tech_monitoring" xsi:type="archimate:SystemSoftware" name="Observability Stack (Prometheus + ELK + Grafana)"/>
+    <element identifier="tech_cicd" xsi:type="archimate:SystemSoftware" name="CI/CD (Cloud Build)"/>
+
+    [cite: 44, 49]
+    <element identifier="infra_dr" xsi:type="archimate:TechnologyService" name="Disaster Recovery Service"/>
+    <element identifier="infra_backup" xsi:type="archimate:TechnologyService" name="Automated Backup Service"/>
+
+  </elements>
+
+  <relations>
+    <relation identifier="r1" xsi:type="archimate:AssignmentRelationship" source="biz_actor_platform_ops" target="app_microservices_baseline"/>
+    <relation identifier="r2" xsi:type="archimate:AssignmentRelationship" source="app_microservices_baseline" target="tech_gke_baseline"/>
+    <relation identifier="r3" xsi:type="archimate:FlowRelationship" source="app_api_gateway_baseline" target="app_microservices_baseline"/>
+    <relation identifier="r4" xsi:type="archimate:FlowRelationship" source="app_microservices_baseline" target="app_db_baseline"/>
+    <relation identifier="r5" xsi:type="archimate:RealizationRelationship" source="app_db_baseline" target="tech_storage_baseline"/>
+    <relation identifier="r6" xsi:type="archimate:UsedByRelationship" source="app_microservices_baseline" target="app_message_broker_baseline"/>
+    <relation identifier="r7" xsi:type="archimate:AssociationRelationship" source="tech_vpc_baseline" target="tech_firewall_baseline"/>
+
+    <relation identifier="r10" xsi:type="archimate:AssignmentRelationship" source="biz_actor_platform_ops" target="app_microservices_target"/>
+    <relation identifier="r11" xsi:type="archimate:AssignmentRelationship" source="app_microservices_target" target="tech_gke_jakarta"/>
+    <relation identifier="r12" xsi:type="archimate:AssignmentRelationship" source="app_microservices_target" target="tech_gke_singapore"/>
+    <relation identifier="r13" xsi:type="archimate:FlowRelationship" source="app_api_gateway_target" target="app_microservices_target"/>
+    <relation identifier="r14" xsi:type="archimate:UsedByRelationship" source="app_microservices_target" target="app_service_mesh"/>
+    <relation identifier="r15" xsi:type="archimate:UsedByRelationship" source="app_microservices_target" target="app_message_broker_target"/>
+    <relation identifier="r16" xsi:type="archimate:RealizationRelationship" source="app_db_target" target="tech_storage_replica"/>
+    <relation identifier="r17" xsi:type="archimate:ServingRelationship" source="tech_loadbalancer" target="app_api_gateway_target"/>
+    <relation identifier="r18" xsi:type="archimate:CompositionRelationship" source="tech_vpc_multi" target="tech_gke_jakarta"/>
+    <relation identifier="r19" xsi:type="archimate:CompositionRelationship" source="tech_vpc_multi" target="tech_gke_singapore"/>
+    <relation identifier="r20" xsi:type="archimate:ServingRelationship" source="tech_monitoring" target="app_microservices_target"/>
+    <relation identifier="r21" xsi:type="archimate:ServingRelationship" source="tech_cicd" target="app_microservices_target"/>
+    <relation identifier="r22" xsi:type="archimate:ServingRelationship" source="tech_iam" target="app_api_gateway_target"/>
+    <relation identifier="r23" xsi:type="archimate:ServingRelationship" source="infra_dr" target="app_db_target"/>
+    <relation identifier="r24" xsi:type="archimate:ServingRelationship" source="infra_backup" target="app_db_target"/>
+  </relations>
+
+  <views>
+    <view identifier="view_baseline" name="Baseline Infrastructure View">
+      <viewElements>
+        <viewElement ref="biz_actor_platform_ops"/>
+        <viewElement ref="app_api_gateway_baseline"/>
+        <viewElement ref="app_microservices_baseline"/>
+        <viewElement ref="app_message_broker_baseline"/>
+        <viewElement ref="app_db_baseline"/>
+        <viewElement ref="tech_gke_baseline"/>
+        <viewElement ref="tech_vpc_baseline"/>
+        <viewElement ref="tech_storage_baseline"/>
+        <viewElement ref="tech_firewall_baseline"/>
+      </viewElements>
+      <viewRelationships>
+        <viewRelationship ref="r1"/>
+        <viewRelationship ref="r2"/>
+        <viewRelationship ref="r3"/>
+        <viewRelationship ref="r4"/>
+        <viewRelationship ref="r5"/>
+        <viewRelationship ref="r6"/>
+        <viewRelationship ref="r7"/>
+      </viewRelationships>
+    </view>
+
+    <view identifier="view_target" name="Target Infrastructure View (To-Be)">
+      <viewElements>
+        <viewElement ref="biz_actor_platform_ops"/>
+        <viewElement ref="app_api_gateway_target"/>
+        <viewElement ref="app_microservices_target"/>
+        <viewElement ref="app_service_mesh"/>
+        <viewElement ref="app_message_broker_target"/>
+        <viewElement ref="app_db_target"/>
+        <viewElement ref="tech_gke_jakarta"/>
+        <viewElement ref="tech_gke_singapore"/>
+        <viewElement ref="tech_vpc_multi"/>
+        <viewElement ref="tech_loadbalancer"/>
+        <viewElement ref="tech_storage_replica"/>
+        <viewElement ref="tech_iam"/>
+        <viewElement ref="tech_monitoring"/>
+        <viewElement ref="tech_cicd"/>
+        <viewElement ref="infra_dr"/>
+        <viewElement ref="infra_backup"/>
+      </viewElements>
+      <viewRelationships>
+        <viewRelationship ref="r10"/>
+        <viewRelationship ref="r11"/>
+        <viewRelationship ref="r12"/>
+        <viewRelationship ref="r13"/>
+        <viewRelationship ref="r14"/>
+        <viewRelationship ref="r15"/>
+        <viewRelationship ref="r16"/>
+        <viewRelationship ref="r17"/>
+        <viewRelationship ref="r18"/>
+        <viewRelationship ref="r19"/>
+        <viewRelationship ref="r20"/>
+        <viewRelationship ref="r21"/>
+        <viewRelationship ref="r22"/>
+        <viewRelationship ref="r23"/>
+        <viewRelationship ref="r24"/>
+      </viewRelationships>
+    </view>
+
+  </views>
+
+</model>

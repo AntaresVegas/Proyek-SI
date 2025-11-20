@@ -16,6 +16,7 @@ require_once('../config/db_connection.php');
 $total_events_this_month = 0;
 $completed_events_this_month = 0;
 $pending_approvals = 0;
+$rejected_events_this_month = 0; // [BARU] Variabel untuk event ditolak
 
 // Current month and year for calendar and stats
 $currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
@@ -64,6 +65,17 @@ try {
         if ($result_pending) {
             $pending_approvals = $result_pending->fetch_assoc()['total'];
         }
+
+        // [BARU] Count rejected events this month (ditolak oleh Ditmawa ATAU ASP)
+        $stmt_rejected_month = $conn->prepare("SELECT COUNT(*) as total FROM pengajuan_event WHERE MONTH(pengajuan_event_tanggal_mulai) = ? AND YEAR(pengajuan_event_tanggal_mulai) = ? AND (pengajuan_status_ditmawa = 'Ditolak' OR pengajuan_status_asp = 'Ditolak')");
+        $stmt_rejected_month->bind_param("ii", $currentMonth, $currentYear);
+        $stmt_rejected_month->execute();
+        $result_rejected_month = $stmt_rejected_month->get_result();
+        if ($result_rejected_month) {
+            $rejected_events_this_month = $result_rejected_month->fetch_assoc()['total'];
+        }
+        $stmt_rejected_month->close();
+
 
         // [DIUBAH] Fetch calendar events based on Ditmawa's approval status
         $stmt_calendar_events = $conn->prepare("
@@ -164,15 +176,17 @@ $conn->close();
             .content-card { background: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 30px; }
             .welcome-section { background: linear-gradient(135deg, #0A2342 0%, #1a4a8a 100%); color: white; border-radius: 10px; padding: 25px; margin-bottom: 30px; text-align: center; }
             .welcome-section h2 { font-size: 28px; }
-            .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+            .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; } /* [DIUBAH] minmax sedikit lebih kecil */
             .stat-card { background: white; border-left: 5px solid; border-radius: 10px; padding: 25px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
             .stat-card.events { border-color: #17a2b8; }
             .stat-card.completed { border-color: #28a745; }
             .stat-card.pending { border-color: #ffc107; }
+            .stat-card.rejected { border-color: #dc3545; } /* [BARU] */
             .stat-card .icon { font-size: 40px; margin-bottom: 15px; }
             .stat-card.events .icon { color: #17a2b8; }
             .stat-card.completed .icon { color: #28a745; }
             .stat-card.pending .icon { color: #ffc107; }
+            .stat-card.rejected .icon { color: #dc3545; } /* [BARU] */
             .stat-card .number { font-size: 32px; font-weight: bold; }
             .stat-card .label { color: #7f8c8d; font-size: 14px; text-transform: uppercase; }
             .calendar-wrapper { margin-top: 0; }
@@ -241,6 +255,7 @@ $conn->close();
                     <div class="stat-card events"><div class="icon"><i class="fas fa-calendar-day"></i></div><div class="number"><?php echo $total_events_this_month; ?></div><div class="label">Total Event Bulan Ini</div></div>
                     <div class="stat-card completed"><div class="icon"><i class="fas fa-calendar-check"></i></div><div class="number"><?php echo $completed_events_this_month; ?></div><div class="label">Event Selesai Bulan Ini</div></div>
                     <div class="stat-card pending"><div class="icon"><i class="fas fa-hourglass-half"></i></div><div class="number"><?php echo $pending_approvals; ?></div><div class="label">Menunggu Persetujuan</div></div>
+                    <div class="stat-card rejected"><div class="icon"><i class="fas fa-calendar-times"></i></div><div class="number"><?php echo $rejected_events_this_month; ?></div><div class="label">Event Ditolak Bulan Ini</div></div>
                 </div>
             </div>
             <div class="content-card">

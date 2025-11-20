@@ -119,16 +119,16 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
             text-align: center;
         }
 
-        /* User Choice Cards */
+        /* [DIUBAH] User Choice Cards */
         .user-choice-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            grid-template-columns: repeat(4, 1fr); /* Diubah ke 4 kolom */
+            gap: 10px; /* Dikecilkan sedikit */
             margin-bottom: 25px;
         }
 
         .user-choice-card {
-            padding: 12px;
+            padding: 12px 8px; /* Disesuaikan padding */
             border: 1px solid transparent;
             border-radius: 12px;
             text-align: center;
@@ -138,14 +138,14 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
         }
         
         .user-choice-card i {
-            font-size: 1.5rem;
+            font-size: 1.4rem; /* Disesuaikan */
             margin-bottom: 8px;
             color: var(--secondary-color);
             transition: color 0.3s ease;
         }
 
         .user-choice-card h3 {
-            font-size: 0.9rem;
+            font-size: 0.8rem; /* Disesuaikan */
             font-weight: 600;
             color: var(--secondary-color);
         }
@@ -273,6 +273,10 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
             .login-panel {
                 border-radius: 20px;
             }
+            /* [DIUBAH] */
+            .user-choice-container {
+                grid-template-columns: 1fr 1fr; /* 2 kolom di tablet */
+            }
         }
 
         @media (max-width: 500px) {
@@ -286,7 +290,7 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
                 font-size: 1.5rem;
             }
             .user-choice-container {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr 1fr; /* Tetap 2 kolom di mobile */
             }
         }
     </style>
@@ -329,6 +333,10 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
                         <i class="fa-solid fa-building-user"></i>
                         <h3>ASP</h3>
                     </div>
+                    <div class="user-choice-card" data-type="sekretariat">
+                        <i class="fa-solid fa-sitemap"></i>
+                        <h3>Sekretariat</h3>
+                    </div>
                 </div>
 
                 <input type="hidden" name="user_type" id="user_type" value="mahasiswa">
@@ -366,10 +374,12 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
             const welcomeText = document.getElementById('welcome-text');
             const hiddenInput = document.getElementById('user_type');
 
+            // [DIUBAH] Tambahkan data untuk sekretariat
             const visualData = {
                 mahasiswa: {
                     action: './mahasiswa/process_login.php',
                     registerHref: './mahasiswa/register.php',
+                    forgotHref: './mahasiswa/forgot_password.php', // [DIUBAH]
                     bgImage: "url('./img/backgroundUnpar.jpeg')",
                     logoSrc: "./img/logo.png",
                     text: "Di Situs Pengelolaan Event Mahasiswa Universitas Katolik Parahyangan"
@@ -377,6 +387,7 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
                 ditmawa: {
                     action: './ditmawa/process_login.php',
                     registerHref: './ditmawa/register_ditmawa.php',
+                    forgotHref: './ditmawa/forgot_password_ditmawa.php', // [DIUBAH]
                     bgImage: "url('./img/backgroundDitmawa.jpeg')",
                     logoSrc: "./img/logoDitmawa.png",
                     text: "Portal khusus untuk manajemen dan persetujuan kegiatan oleh Ditmawa."
@@ -384,9 +395,19 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
                 asp: {
                     action: './asp/process_login.php',
                     registerHref: './asp/register_asp.php',
+                    forgotHref: './asp/forgot_password_asp.php', // [DIUBAH]
                     bgImage: "url('./img/backgroundASP.jpeg')",
                     logoSrc: "./img/logoASP.png",
                     text: "Portal khusus untuk persetujuan sarana prasarana kegiatan oleh ASP."
+                },
+                // [BARU] Data untuk Sekretariat
+                sekretariat: {
+                    action: './sekretariat/process_login.php',
+                    registerHref: './sekretariat/register_sekretariat.php',
+                    forgotHref: './sekretariat/forgot_password_sekretariat.php',
+                    bgImage: "url('./img/backgroundSekretariat.jpg')", // Asumsi Anda punya gambar ini
+                    logoSrc: "./img/logoSU.png", // Menggunakan logo Unpar
+                    text: "Portal khusus untuk manajemen dan persetujuan oleh Sekretariat Universitas."
                 }
             };
 
@@ -397,6 +418,7 @@ $pw_reset_success = isset($_GET['status']) && $_GET['status'] === 'pw_reset_succ
                 // Update form attributes
                 form.action = data.action;
                 registerLink.href = data.registerHref;
+                forgotLink.href = data.forgotHref; // [DIUBAH]
                 hiddenInput.value = userType;
                 
                 // Transisi untuk teks dan o

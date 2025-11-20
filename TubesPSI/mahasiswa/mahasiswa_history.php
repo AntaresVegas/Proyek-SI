@@ -256,6 +256,7 @@ $conn->close();
     </div>
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
+        <li><a href="mahasiswa_fasilitas.php">Fasilitas</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
         <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 
@@ -297,14 +298,14 @@ $conn->close();
                     <i class="fas fa-file-signature"></i>
                 </div>
                 <div class="card-text">
-                    <h3>Riwayat Laporan Pertanggungjawaban</h3>
-                    <p>Lihat status dan riwayat LPJ yang telah Anda unggah.</p>
+                    <h3>Riwayat Laporan Bukti Kegiatan</h3>
+                    <p>Lihat status dan riwayat Laporan Bukti Kegiatan yang telah Anda unggah.</p>
                 </div>
                 <div class="card-arrow">
                     <i class="fas fa-arrow-right"></i>
                 </div>
             </a>
-        </div>
+            </div>
         </div>
 </div>
 
