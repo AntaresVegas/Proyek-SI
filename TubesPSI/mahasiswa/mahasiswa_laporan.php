@@ -255,7 +255,29 @@ $conn->close();
 <div id="uploadMessage" class="upload-message <?php echo !empty($message) ? 'show ' . $message_type : ''; ?>"><?php echo htmlspecialchars($message); ?></div>
 
 <footer class="page-footer">
-    </footer>
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
+            </div>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 <script>
     // Script notifikasi
     window.onload = function() { const messageDiv = document.getElementById('uploadMessage'); if (messageDiv.textContent.trim() !== '') { setTimeout(() => { messageDiv.classList.add('show'); setTimeout(() => { messageDiv.classList.remove('show'); if (window.history.replaceState) { const url = new URL(window.location.href); url.searchParams.delete('status'); url.searchParams.delete('msg'); window.history.replaceState({}, document.title, url.href); } }, 5000); }, 100); } };

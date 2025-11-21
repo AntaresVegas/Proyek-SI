@@ -46,7 +46,24 @@ $conn->close();
         
         /* [TAMBAHKAN CSS BARU INI] */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh; padding-top: 70px; background-image: url('../img/backgroundUnpar.jpeg'); background-size: cover; background-position: center; background-attachment: fixed;}
+        
+        /* [PERUBAHAN DISINI] */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f0f2f5; /* Diubah dari 'background' */
+            min-height: 100vh; 
+            padding-top: 70px; 
+            
+            /* Ini akan memberi lapisan putih 60% di atas gambar,
+               sehingga gambar terlihat 40% */
+            background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), url('../img/backgroundUnpar.jpeg'); 
+            
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed;
+        }
+        /* [AKHIR PERUBAHAN] */
+
         .navbar { display: flex; justify-content: space-between; align-items: center; background:rgb(2, 71, 25); width: 100%; padding: 10px 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); position: fixed; top: 0; left: 0; z-index: 1000; }
         .navbar-left { display: flex; align-items: center; gap: 10px; }
         .navbar-logo { width: 50px; height: 50px; }
@@ -130,7 +147,16 @@ $conn->close();
         }
         
         .page-footer { background-color: rgb(2, 71, 25); color: #e9ecef; padding: 40px 0; margin-top: 40px; }
-        /* ... (Salin CSS Footer dari file lain) ... */
+        /* ... (CSS Footer Anda) ... */
+        .footer-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #e9ecef; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -156,42 +182,66 @@ $conn->close();
     </div>
 </nav>
 
-<div class="page-header">
-    <h1>Fasilitas Kampus</h1>
-    <p>Telusuri berbagai gedung dan ruangan yang tersedia di lingkungan UNPAR.</p>
-</div>
+<div class="main-content-wrapper" style="flex: 1;">
 
-<div class="facilities-container">
-    <?php if (empty($buildings)): ?>
-        <p style="text-align: center; grid-column: 1 / -1; font-size: 18px;">Data fasilitas gedung belum tersedia.</p>
-    <?php else: ?>
-        <?php foreach ($buildings as $building): ?>
-            <div class="building-card">
-                <?php 
-                    // Tampilkan foto utama, atau foto placeholder jika kosong
-                    $foto_utama = !empty($building['foto_utama']) ? htmlspecialchars($building['foto_utama']) : '../img/placeholder_gedung.png'; 
-                ?>
-                <div class="building-card-image" style="background-image: url('<?php echo $foto_utama; ?>');"></div>
-                <div class="building-card-content">
-                    <h3><?php echo htmlspecialchars($building['gedung_nama']); ?></h3>
-                    <p>
-                        <?php 
-                            // Tampilkan deskripsi, atau deskripsi default jika kosong
-                            $deskripsi = !empty($building['deskripsi']) ? $building['deskripsi'] : 'Deskripsi untuk gedung ini belum tersedia.';
-                            echo htmlspecialchars(strip_tags($deskripsi)); // strip_tags untuk keamanan
-                        ?>
-                    </p>
-                    <a href="mahasiswa_detail_gedung.php?gedung_id=<?php echo $building['gedung_id']; ?>" class="building-card-link">
-                        Lihat Detail Ruangan <i class="fas fa-arrow-right"></i>
-                    </a>
+    <div class="page-header">
+        <h1>Fasilitas Kampus</h1>
+        <p>Telusuri berbagai gedung dan ruangan yang tersedia di lingkungan UNPAR.</p>
+    </div>
+
+    <div class="facilities-container">
+        <?php if (empty($buildings)): ?>
+            <p style="text-align: center; grid-column: 1 / -1; font-size: 18px;">Data fasilitas gedung belum tersedia.</p>
+        <?php else: ?>
+            <?php foreach ($buildings as $building): ?>
+                <div class="building-card">
+                    <?php 
+                        // Tampilkan foto utama, atau foto placeholder jika kosong
+                        $foto_utama = !empty($building['foto_utama']) ? htmlspecialchars($building['foto_utama']) : '../img/placeholder_gedung.png'; 
+                    ?>
+                    <div class="building-card-image" style="background-image: url('<?php echo $foto_utama; ?>');"></div>
+                    <div class="building-card-content">
+                        <h3><?php echo htmlspecialchars($building['gedung_nama']); ?></h3>
+                        <p>
+                            <?php 
+                                // Tampilkan deskripsi, atau deskripsi default jika kosong
+                                $deskripsi = !empty($building['deskripsi']) ? $building['deskripsi'] : 'Deskripsi untuk gedung ini belum tersedia.';
+                                echo htmlspecialchars(strip_tags($deskripsi)); // strip_tags untuk keamanan
+                            ?>
+                        </p>
+                        <a href="mahasiswa_detail_gedung.php?gedung_id=<?php echo $building['gedung_id']; ?>" class="building-card-link">
+                            Lihat Detail Ruangan <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
                 </div>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
 
-<footer class="page-footer">
-    </footer>
+</div> <footer class="page-footer">
+    <div class="footer-container">
+        <div class="footer-left">
+            <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+            <div>
+                <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                <h3 style="font-weight: bold; margin-top: 5px;">DIREKTORAT KEMAHASISWAAN</h3>
+            </div>
+        </div>
+        <div class="footer-right">
+            <ul>
+                <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                <li><i class="fas fa-phone-alt"></i> (022) 203 2655 ext. 100140</li>
+                <li><i class="fas fa-envelope"></i> kemahasiswaan@unpar.ac.id</li>
+            </ul>
+            <div class="social-icons">
+                <a href="httpsm://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>

@@ -182,6 +182,9 @@ $calendar_events_json = json_encode($calendar_events);
         .close-button:hover { color: #e74c3c; transform: rotate(90deg); }
         :root { --fc-border-color: #ddd; --fc-today-bg-color: rgba(30, 136, 229, 0.1); --fc-button-bg-color: var(--secondary-color); --fc-button-active-bg-color: var(--primary-color); --fc-button-hover-bg-color: var(--primary-color); }
         .fc-event { cursor: pointer; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: var(--primary-color); }
     </style>
 </head>
 <body>
@@ -269,6 +272,12 @@ $calendar_events_json = json_encode($calendar_events);
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li>
                 <li><a href="mailto:rektorat@unpar.ac.id" style="color: inherit; text-decoration: none;"><i class="fas fa-envelope"></i> rektorat@unpar.ac.id</a></li>
             </ul>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
         </div>
     </div>
 </footer>

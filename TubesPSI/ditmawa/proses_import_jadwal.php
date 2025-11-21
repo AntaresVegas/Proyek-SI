@@ -38,15 +38,17 @@ if (isset($_FILES['fileJadwal']) && $_FILES['fileJadwal']['error'] == UPLOAD_ERR
         
         $conn->begin_transaction();
         try {
-            // Hapus jadwal lama jika dicentang
+// Hapus jadwal lama jika dicentang
             if ($hapus_jadwal_lama) {
-                $delete_stmt = $conn->prepare("DELETE FROM jadwal_kelas WHERE semester_tahun = ?");
+                // [DIUBAH] Query DELETE sekarang juga memfilter berdasarkan jurusan_fakultas
+                $delete_stmt = $conn->prepare("DELETE FROM jadwal_kelas WHERE semester_tahun = ? AND jurusan_fakultas = ?");
                 if (!$delete_stmt) throw new Exception("Gagal prepare statement hapus: " . $conn->error);
-                $delete_stmt->bind_param("s", $semester_tahun);
+
+                // [DIUBAH] bind_param sekarang "ss" (dua string) untuk semester_tahun dan jurusan_fakultas
+                $delete_stmt->bind_param("ss", $semester_tahun, $jurusan_fakultas);
                 $delete_stmt->execute();
                 $delete_stmt->close();
             }
-
             // Siapkan statement insert
             $insert_stmt = $conn->prepare("
                 INSERT INTO jadwal_kelas (ruangan_id, hari, jam_mulai, jam_selesai, nama_matakuliah, semester_tahun) 

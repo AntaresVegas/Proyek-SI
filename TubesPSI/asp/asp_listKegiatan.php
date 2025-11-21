@@ -209,6 +209,9 @@ $years = range($current_year, $current_year - 5);
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #FFFFFF; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #FFD700; }
 
         /* [BARU] CSS Untuk Paginasi (disesuaikan tema ASP) */
         .pagination-container {
@@ -410,6 +413,12 @@ $years = range($current_year, $current_year - 5);
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li>
                 <li><a href="mailto:asp@unpar.ac.id" style="color: inherit; text-decoration: none;"><i class="fas fa-envelope"></i> asp@unpar.ac.id</a></li>
             </ul>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
         </div>
     </div>
 </footer>

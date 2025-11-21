@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 13, 2025 at 06:51 PM
+-- Generation Time: Nov 21, 2025 at 04:27 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -170,6 +170,7 @@ CREATE TABLE `jadwal_kelas` (
   `jam_selesai` time NOT NULL,
   `nama_matakuliah` varchar(150) DEFAULT NULL,
   `semester_tahun` varchar(50) DEFAULT NULL,
+  `jurusan_fakultas` varchar(100) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -177,67 +178,67 @@ CREATE TABLE `jadwal_kelas` (
 -- Dumping data for table `jadwal_kelas`
 --
 
-INSERT INTO `jadwal_kelas` (`jadwal_id`, `ruangan_id`, `hari`, `jam_mulai`, `jam_selesai`, `nama_matakuliah`, `semester_tahun`, `created_at`) VALUES
-(1, 1, 'Senin', '07:30:00', '10:00:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(2, 2, 'Senin', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(3, 3, 'Senin', '07:30:00', '10:00:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(4, 4, 'Senin', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(5, 1, 'Senin', '10:00:00', '12:30:00', 'Sistem Digital', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(6, 2, 'Senin', '10:00:00', '12:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(7, 3, 'Senin', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(8, 4, 'Senin', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(9, 1, 'Senin', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(10, 2, 'Senin', '13:00:00', '15:30:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(11, 3, 'Senin', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(12, 4, 'Senin', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(13, 1, 'Senin', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(14, 2, 'Senin', '15:30:00', '18:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(15, 3, 'Selasa', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(16, 5, 'Selasa', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(17, 1, 'Selasa', '10:00:00', '12:30:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(18, 2, 'Selasa', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(19, 3, 'Selasa', '10:00:00', '12:30:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(20, 5, 'Selasa', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(21, 1, 'Selasa', '13:00:00', '15:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(22, 2, 'Selasa', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(23, 3, 'Selasa', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(24, 5, 'Selasa', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(25, 1, 'Selasa', '15:30:00', '18:00:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(26, 2, 'Selasa', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(27, 1, 'Rabu', '07:30:00', '10:00:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(28, 2, 'Rabu', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(29, 3, 'Rabu', '07:30:00', '10:00:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(30, 4, 'Rabu', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(31, 1, 'Rabu', '10:00:00', '12:30:00', 'Sistem Digital', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(32, 2, 'Rabu', '10:00:00', '12:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(33, 3, 'Rabu', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(34, 4, 'Rabu', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(35, 1, 'Rabu', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(36, 2, 'Rabu', '13:00:00', '15:30:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(37, 3, 'Rabu', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(38, 4, 'Rabu', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(39, 1, 'Rabu', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(40, 2, 'Rabu', '15:30:00', '18:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(41, 3, 'Kamis', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(42, 5, 'Kamis', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(43, 1, 'Kamis', '10:00:00', '12:30:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(44, 2, 'Kamis', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(45, 3, 'Kamis', '10:00:00', '12:30:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(46, 5, 'Kamis', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(47, 1, 'Kamis', '13:00:00', '15:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(48, 2, 'Kamis', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(49, 3, 'Kamis', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(50, 5, 'Kamis', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(51, 1, 'Kamis', '15:30:00', '18:00:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(52, 2, 'Kamis', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(53, 1, 'Jumat', '07:30:00', '10:00:00', 'Sistem Digital', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(54, 2, 'Jumat', '07:30:00', '10:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(55, 3, 'Jumat', '07:30:00', '10:00:00', 'Statistik & Probabilitas', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(56, 4, 'Jumat', '07:30:00', '10:00:00', 'Pancasila', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(57, 1, 'Jumat', '13:00:00', '15:30:00', 'Teori Bahasa & Automata', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(58, 2, 'Jumat', '13:00:00', '15:30:00', 'Interaksi Manusia & Komputer', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(59, 3, 'Jumat', '13:00:00', '15:30:00', 'Kecerdasan Buatan', 'Ganjil 2025/2026', '2025-10-28 15:06:54'),
-(60, 4, 'Jumat', '13:00:00', '15:30:00', 'Agama', 'Ganjil 2025/2026', '2025-10-28 15:06:54');
+INSERT INTO `jadwal_kelas` (`jadwal_id`, `ruangan_id`, `hari`, `jam_mulai`, `jam_selesai`, `nama_matakuliah`, `semester_tahun`, `jurusan_fakultas`, `created_at`) VALUES
+(1, 1, 'Senin', '07:30:00', '10:00:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(2, 2, 'Senin', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(3, 3, 'Senin', '07:30:00', '10:00:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(4, 4, 'Senin', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(5, 1, 'Senin', '10:00:00', '12:30:00', 'Sistem Digital', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(6, 2, 'Senin', '10:00:00', '12:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(7, 3, 'Senin', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(8, 4, 'Senin', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(9, 1, 'Senin', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(10, 2, 'Senin', '13:00:00', '15:30:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(11, 3, 'Senin', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(12, 4, 'Senin', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(13, 1, 'Senin', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(14, 2, 'Senin', '15:30:00', '18:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(15, 3, 'Selasa', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(16, 5, 'Selasa', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(17, 1, 'Selasa', '10:00:00', '12:30:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(18, 2, 'Selasa', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(19, 3, 'Selasa', '10:00:00', '12:30:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(20, 5, 'Selasa', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(21, 1, 'Selasa', '13:00:00', '15:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(22, 2, 'Selasa', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(23, 3, 'Selasa', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(24, 5, 'Selasa', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(25, 1, 'Selasa', '15:30:00', '18:00:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(26, 2, 'Selasa', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(27, 1, 'Rabu', '07:30:00', '10:00:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(28, 2, 'Rabu', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(29, 3, 'Rabu', '07:30:00', '10:00:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(30, 4, 'Rabu', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(31, 1, 'Rabu', '10:00:00', '12:30:00', 'Sistem Digital', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(32, 2, 'Rabu', '10:00:00', '12:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(33, 3, 'Rabu', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(34, 4, 'Rabu', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(35, 1, 'Rabu', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(36, 2, 'Rabu', '13:00:00', '15:30:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(37, 3, 'Rabu', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(38, 4, 'Rabu', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(39, 1, 'Rabu', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(40, 2, 'Rabu', '15:30:00', '18:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(41, 3, 'Kamis', '07:30:00', '10:00:00', 'Struktur Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(42, 5, 'Kamis', '07:30:00', '10:00:00', 'Matematika Diskrit', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(43, 1, 'Kamis', '10:00:00', '12:30:00', 'Pemrograman Berorientasi Objek', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(44, 2, 'Kamis', '10:00:00', '12:30:00', 'Kalkulus II', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(45, 3, 'Kamis', '10:00:00', '12:30:00', 'Algoritma & Pemrograman', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(46, 5, 'Kamis', '10:00:00', '12:30:00', 'Bahasa Inggris Teknik', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(47, 1, 'Kamis', '13:00:00', '15:30:00', 'Jaringan Komputer Dasar', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(48, 2, 'Kamis', '13:00:00', '15:30:00', 'Basis Data', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(49, 3, 'Kamis', '13:00:00', '15:30:00', 'Sistem Operasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(50, 5, 'Kamis', '13:00:00', '15:30:00', 'Kewarganegaraan', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(51, 1, 'Kamis', '15:30:00', '18:00:00', 'Pengantar Sistem Informasi', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(52, 2, 'Kamis', '15:30:00', '18:00:00', 'Pemrograman Web', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(53, 1, 'Jumat', '07:30:00', '10:00:00', 'Sistem Digital', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(54, 2, 'Jumat', '07:30:00', '10:00:00', 'Rekayasa Perangkat Lunak', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(55, 3, 'Jumat', '07:30:00', '10:00:00', 'Statistik & Probabilitas', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(56, 4, 'Jumat', '07:30:00', '10:00:00', 'Pancasila', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(57, 1, 'Jumat', '13:00:00', '15:30:00', 'Teori Bahasa & Automata', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(58, 2, 'Jumat', '13:00:00', '15:30:00', 'Interaksi Manusia & Komputer', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(59, 3, 'Jumat', '13:00:00', '15:30:00', 'Kecerdasan Buatan', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54'),
+(60, 4, 'Jumat', '13:00:00', '15:30:00', 'Agama', 'Ganjil 2025/2026', NULL, '2025-10-28 15:06:54');
 
 -- --------------------------------------------------------
 
@@ -347,7 +348,8 @@ INSERT INTO `notifications` (`notification_id`, `user_id`, `message`, `link`, `i
 (19, 0, 'Mohon maaf, pengajuan event \'Testing\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=13', 1, '2025-09-18 13:24:51'),
 (20, 0, 'Mohon maaf, pengajuan event \'Testing\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=13', 1, '2025-09-18 13:32:53'),
 (21, 0, 'Mohon maaf, pengajuan event \'Science Fest\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=15', 0, '2025-09-19 03:11:37'),
-(22, 0, 'Mohon maaf, pengajuan event \'Talkshow Inspiratif Bersama Alumni\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=19', 0, '2025-10-28 01:48:20');
+(22, 0, 'Mohon maaf, pengajuan event \'Talkshow Inspiratif Bersama Alumni\' Anda ditolak. Silakan cek detail.', 'mahasiswa/mahasiswa_detail_pengajuan.php?id=19', 0, '2025-10-28 01:48:20'),
+(23, 1, 'Pengajuan Pembatalan Event #18 telah diajukan.', 'ditmawa/ditmawa_editForm.php?id=18', 0, '2025-11-21 03:12:11');
 
 -- --------------------------------------------------------
 
@@ -455,6 +457,10 @@ CREATE TABLE `pengajuan_event` (
   `pengajuan_LPJ` longblob DEFAULT NULL,
   `pengajuan_statusLPJ` enum('Menunggu Persetujuan','Disetujui','Ditolak') NOT NULL DEFAULT 'Menunggu Persetujuan',
   `pengajuan_komentarLPJ` text DEFAULT NULL,
+  `pengajuan_status_pembatalan` enum('Tidak Ada','Diajukan','Disetujui','Ditolak') NOT NULL DEFAULT 'Tidak Ada',
+  `surat_pembatalan_file` varchar(255) DEFAULT NULL,
+  `komentar_ditmawa_pembatalan` text DEFAULT NULL,
+  `tanggal_pembatalan_disetujui` datetime DEFAULT NULL,
   `surat_izin_kegiatan_file` varchar(255) DEFAULT NULL,
   `tanggal_terbit_surat_izin` datetime DEFAULT NULL,
   `penerbit_surat_izin_id` int(11) DEFAULT NULL
@@ -464,36 +470,36 @@ CREATE TABLE `pengajuan_event` (
 -- Dumping data for table `pengajuan_event`
 --
 
-INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `pengaju_tipe`, `pengaju_id`, `pengajuan_TypeKegiatan`, `pengajuan_event_jam_mulai`, `pengajuan_event_jam_selesai`, `pengajuan_event_tanggal_mulai`, `pengajuan_event_tanggal_selesai`, `tanggal_persiapan`, `tanggal_beres`, `jadwal_event_rundown_file`, `pengajuan_event_proposal_file`, `pengajuan_status_ditmawa`, `tanggal_approve_ditmawa`, `pengajuan_tanggalEdit`, `komentar_ditmawa`, `approver_ditmawa_id`, `pengajuan_status_asp`, `pengajuan_tanggalApprove_asp`, `komentar_asp`, `approver_asp_id`, `pengajuan_status_proposal`, `pengajuan_LPJ`, `pengajuan_statusLPJ`, `pengajuan_komentarLPJ`, `surat_izin_kegiatan_file`, `tanggal_terbit_surat_izin`, `penerbit_surat_izin_id`) VALUES
-(1, 'Seminar AI Masa Depan', 'mahasiswa', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL, NULL, NULL, NULL),
-(2, 'Workshop Fotografi Dasar', 'mahasiswa', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL, NULL, NULL, NULL),
-(3, 'Lomba Catur Antar Jurusan', 'mahasiswa', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL, NULL, NULL, NULL),
-(4, 'ISEC', 'mahasiswa', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', NULL, NULL, '', '', 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 11:20:39', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'ga sesuai', NULL, NULL, NULL),
-(5, 'Science Fest', 'mahasiswa', 0, 'Lomba', '11:12:00', '16:12:00', '2025-09-18', '2025-09-20', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363863323463333535393735395f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323463333535396334615f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 11:12:37', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(6, 'ISEC', 'mahasiswa', 0, 'Lomba', '12:10:00', '14:08:00', '2025-10-01', '2025-10-03', '2025-09-30', '2025-10-04', 0x75706c6f6164732f72756e646f776e2f363863323539376337363962665f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323539376337366637385f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 12:09:16', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(7, 'Thormatics', 'mahasiswa', 0, 'Tutoring', '10:00:00', '13:00:00', '2025-12-10', '2025-12-12', '2025-12-08', '2025-12-14', 0x75706c6f6164732f72756e646f776e2f363863326165633038316266655f36313832313031303339202d204b6567696174616e20322e706466, 0x75706c6f6164732f70726f706f73616c2f363863326165633038323365645f5475676173204d696e676775206b652d312e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 18:13:04', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(8, 'ISEC', 'mahasiswa', 0, 'Lomba', '10:23:00', '11:23:00', '2025-09-12', '2025-09-14', '2025-09-11', '2025-09-15', 0x75706c6f6164732f72756e646f776e2f363863333834393264373130665f524b54412e706466, 0x75706c6f6164732f70726f706f73616c2f363863333834393264383266655f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 18:50:21', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(9, 'ISECS', 'mahasiswa', 0, 'Lomba', '10:46:00', '20:46:00', '2025-09-22', '2025-09-23', '2025-09-20', '2025-09-24', 0x75706c6f6164732f72756e646f776e2f363863383138653535353836635f524b54412e706466, 0x75706c6f6164732f70726f706f73616c2f363863383138653535356139645f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-15 20:47:17', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(10, 'Thormatics', 'mahasiswa', 0, 'Seminar', '10:29:00', '14:29:00', '2025-09-18', '2025-09-18', '2025-09-17', '2025-09-19', 0x75706c6f6164732f72756e646f776e2f363863623763386430663139315f524b54415f417564726963417572656c6975734a61776972796164696e6174615f36313832313031303339202d2072657631363932352e706466, 0x75706c6f6164732f70726f706f73616c2f363863623763386430663339335f6761727564613436313338312e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 10:55:28', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(11, 'Science Fest', 'mahasiswa', 0, 'Pameran', '15:34:00', '17:34:00', '2025-09-18', '2025-09-18', '2025-09-17', '2025-09-19', 0x75706c6f6164732f72756e646f776e2f363863623764656333346366655f42494c4c494e475f434f44455f313735383039303936392e706466, 0x75706c6f6164732f70726f706f73616c2f363863623764656333346636375f4441465441522048415247412050415243454c20323032352e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 10:35:08', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(12, 'Testing', 'mahasiswa', 0, 'Lomba', '08:54:00', '18:54:00', '2025-10-20', '2025-10-21', '2025-10-19', '2025-10-22', 0x75706c6f6164732f72756e646f776e2f363863626633333137336235655f4441465441522048415247412050415243454c20323032352e706466, 0x75706c6f6164732f70726f706f73616c2f363863626633333137336662645f4441465441522048415247412050415243454c20323032352e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 18:55:29', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(13, 'Testing', 'mahasiswa', 0, 'Lomba', '08:54:00', '18:54:00', '2025-10-20', '2025-10-21', '2025-10-19', '2025-10-22', 0x75706c6f6164732f72756e646f776e2f363863626634303831336161665f4441465441522048415247412050415243454c20323032352e706466, 0x75706c6f6164732f70726f706f73616c2f363863626634303831336430315f4441465441522048415247412050415243454c20323032352e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 20:30:09', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(14, 'SIAP IF', 'mahasiswa', 0, 'SIAP', '13:55:00', '10:55:00', '2025-09-21', '2025-09-22', '2025-09-20', '2025-09-23', 0x75706c6f6164732f72756e646f776e2f363863636238343765663239355f42494c4c494e475f434f44455f313735383039303936392e706466, 0x75706c6f6164732f70726f706f73616c2f363863636238343765663466355f4441465441522048415247412050415243454c20323032352e706466, 'Ditolak', '2025-10-04 00:32:43', '2025-09-19 08:56:23', 'Belum memenuhi persyaratan', NULL, 'Ditolak', '2025-10-04 00:32:43', 'Belum memenuhi persyaratan', NULL, 'Ditolak', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(15, 'Science Fest', 'mahasiswa', 0, 'SIAP', '10:08:00', '11:08:00', '2025-09-19', '2025-09-20', '2025-09-18', '2025-09-21', 0x75706c6f6164732f72756e646f776e2f363863636339636234386630365f42494c4c494e475f434f44455f313735383039303936392e706466, 0x75706c6f6164732f70726f706f73616c2f363863636339636234393931655f4441465441522048415247412050415243454c20323032352e706466, 'Ditolak', '2025-10-04 00:32:43', '2025-09-19 10:11:07', 'KURANG LENGKAP', NULL, 'Ditolak', '2025-10-04 00:32:43', 'KURANG LENGKAP', NULL, 'Ditolak', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(16, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '10:14:00', '16:14:00', '2025-09-25', '2025-09-25', '2025-09-24', '2025-09-26', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-09-19 10:14:38', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(17, 'Seminar Pagi Tentang Teknologi Blockchain', 'mahasiswa', 0, 'Seminar', '08:00:00', '10:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(18, 'Workshop Desain Grafis untuk Pemula', 'mahasiswa', 0, 'Workshop', '10:00:00', '12:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(19, 'Talkshow Inspiratif Bersama Alumni', 'mahasiswa', 0, 'Talkshow', '13:00:00', '15:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Ditolak', '2025-10-28 02:48:20', '2025-10-04 00:36:35', '', NULL, 'Disetujui', '2025-10-27 09:56:41', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(20, 'Lomba Cepat Tepat Cerdas Cermat', 'mahasiswa', 0, 'Lomba', '15:00:00', '17:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Ditolak', '2025-10-28 02:34:34', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(21, 'Pentas Seni Malam Apresiasi Budaya', 'mahasiswa', 0, 'Pentas Seni', '19:00:00', '21:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Ditolak', '2025-10-28 02:34:27', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(22, 'Science Fest', 'mahasiswa', 0, 'Workshop', '10:07:00', '12:07:00', '2025-10-29', '2025-10-30', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303137343931626565315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303137343931633462335f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 08:07:21', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(23, 'Natal Unpar', 'ditmawa', 1, 'Institusional', '10:27:00', '11:27:00', '2025-10-29', '2025-10-30', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-28 08:27:59', '2025-10-28 08:27:59', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(24, 'ISECS', 'mahasiswa', 0, 'Lomba Game', '09:05:00', '10:05:00', '2025-10-29', '2025-10-30', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303234656338316462315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303234656338323266615f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 09:05:32', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(25, 'Testing', 'mahasiswa', 0, 'Seminar', '09:06:00', '10:06:00', '2025-10-21', '2025-10-22', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303235323563313439315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303235323563323031665f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 09:06:29', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(26, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '10:09:00', '11:09:00', '2025-10-29', '2025-10-30', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-28 09:09:41', '2025-10-28 09:09:41', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(27, 'SIAP IF', 'mahasiswa', 0, 'Pameran', '16:00:00', '14:00:00', '2025-11-05', '2025-11-07', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930386564613838356636345f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930386564613838363633375f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-11-04 01:00:08', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(28, 'Testing', 'mahasiswa', 0, 'Workshop', '12:00:00', '14:00:00', '2025-11-08', '2025-11-09', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930643633656331313635355f5f50656d6f64656c616e204d6174656d6174696b61202d20363138323130313033392e706466, 0x75706c6f6164732f70726f706f73616c2f363930643633656331313937615f5f50656d6f64656c616e204d6174656d6174696b61202d20363138323130313033392e706466, 'Diajukan', NULL, '2025-11-07 10:13:48', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL),
-(29, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '12:00:00', '13:00:00', '2025-11-16', '2025-11-16', NULL, NULL, NULL, NULL, 'Disetujui', '2025-11-07 10:18:06', '2025-11-07 10:18:06', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, NULL);
+INSERT INTO `pengajuan_event` (`pengajuan_id`, `pengajuan_namaEvent`, `pengaju_tipe`, `pengaju_id`, `pengajuan_TypeKegiatan`, `pengajuan_event_jam_mulai`, `pengajuan_event_jam_selesai`, `pengajuan_event_tanggal_mulai`, `pengajuan_event_tanggal_selesai`, `tanggal_persiapan`, `tanggal_beres`, `jadwal_event_rundown_file`, `pengajuan_event_proposal_file`, `pengajuan_status_ditmawa`, `tanggal_approve_ditmawa`, `pengajuan_tanggalEdit`, `komentar_ditmawa`, `approver_ditmawa_id`, `pengajuan_status_asp`, `pengajuan_tanggalApprove_asp`, `komentar_asp`, `approver_asp_id`, `pengajuan_status_proposal`, `pengajuan_LPJ`, `pengajuan_statusLPJ`, `pengajuan_komentarLPJ`, `pengajuan_status_pembatalan`, `surat_pembatalan_file`, `komentar_ditmawa_pembatalan`, `tanggal_pembatalan_disetujui`, `surat_izin_kegiatan_file`, `tanggal_terbit_surat_izin`, `penerbit_surat_izin_id`) VALUES
+(1, 'Seminar AI Masa Depan', 'mahasiswa', 0, 'Seminar', '09:00:00', '12:00:00', '2025-08-20', '2025-08-20', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(2, 'Workshop Fotografi Dasar', 'mahasiswa', 0, 'Workshop', '13:00:00', '16:00:00', '2025-09-10', '2025-09-10', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(3, 'Lomba Catur Antar Jurusan', 'mahasiswa', 0, 'Lomba', '08:00:00', '17:00:00', '2025-07-01', '2025-07-02', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 10:06:24', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, '', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(4, 'ISEC', 'mahasiswa', 0, 'Seminar/Workshop', '16:25:00', '18:25:00', '2025-09-01', '2025-09-02', NULL, NULL, '', '', 'Disetujui', '2025-10-04 00:32:43', '2025-06-12 11:20:39', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', 0x75706c6f6164732f6c706a2f6c706a5f36383463313134343534336637322e38303332393736342e646f6378, 'Ditolak', 'ga sesuai', 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(5, 'Science Fest', 'mahasiswa', 0, 'Lomba', '11:12:00', '16:12:00', '2025-09-18', '2025-09-20', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363863323463333535393735395f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323463333535396334615f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 11:12:37', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(6, 'ISEC', 'mahasiswa', 0, 'Lomba', '12:10:00', '14:08:00', '2025-10-01', '2025-10-03', '2025-09-30', '2025-10-04', 0x75706c6f6164732f72756e646f776e2f363863323539376337363962665f36313832313031303339202d204b6567696174616e20312e706466, 0x75706c6f6164732f70726f706f73616c2f363863323539376337366637385f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 12:09:16', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(7, 'Thormatics', 'mahasiswa', 0, 'Tutoring', '10:00:00', '13:00:00', '2025-12-10', '2025-12-12', '2025-12-08', '2025-12-14', 0x75706c6f6164732f72756e646f776e2f363863326165633038316266655f36313832313031303339202d204b6567696174616e20322e706466, 0x75706c6f6164732f70726f706f73616c2f363863326165633038323365645f5475676173204d696e676775206b652d312e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-11 18:13:04', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(8, 'ISEC', 'mahasiswa', 0, 'Lomba', '10:23:00', '11:23:00', '2025-09-12', '2025-09-14', '2025-09-11', '2025-09-15', 0x75706c6f6164732f72756e646f776e2f363863333834393264373130665f524b54412e706466, 0x75706c6f6164732f70726f706f73616c2f363863333834393264383266655f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 18:50:21', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(9, 'ISECS', 'mahasiswa', 0, 'Lomba', '10:46:00', '20:46:00', '2025-09-22', '2025-09-23', '2025-09-20', '2025-09-24', 0x75706c6f6164732f72756e646f776e2f363863383138653535353836635f524b54412e706466, 0x75706c6f6164732f70726f706f73616c2f363863383138653535356139645f5450532026204d495320363138323130313033392e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-15 20:47:17', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(10, 'Thormatics', 'mahasiswa', 0, 'Seminar', '10:29:00', '14:29:00', '2025-09-18', '2025-09-18', '2025-09-17', '2025-09-19', 0x75706c6f6164732f72756e646f776e2f363863623763386430663139315f524b54415f417564726963417572656c6975734a61776972796164696e6174615f36313832313031303339202d2072657631363932352e706466, 0x75706c6f6164732f70726f706f73616c2f363863623763386430663339335f6761727564613436313338312e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 10:55:28', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(11, 'Science Fest', 'mahasiswa', 0, 'Pameran', '15:34:00', '17:34:00', '2025-09-18', '2025-09-18', '2025-09-17', '2025-09-19', 0x75706c6f6164732f72756e646f776e2f363863623764656333346366655f42494c4c494e475f434f44455f313735383039303936392e706466, 0x75706c6f6164732f70726f706f73616c2f363863623764656333346636375f4441465441522048415247412050415243454c20323032352e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 10:35:08', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(12, 'Testing', 'mahasiswa', 0, 'Lomba', '08:54:00', '18:54:00', '2025-10-20', '2025-10-21', '2025-10-19', '2025-10-22', 0x75706c6f6164732f72756e646f776e2f363863626633333137336235655f4441465441522048415247412050415243454c20323032352e706466, 0x75706c6f6164732f70726f706f73616c2f363863626633333137336662645f4441465441522048415247412050415243454c20323032352e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 18:55:29', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(13, 'Testing', 'mahasiswa', 0, 'Lomba', '08:54:00', '18:54:00', '2025-10-20', '2025-10-21', '2025-10-19', '2025-10-22', 0x75706c6f6164732f72756e646f776e2f363863626634303831336161665f4441465441522048415247412050415243454c20323032352e706466, 0x75706c6f6164732f70726f706f73616c2f363863626634303831336430315f4441465441522048415247412050415243454c20323032352e706466, 'Disetujui', '2025-10-04 00:32:43', '2025-09-18 20:30:09', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(14, 'SIAP IF', 'mahasiswa', 0, 'SIAP', '13:55:00', '10:55:00', '2025-09-21', '2025-09-22', '2025-09-20', '2025-09-23', 0x75706c6f6164732f72756e646f776e2f363863636238343765663239355f42494c4c494e475f434f44455f313735383039303936392e706466, 0x75706c6f6164732f70726f706f73616c2f363863636238343765663466355f4441465441522048415247412050415243454c20323032352e706466, 'Ditolak', '2025-10-04 00:32:43', '2025-09-19 08:56:23', 'Belum memenuhi persyaratan', NULL, 'Ditolak', '2025-10-04 00:32:43', 'Belum memenuhi persyaratan', NULL, 'Ditolak', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(15, 'Science Fest', 'mahasiswa', 0, 'SIAP', '10:08:00', '11:08:00', '2025-09-19', '2025-09-20', '2025-09-18', '2025-09-21', 0x75706c6f6164732f72756e646f776e2f363863636339636234386630365f42494c4c494e475f434f44455f313735383039303936392e706466, 0x75706c6f6164732f70726f706f73616c2f363863636339636234393931655f4441465441522048415247412050415243454c20323032352e706466, 'Ditolak', '2025-10-04 00:32:43', '2025-09-19 10:11:07', 'KURANG LENGKAP', NULL, 'Ditolak', '2025-10-04 00:32:43', 'KURANG LENGKAP', NULL, 'Ditolak', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(16, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '10:14:00', '16:14:00', '2025-09-25', '2025-09-25', '2025-09-24', '2025-09-26', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', '2025-09-19 10:14:38', NULL, NULL, 'Disetujui', '2025-10-04 00:32:43', NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(17, 'Seminar Pagi Tentang Teknologi Blockchain', 'mahasiswa', 0, 'Seminar', '08:00:00', '10:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(18, 'Workshop Desain Grafis untuk Pemula', 'mahasiswa', 0, 'Workshop', '10:00:00', '12:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-11-21 10:12:11', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Diajukan', 'uploads/pembatalan/691fd88ba8c44_Pembatalan Event - Workshop Desain Grafis untuk Pemula.docx', NULL, NULL, NULL, NULL, NULL),
+(19, 'Talkshow Inspiratif Bersama Alumni', 'mahasiswa', 0, 'Talkshow', '13:00:00', '15:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Ditolak', '2025-10-28 02:48:20', '2025-10-04 00:36:35', '', NULL, 'Disetujui', '2025-10-27 09:56:41', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(20, 'Lomba Cepat Tepat Cerdas Cermat', 'mahasiswa', 0, 'Lomba', '15:00:00', '17:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Ditolak', '2025-10-28 02:34:34', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(21, 'Pentas Seni Malam Apresiasi Budaya', 'mahasiswa', 0, 'Pentas Seni', '19:00:00', '21:00:00', '2025-10-15', '2025-10-15', NULL, NULL, NULL, NULL, 'Disetujui', NULL, '2025-10-04 00:36:35', NULL, NULL, 'Ditolak', '2025-10-28 02:34:27', '', NULL, 'Disetujui', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(22, 'Science Fest', 'mahasiswa', 0, 'Workshop', '10:07:00', '12:07:00', '2025-10-29', '2025-10-30', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303137343931626565315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303137343931633462335f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 08:07:21', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(23, 'Natal Unpar', 'ditmawa', 1, 'Institusional', '10:27:00', '11:27:00', '2025-10-29', '2025-10-30', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-28 08:27:59', '2025-10-28 08:27:59', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(24, 'ISECS', 'mahasiswa', 0, 'Lomba Game', '09:05:00', '10:05:00', '2025-10-29', '2025-10-30', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303234656338316462315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303234656338323266615f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 09:05:32', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(25, 'Testing', 'mahasiswa', 0, 'Seminar', '09:06:00', '10:06:00', '2025-10-21', '2025-10-22', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930303235323563313439315f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930303235323563323031665f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-10-28 09:06:29', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(26, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '10:09:00', '11:09:00', '2025-10-29', '2025-10-30', NULL, NULL, NULL, NULL, 'Disetujui', '2025-10-28 09:09:41', '2025-10-28 09:09:41', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(27, 'SIAP IF', 'mahasiswa', 0, 'Pameran', '16:00:00', '14:00:00', '2025-11-05', '2025-11-07', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930386564613838356636345f5050545f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 0x75706c6f6164732f70726f706f73616c2f363930386564613838363633375f446f6b54656b6e69735f50656e67656c6f6c61616e204576656e74204b616d7075732e706466, 'Diajukan', NULL, '2025-11-04 01:00:08', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(28, 'Testing', 'mahasiswa', 0, 'Workshop', '12:00:00', '14:00:00', '2025-11-08', '2025-11-09', NULL, NULL, 0x75706c6f6164732f72756e646f776e2f363930643633656331313635355f5f50656d6f64656c616e204d6174656d6174696b61202d20363138323130313033392e706466, 0x75706c6f6164732f70726f706f73616c2f363930643633656331313937615f5f50656d6f64656c616e204d6174656d6174696b61202d20363138323130313033392e706466, 'Diajukan', NULL, '2025-11-07 10:13:48', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL),
+(29, 'Dies Natalis', 'ditmawa', 1, 'Institusional', '12:00:00', '13:00:00', '2025-11-16', '2025-11-16', NULL, NULL, NULL, NULL, 'Disetujui', '2025-11-07 10:18:06', '2025-11-07 10:18:06', NULL, NULL, 'Diajukan', NULL, NULL, NULL, 'Diajukan', NULL, 'Menunggu Persetujuan', NULL, 'Tidak Ada', NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -731,7 +737,7 @@ ALTER TABLE `mahasiswa`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `organisasi`
