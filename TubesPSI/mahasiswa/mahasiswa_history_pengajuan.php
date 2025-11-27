@@ -10,17 +10,78 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'mahasiswa') {
 $nama = $_SESSION['nama'] ?? 'User';
 $user_id = $_SESSION['user_id'] ?? 'No ID';
 
-// [MODIFIKASI] Mengambil parameter filter
+// Handle file upload
+$upload_dir = '../uploads/pembatalan/';
+if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'ajukan_pembatalan') {
+    $pengajuan_id = $_POST['pengajuan_id'];
+    $file_pembatalan = $_FILES['surat_pembatalan'];
+    $error_upload = '';
+
+    if ($file_pembatalan['error'] === UPLOAD_ERR_OK) {
+        $file_name = uniqid() . '_' . basename($file_pembatalan['name']);
+        $target_file = $upload_dir . $file_name;
+        $file_type = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+
+        // Validasi tipe file
+        if ($file_type != "pdf" && $file_type != "docx") {
+            $_SESSION['error_message'] = "Hanya file PDF dan DOCX yang diizinkan untuk Surat Pembatalan.";
+        } else {
+            if (move_uploaded_file($file_pembatalan['tmp_name'], $target_file)) {
+                $file_path_db = substr($target_file, 3); // Simpan path relatif ke DB
+
+                $conn->begin_transaction();
+                try {
+                    // Reset komentar pembatalan jika ada pengajuan baru
+                    $stmt_update = $conn->prepare("UPDATE pengajuan_event SET pengajuan_status_pembatalan = 'Diajukan', surat_pembatalan_file = ?, komentar_ditmawa_pembatalan = NULL, pengajuan_tanggalEdit = NOW() WHERE pengajuan_id = ? AND pengaju_id = ?");
+                    if (!$stmt_update) throw new Exception("Prepare statement update gagal: " . $conn->error);
+                    $stmt_update->bind_param("sii", $file_path_db, $pengajuan_id, $user_id);
+                    $stmt_update->execute();
+                    $stmt_update->close();
+
+                    // Notifikasi ke Ditmawa
+                    $ditmawa_id_notif = 1; 
+                    $message = "Pengajuan Pembatalan Event #{$pengajuan_id} telah diajukan.";
+                    $link = "ditmawa/ditmawa_editForm.php?id=" . $pengajuan_id; 
+
+                    $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, message, link, is_read, created_at) VALUES (?, ?, ?, 0, NOW())");
+                    if (!$notif_stmt) throw new Exception("Prepare statement notif gagal: " . $conn->error);
+                    $notif_stmt->bind_param("iss", $ditmawa_id_notif, $message, $link); 
+                    $notif_stmt->execute();
+                    $notif_stmt->close();
+                    
+                    $conn->commit();
+                    $_SESSION['success_message'] = "Pengajuan pembatalan berhasil diunggah dan sedang menunggu persetujuan Ditmawa.";
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    if (isset($target_file) && file_exists($target_file)) {
+                        unlink($target_file); 
+                    }
+                    $_SESSION['error_message'] = "Gagal memproses pengajuan: " . $e->getMessage();
+                }
+            } else {
+                $_SESSION['error_message'] = "Gagal mengunggah file surat pembatalan.";
+            }
+        }
+    } elseif ($file_pembatalan['error'] !== UPLOAD_ERR_NO_FILE) {
+         $_SESSION['error_message'] = "Terjadi error upload: Code " . $file_pembatalan['error'];
+    } else {
+        $_SESSION['error_message'] = "Anda harus mengunggah file surat pembatalan.";
+    }
+    header("Location: mahasiswa_history_pengajuan.php");
+    exit();
+}
+
+
 $search_event = $_GET['search_event'] ?? '';
 $selected_status_proposal = $_GET['status_proposal'] ?? '';
 
-// [BARU] Variabel Paginasi
-$limit = 10; // Mengurangi jadi 10 agar lebih rapi
+$limit = 10; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $page = max(1, $page);
 $offset = ($page - 1) * $limit;
 
-// [BARU] Membangun query string untuk paginasi (mempertahankan filter)
 $pagination_query_params = $_GET;
 unset($pagination_query_params['page']);
 $pagination_query_string = http_build_query($pagination_query_params);
@@ -34,7 +95,6 @@ $total_rows = 0;
 $total_pages = 0;
 
 if ($user_id !== 'No ID') {
-    // [MODIFIKASI] Membangun kondisi WHERE dinamis
     $conditions = ["pe.pengaju_id = ? AND pe.pengaju_tipe = 'mahasiswa'"];
     $params = [$user_id];
     $types = "i";
@@ -48,18 +108,19 @@ if ($user_id !== 'No ID') {
 
     if (!empty($selected_status_proposal)) {
         if ($selected_status_proposal === 'Ditolak') {
-            $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak')";
+            $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak' OR pe.pengajuan_status_pembatalan = 'Disetujui')";
         } elseif ($selected_status_proposal === 'Disetujui') {
-            $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui')";
+            $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui' AND pe.pengajuan_status_pembatalan <> 'Disetujui' AND pe.pengajuan_status_pembatalan <> 'Diajukan')";
         } elseif ($selected_status_proposal === 'Diajukan') {
-            $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan')";
+            $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan' AND pe.pengajuan_status_pembatalan <> 'Disetujui')";
+        } elseif ($selected_status_proposal === 'Pembatalan Diajukan') {
+            $conditions[] = "(pe.pengajuan_status_pembatalan = 'Diajukan')";
         }
     }
     
     $where_clause = " WHERE " . implode(' AND ', $conditions);
 
     try {
-        // [MODIFIKASI] Query COUNT dengan filter
         $count_sql = "SELECT COUNT(pe.pengajuan_id) as total FROM pengajuan_event pe" . $where_clause;
         $count_stmt = $conn->prepare($count_sql);
         $count_stmt->bind_param($types, ...$params);
@@ -71,7 +132,6 @@ if ($user_id !== 'No ID') {
         }
         $count_stmt->close();
 
-        // [MODIFIKASI] Query SELECT utama dengan filter dan SIK
         $stmt = $conn->prepare("
             SELECT
                 pe.pengajuan_id,
@@ -81,11 +141,15 @@ if ($user_id !== 'No ID') {
                 pe.komentar_ditmawa,
                 pe.pengajuan_status_asp,
                 pe.komentar_asp,
-                pe.surat_izin_kegiatan_file, -- <--- DITAMBAHKAN
+                pe.surat_izin_kegiatan_file, 
+                pe.pengajuan_status_pembatalan,
+                pe.komentar_ditmawa_pembatalan,
                 
                 CASE 
                     WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
                     THEN 'Ditolak' 
+                    WHEN pe.pengajuan_status_pembatalan = 'Disetujui'
+                    THEN 'Dibatalkan'
                     ELSE pe.pengajuan_status_proposal 
                 END AS pengajuan_status_proposal,
                 
@@ -96,7 +160,6 @@ if ($user_id !== 'No ID') {
             LIMIT ? OFFSET ?
         ");
         
-        // Menambahkan LIMIT dan OFFSET ke parameter
         $params[] = $limit;
         $params[] = $offset;
         $types .= "ii";
@@ -113,6 +176,11 @@ if ($user_id !== 'No ID') {
     }
 }
 $conn->close();
+
+$success_message = $_SESSION['success_message'] ?? '';
+$error_message = $_SESSION['error_message'] ?? '';
+unset($_SESSION['success_message'], $_SESSION['error_message']);
+
 ?>
 
 <!DOCTYPE html>
@@ -158,15 +226,14 @@ $conn->close();
         .navbar-title { color:white; font-size: 14px; line-height: 1.2; }
         .navbar-menu { display: flex; list-style: none; gap: 25px; }
         .navbar-menu li a { text-decoration: none; color:white; font-weight: 500; }
-        .navbar-menu li a.active, .navbar-menu li a:hover { color: #87CEEB; } /* Light blue hover */
+        .navbar-menu li a.active, .navbar-menu li a:hover { color: #87CEEB; } 
         .navbar-right { display: flex; align-items: center; gap: 15px; color:white; }
         .icon { font-size: 20px; cursor: pointer; }
         
-        /* [MODIFIKASI] Container diperlebar */
         .container { 
-            max-width: 1200px; 
+            max-width: 1300px; /* Lebarkan container agar kolom baru muat */
             margin: 20px auto 30px; 
-            background: rgba(255, 255, 255, 0.98); /* Lebih solid */
+            background: rgba(255, 255, 255, 0.98); 
             backdrop-filter: blur(5px); 
             border-radius: 15px; 
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
@@ -176,7 +243,21 @@ $conn->close();
         .header h1 { font-size: 24px; }
         .kembali-button { background-color: #6c757d; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; }
         
-        /* [BARU] CSS Untuk Filter Form */
+        /* [BARU] CSS untuk Peringatan Pembatalan */
+        .cancellation-info {
+            background-color: #f0f8ff; /* Light Blue BG */
+            border-left: 5px solid #007bff;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        .cancellation-info strong {
+            color: #007bff;
+        }
+
+
         .filter-form { 
             display: flex; 
             flex-wrap: wrap; 
@@ -215,8 +296,11 @@ $conn->close();
         .status-badge.disetujui { background-color: var(--success-color); }
         .status-badge.ditolak { background-color: var(--danger-color); }
         .status-badge.diajukan { background-color: var(--warning-color); color: #333; }
-        
-        /* [MODIFIKASI] CSS Tombol Aksi */
+        .status-badge.dibatalkan { background-color: #000; } 
+        .status-badge.diajukan_batal { background-color: #ff5722; } 
+        .status-badge.tidak_ada { background-color: var(--grey-color); }
+
+        /* Aksi buttons */
         .btn-action { 
             color: white; 
             padding: 8px 15px; 
@@ -237,6 +321,9 @@ $conn->close();
         .btn-detail:hover { background-color: #138496; }
         .btn-download-sik { background-color: var(--success-color); }
         .btn-download-sik:hover { background-color: #218838; }
+        .btn-batal { background-color: var(--danger-color); } 
+        .btn-batal:hover { background-color: #a71d2a; }
+
         .action-disabled { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 5px; background-color: var(--grey-color); color: white; font-size: 14px; font-weight: 500; cursor: not-allowed; }
         
         .alasan-ditolak { font-size: 13px; color: #dc3545; margin-top: 5px; font-style: italic; max-width: 250px; }
@@ -260,6 +347,103 @@ $conn->close();
         .page-link:hover { background-color: var(--primary-light); border-color: var(--primary-border); }
         .page-link.active { background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
         .page-link.disabled { color: var(--text-light); pointer-events: none; background-color: var(--bg-light); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal-content { 
+            background-color: var(--white); 
+            margin: 10% auto; 
+            padding: 0; 
+            border: none;
+            width: 90%; 
+            max-width: 600px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            animation: fadeIn 0.3s;
+            overflow: hidden;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header-custom {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header-custom h2 {
+            margin: 0;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+        }
+        .modal-header-custom i {
+            margin-right: 10px;
+        }
+        .close-btn { 
+            color: white; 
+            float: right; 
+            font-size: 30px; 
+            font-weight: normal;
+            transition: color 0.3s;
+        }
+        .close-btn:hover, .close-btn:focus { 
+            color: #ccc; 
+            text-decoration: none; 
+            cursor: pointer; 
+        }
+
+        .modal-body-custom {
+            padding: 30px;
+        }
+
+        .modal-step {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+            background-color: #fffaf7; 
+        }
+        .modal-step h3 {
+            font-size: 16px;
+            color: var(--text-dark);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .modal-step .step-number {
+            display: inline-block;
+            background-color: var(--danger-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 24px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .modal-body-custom input[type="file"] { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px;
+            background-color: var(--white);
+            cursor: pointer;
+        }
+        .modal-footer { 
+            padding: 20px 30px;
+            border-top: 1px solid var(--border-color);
+            display: flex; 
+            justify-content: flex-end;
+            gap: 10px;
+            background-color: var(--bg-light);
+        }
     </style>
 </head>
 <body>
@@ -295,13 +479,31 @@ $conn->close();
             <a href="mahasiswa_history.php" class="kembali-button"><i class="fas fa-arrow-left"></i> Kembali</a>
         </div>
 
+        <?php if ($success_message): ?>
+            <div style="padding: 15px; background-color: var(--success-color); color: white; border-radius: 8px; margin-bottom: 20px; text-align: center;"><?php echo htmlspecialchars($success_message); ?></div>
+        <?php endif; ?>
+        <?php if ($error_message): ?>
+            <div style="padding: 15px; background-color: var(--danger-color); color: white; border-radius: 8px; margin-bottom: 20px; text-align: center;"><?php echo htmlspecialchars($error_message); ?></div>
+        <?php endif; ?>
+
+        <div class="cancellation-info">
+            <p>
+                <i class="fas fa-info-circle"></i> <strong>Informasi Pembatalan Event:</strong>
+            </p>
+            <ul>
+                <li>Pengajuan pembatalan hanya dapat dilakukan untuk event yang **SUDAH DISEUJUI oleh minimal satu pihak (Ditmawa ATAU ASP)**.</li>
+                <li>Jika event masih berstatus **'Diajukan'** (Belum ada persetujuan Ditmawa atau ASP), Anda dapat langsung melakukan perubahan/pembatalan dengan **mengedit ulang** pengajuan melalui tombol 'Detail' atau 'Edit Ulang' di kolom Aksi.</li>
+                <li>Permohonan pembatalan harus didasari alasan yang **urgen/mendesak** dan memerlukan persetujuan dari Direktorat Kemahasiswaan (Ditmawa).</li>
+            </ul>
+        </div>
         <form method="GET" class="filter-form">
             <label for="status_proposal">Status Proposal:</label>
             <select name="status_proposal" id="status_proposal">
                 <option value="">Semua Status</option>
                 <option value="Diajukan" <?php echo ($selected_status_proposal == 'Diajukan' ? 'selected' : ''); ?>>Diajukan</option>
                 <option value="Disetujui" <?php echo ($selected_status_proposal == 'Disetujui' ? 'selected' : ''); ?>>Disetujui</option>
-                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak</option>
+                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak / Dibatalkan</option>
+                <option value="Pembatalan Diajukan" <?php echo ($selected_status_proposal == 'Pembatalan Diajukan' ? 'selected' : ''); ?>>Pembatalan Diajukan</option>
             </select>
             
             <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
@@ -317,7 +519,7 @@ $conn->close();
                         <th>TANGGAL & NAMA EVENT</th>
                         <th>STATUS DITMAWA</th>
                         <th>STATUS ASP</th>
-                        <th>STATUS PROPOSAL</th>
+                        <th>STATUS BATAL</th> <th>STATUS PROPOSAL</th>
                         <th>LAST MODIFIED</th>
                         <th>ACTION</th>
                     </tr>
@@ -350,11 +552,43 @@ $conn->close();
                                         </div>
                                     <?php endif; ?>
                                 </td>
+                                
+                                <td>
+                                    <?php 
+                                        $batal_status = $event['pengajuan_status_pembatalan'];
+                                        $batal_class = strtolower(str_replace(' ', '_', $batal_status));
+                                        
+                                        if ($batal_status == 'Diajukan') {
+                                            echo '<span class="status-badge diajukan_batal">Diajukan</span>';
+                                        } elseif ($batal_status == 'Disetujui') {
+                                            echo '<span class="status-badge dibatalkan">Disetujui</span>';
+                                        } elseif ($batal_status == 'Ditolak') {
+                                            echo '<span class="status-badge ditolak">Ditolak</span>';
+                                            if (!empty($event['komentar_ditmawa_pembatalan'])): 
+                                        ?>
+                                            <div class="alasan-ditolak" style="font-size: 11px;">
+                                                (Alasan Batal Ditolak)
+                                            </div>
+                                        <?php endif;
+                                        } else {
+                                            echo '<span class="status-badge tidak_ada">N/A</span>';
+                                        }
+                                    ?>
+                                </td>
+
                                 <td>
                                     <span class="status-badge <?php echo strtolower(htmlspecialchars($event['pengajuan_status_proposal'])); ?>">
-                                        <?php echo htmlspecialchars($event['pengajuan_status_proposal']); ?>
+                                        <?php 
+                                            // Status Final (Dibatalkan atau Ditolak)
+                                            if ($event['pengajuan_status_pembatalan'] == 'Disetujui') {
+                                                echo 'Dibatalkan';
+                                            } else {
+                                                echo htmlspecialchars($event['pengajuan_status_proposal']);
+                                            }
+                                        ?>
                                     </span>
                                 </td>
+
                                 <td>
                                     <?php if (!empty($event['pengajuan_tanggalEdit'])): ?>
                                         <div class="modified-info">
@@ -365,21 +599,43 @@ $conn->close();
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($event['pengajuan_status_proposal'] == 'Disetujui'): ?>
-                                        <?php if (!empty($event['surat_izin_kegiatan_file'])): ?>
-                                            <a href="../<?php echo htmlspecialchars($event['surat_izin_kegiatan_file']); ?>" class="btn-action btn-download-sik" download>
-                                                <i class="fas fa-file-download"></i> Unduh SIK
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="action-disabled" title="Event Disetujui, menunggu SIK diterbitkan oleh Sekretariat.">
-                                                <i class="fas fa-hourglass-half"></i> Menunggu SIK
-                                            </span>
-                                        <?php endif; ?>
-                                    <?php elseif ($event['pengajuan_status_proposal'] == 'Ditolak'): ?>
-                                        <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?><?php echo $pagination_query_string; ?>" class="btn-action btn-edit">
-                                            <i class="fas fa-edit"></i> Edit
+                                    <?php 
+                                        // --- LOGIKA UTAMA: Kondisi untuk menampilkan Tombol Batalkan atau Edit Ulang ---
+                                        $is_fully_approved_proposal = ($event['pengajuan_status_ditmawa'] == 'Disetujui' && $event['pengajuan_status_asp'] == 'Disetujui' && $event['pengajuan_status_proposal'] == 'Disetujui');
+                                        $is_approved_by_at_least_one = ($event['pengajuan_status_ditmawa'] == 'Disetujui' || $event['pengajuan_status_asp'] == 'Disetujui');
+                                        
+                                        if ($is_approved_by_at_least_one && $event['pengajuan_status_pembatalan'] === 'Tidak Ada'): 
+                                    ?>
+                                        <button class="btn-action btn-batal" onclick="openCancelModal(<?php echo $event['pengajuan_id']; ?>, '<?php echo htmlspecialchars($event['pengajuan_namaEvent']); ?>')">
+                                            <i class="fas fa-times-circle"></i> Batalkan
+                                        </button>
+
+                                        <?php 
+                                            // Tombol SIK (Download atau Menunggu) HANYA jika proposal sudah disetujui penuh
+                                            if ($is_fully_approved_proposal):
+                                                if (!empty($event['surat_izin_kegiatan_file'])): ?>
+                                                    <a href="../<?php echo htmlspecialchars($event['surat_izin_kegiatan_file']); ?>" class="btn-action btn-download-sik" download>
+                                                        <i class="fas fa-file-download"></i> Unduh SIK
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="action-disabled" title="Event Disetujui, menunggu SIK diterbitkan oleh Sekretariat.">
+                                                        <i class="fas fa-hourglass-half"></i> Menunggu SIK
+                                                    </span>
+                                                <?php endif; 
+                                            endif; // end is_fully_approved_proposal check for SIK
+                                        ?>
+                                    
+                                    <?php elseif ($event['pengajuan_status_pembatalan'] === 'Diajukan'): ?>
+                                         <span class="action-disabled" title="Menunggu konfirmasi pembatalan dari Ditmawa.">
+                                            <i class="fas fa-hourglass-half"></i> Pembatalan Pending
+                                        </span>
+                                        
+                                    <?php elseif ($event['pengajuan_status_proposal'] == 'Ditolak' || $event['pengajuan_status_pembatalan'] === 'Disetujui' || $event['pengajuan_status_pembatalan'] === 'Ditolak'): ?>
+                                         <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?><?php echo $pagination_query_string; ?>" class="btn-action btn-edit">
+                                            <i class="fas fa-edit"></i> Edit Ulang
                                         </a>
-                                    <?php else: // Status 'Diajukan' ?>
+                                        
+                                    <?php else: // Status 'Diajukan' Awal (Perlu di-edit jika ada revisi) ?>
                                         <a href="mahasiswa_editForm.php?id=<?php echo $event['pengajuan_id']; ?>&page=<?php echo $page; ?><?php echo $pagination_query_string; ?>" class="btn-action btn-detail">
                                             <i class="fas fa-eye"></i> Detail
                                         </a>
@@ -389,7 +645,7 @@ $conn->close();
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="no-data">Belum ada pengajuan event yang cocok dengan kriteria Anda.</td>
+                            <td colspan="7" class="no-data">Belum ada pengajuan event yang cocok dengan kriteria Anda.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -407,7 +663,7 @@ $conn->close();
                 </a>
                 
                 <?php
-                    $window = 2; // Jumlah halaman di kiri dan kanan halaman aktif
+                    $window = 2; 
                     for ($i = 1; $i <= $total_pages; $i++):
                         if ($i == 1 || $i == $total_pages || ($i >= $page - $window && $i <= $page + $window)):
                 ?>
@@ -429,6 +685,70 @@ $conn->close();
         <?php endif; ?>
         </div>
 </div>
+
+<div id="cancelModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header-custom">
+            <h2><i class="fas fa-exclamation-triangle"></i> Pengajuan Pembatalan Event</h2>
+            <span class="close-btn" onclick="closeCancelModal()">&times;</span>
+        </div>
+        
+        <form action="mahasiswa_history_pengajuan.php" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="ajukan_pembatalan">
+            <input type="hidden" name="pengajuan_id" id="modalPengajuanId">
+
+            <div class="modal-body-custom">
+                <p style="margin-bottom: 20px;">Anda akan mengajukan pembatalan untuk event: <strong><span id="eventNamaBatal"></span></strong>. Proses ini memerlukan persetujuan dari Direktorat Kemahasiswaan.</p>
+                
+                <div class="modal-step">
+                    <h3><span class="step-number">1</span> Unduh dan Isi Template Surat</h3>
+                    <p style="font-size: 14px; color: #555;">Pastikan template diisi lengkap dan ditandatangani sesuai prosedur yang berlaku.</p>
+                    <a href="#" id="downloadTemplateLink" class="btn-action btn-download-sik" style="display: block; text-align: center; margin-top: 15px; background-color: #007bff;">
+                        <i class="fas fa-file-download"></i> Unduh Template Pembatalan (.DOCX)
+                    </a>
+                </div>
+
+                <div class="modal-step">
+                    <h3><span class="step-number">2</span> Unggah Surat Pembatalan</h3>
+                    <label for="surat_pembatalan" style="font-weight: 500; display: block; margin-bottom: 5px;">Unggah File (PDF atau DOCX):</label>
+                    <input type="file" name="surat_pembatalan" id="surat_pembatalan" accept=".pdf, .docx" required>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-action" style="background-color: var(--grey-color);" onclick="closeCancelModal()">Tutup</button>
+                <button type="submit" class="btn-action btn-batal"><i class="fas fa-upload"></i> Ajukan Pembatalan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCancelModal(id, namaEvent) {
+        document.getElementById('modalPengajuanId').value = id;
+        document.getElementById('eventNamaBatal').innerText = namaEvent;
+        
+        // LOGIKA DYNAMIC DOWNLOAD LINK: Memanggil skrip baru dengan ID pengajuan
+        const downloadLink = document.getElementById('downloadTemplateLink');
+        downloadLink.href = 'download_template_pembatalan.php?id=' + id;
+        
+        document.getElementById('cancelModal').style.display = 'block';
+    }
+
+    function closeCancelModal() {
+        document.getElementById('cancelModal').style.display = 'none';
+        const fileInput = document.getElementById('surat_pembatalan');
+        if(fileInput) fileInput.value = ''; // Reset file input
+    }
+    
+    // Close the modal when the user clicks anywhere outside of the modal
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('cancelModal')) {
+            closeCancelModal();
+        }
+    }
+</script>
 
 <footer class="page-footer">
     <div class="footer-container">

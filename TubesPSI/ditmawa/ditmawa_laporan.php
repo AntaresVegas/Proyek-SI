@@ -424,7 +424,7 @@ $conn->close();
     </ul>
     <div class="navbar-right">
         <a href="ditmawa_profile.php" style="color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon"></i></a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt icon"style="color:black;"></i></a>
     </div>
 </nav>
 

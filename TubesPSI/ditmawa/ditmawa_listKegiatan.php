@@ -61,15 +61,16 @@ if (!empty($search_event)) {
 // [PERBAIKAN] Logika filter status proposal disesuaikan dengan logika TAMPILAN
 if (!empty($selected_status_proposal)) {
     if ($selected_status_proposal === 'Ditolak') {
-        // Jika filter 'Ditolak', cari semua yang statusnya Ditolak (baik oleh Ditmawa, ASP, atau Proposal itu sendiri)
-        // Ini mencerminkan logika CASE di SQL: (CASE WHEN ... = 'Ditolak' OR ... = 'Ditolak' THEN 'Ditolak' ELSE ...)
-        $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak')";
+        // [MODIFIKASI] Tambahkan status pembatalan disetujui
+        $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak' OR pe.pengajuan_status_pembatalan = 'Disetujui')";
     } elseif ($selected_status_proposal === 'Disetujui') {
-        // Jika filter 'Disetujui', Ditmawa DAN ASP tidak boleh Ditolak, DAN status proposal harus 'Disetujui'
-        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui')";
+        // [MODIFIKASI] Cek juga status pembatalan
+        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui' AND pe.pengajuan_status_pembatalan <> 'Disetujui' AND pe.pengajuan_status_pembatalan <> 'Diajukan')";
     } elseif ($selected_status_proposal === 'Diajukan') {
-        // Jika filter 'Diajukan', Ditmawa DAN ASP tidak boleh Ditolak, DAN status proposal harus 'Diajukan'
-        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan')";
+         // [MODIFIKASI] Cek juga status pembatalan
+        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan' AND pe.pengajuan_status_pembatalan <> 'Disetujui')";
+    } elseif ($selected_status_proposal === 'Pembatalan Diajukan') { // [BARU]
+        $conditions[] = "(pe.pengajuan_status_pembatalan = 'Diajukan')";
     }
 }
 
@@ -97,16 +98,19 @@ try {
             $count_stmt->close();
         }
 
-        // [DIUBAH] Query utama untuk mengambil data + LIMIT
+        // [DIUBAH] Query utama untuk mengambil data + kolom pembatalan + LIMIT
         $sql = "
             SELECT 
                 pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_event_tanggal_mulai,
                 pe.pengajuan_tanggalEdit, pe.pengajuan_status_ditmawa, pe.pengajuan_status_asp,
+                pe.pengajuan_status_pembatalan, 
                 
                 -- [PERBAIKAN] Terapkan logika status proposal secara dinamis di list
                 CASE 
                     WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
                     THEN 'Ditolak' 
+                    WHEN pe.pengajuan_status_pembatalan = 'Disetujui' 
+                    THEN 'Dibatalkan' 
                     ELSE pe.pengajuan_status_proposal 
                 END AS pengajuan_status_proposal,
                 
@@ -150,6 +154,10 @@ $conn->close();
 
 $current_year = date('Y');
 $years = range($current_year, $current_year - 5);
+
+$success_message = $_SESSION['success_message'] ?? '';
+$error_message = $_SESSION['error_message'] ?? '';
+unset($_SESSION['success_message'], $_SESSION['error_message']);
 ?>
 
 <!DOCTYPE html>
@@ -168,6 +176,9 @@ $years = range($current_year, $current_year - 5);
             --border-color: #e5e7eb;
             --white: #ffffff;
             --bg-light: #f9fafb;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
@@ -180,9 +191,9 @@ $years = range($current_year, $current_year - 5);
         .navbar-menu { list-style: none; }
         .navbar-menu li a { text-decoration: none; color:rgb(255, 255, 255); font-weight: 500; }
         .navbar-menu li a.active, .navbar-menu li a:hover { color: #007bff; }
-        .navbar-right { display: flex; align-items: center; gap: 15px; color:rgb(249, 249, 249); }
+        .navbar-right { display: flex; align-items: center; gap: 15px; font-size: 15px; color:rgb(249, 249, 249); }
         .icon { font-size: 20px; cursor: pointer; color: white; }
-        .kegiatan-container { max-width: 1200px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
+        .kegiatan-container { max-width: 1300px; margin: 40px auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 30px; }
         .kegiatan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;}
         .kegiatan-header h1 { font-size: 32px; color: #2c3e50; margin: 0; }
         .header-buttons { display: flex; gap: 10px; align-items: center; }
@@ -199,9 +210,11 @@ $years = range($current_year, $current_year - 5);
         .kegiatan-table th, .kegiatan-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; }
         .kegiatan-table th { background-color: #f2f2f2; }
         .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 12px; white-space: nowrap; }
-        .status-badge.disetujui { background-color: #28a745; }
-        .status-badge.ditolak { background-color: #dc3545; }
-        .status-badge.diajukan { background-color: #ffc107; color: #333; }
+        .status-badge.disetujui { background-color: var(--success-color); }
+        .status-badge.ditolak { background-color: var(--danger-color); }
+        .status-badge.diajukan { background-color: var(--warning-color); color: #333; }
+        .status-badge.dibatalkan { background-color: #000; } /* Status baru */
+        .status-badge.diajukan_batal { background-color: #ff5722; } /* Status baru */
         .action-buttons { display: flex; gap: 10px; align-items: center; }
         .btn { padding: 8px 15px; border-radius: 5px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; border: none; cursor: pointer; font-family: 'Segoe UI', sans-serif; font-size: 14px;}
         .btn-view { background-color: #007bff; color: white; }
@@ -283,7 +296,7 @@ $years = range($current_year, $current_year - 5);
     </ul>
     <div class="navbar-right">
         <a href="ditmawa_profile.php" style="text-decoration: none; color: inherit;"><span class="user-name"><?php echo htmlspecialchars($nama); ?></span><i class="fas fa-user-circle icon" style="margin-left: 10px;"></i></a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt icon"style="color:black;"></i></a>
     </div>
 </nav>
 
@@ -297,11 +310,11 @@ $years = range($current_year, $current_year - 5);
             </div>
         </div>
 
-        <?php if (isset($_SESSION['success_message'])): ?>
-            <div class="message success"><?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?></div>
+        <?php if ($success_message): ?>
+            <div class="message success"><?php echo htmlspecialchars($success_message); ?></div>
         <?php endif; ?>
-        <?php if (isset($_SESSION['error_message'])): ?>
-            <div class="message error"><?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?></div>
+        <?php if ($error_message): ?>
+            <div class="message error"><?php echo htmlspecialchars($error_message); ?></div>
         <?php endif; ?>
 
         <form method="GET" class="filter-form">
@@ -322,7 +335,8 @@ $years = range($current_year, $current_year - 5);
                 <option value="">Semua Status</option>
                 <option value="Diajukan" <?php echo ($selected_status_proposal == 'Diajukan' ? 'selected' : ''); ?>>Diajukan</option>
                 <option value="Disetujui" <?php echo ($selected_status_proposal == 'Disetujui' ? 'selected' : ''); ?>>Disetujui</option>
-                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak</option>
+                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak / Dibatalkan</option>
+                 <option value="Pembatalan Diajukan" <?php echo ($selected_status_proposal == 'Pembatalan Diajukan' ? 'selected' : ''); ?>>Pembatalan Diajukan</option>
             </select>
             
              <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
@@ -344,6 +358,7 @@ $years = range($current_year, $current_year - 5);
                         <th>Nama Acara</th>
                         <th>Status Ditmawa</th>
                         <th>Status ASP</th>
+                        <th>Status Batal</th>
                         <th>Status Proposal</th>
                         <th>Aksi</th>
                     </tr>
@@ -351,7 +366,7 @@ $years = range($current_year, $current_year - 5);
                 <tbody>
                     <?php if (!empty($kegiatan_data)): ?>
                         <?php foreach ($kegiatan_data as $row): ?>
-                            <tr>
+                            <tr <?php if($row['pengajuan_status_pembatalan'] == 'Diajukan') echo 'style="background-color: #fff3cd; border: 2px solid #ffc107;"'; ?>>
                                 <td><?php echo htmlspecialchars(date('d F Y', strtotime($row['pengajuan_tanggalEdit']))); ?></td>
                                 <td><?php echo htmlspecialchars(date('d F Y', strtotime($row['pengajuan_event_tanggal_mulai']))); ?></td>
                                 <td><?php echo htmlspecialchars($row['nama_pengaju']); ?></td>
@@ -359,6 +374,17 @@ $years = range($current_year, $current_year - 5);
                                 <td><?php echo htmlspecialchars($row['pengajuan_namaEvent']); ?></td>
                                 <td><span class="status-badge <?php echo strtolower(htmlspecialchars($row['pengajuan_status_ditmawa'])); ?>"><?php echo htmlspecialchars($row['pengajuan_status_ditmawa']); ?></span></td>
                                 <td><span class="status-badge <?php echo strtolower(htmlspecialchars($row['pengajuan_status_asp'])); ?>"><?php echo htmlspecialchars($row['pengajuan_status_asp']); ?></span></td>
+                                <td>
+                                    <?php if ($row['pengajuan_status_pembatalan'] == 'Diajukan'): ?>
+                                        <span class="status-badge diajukan_batal">Diajukan</span>
+                                    <?php elseif ($row['pengajuan_status_pembatalan'] == 'Disetujui'): ?>
+                                        <span class="status-badge dibatalkan">Disetujui</span>
+                                    <?php elseif ($row['pengajuan_status_pembatalan'] == 'Ditolak'): ?>
+                                        <span class="status-badge ditolak">Ditolak</span>
+                                    <?php else: ?>
+                                        <span class="status-badge" style="background-color: var(--text-light);">N/A</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><span class="status-badge <?php echo strtolower(htmlspecialchars($row['pengajuan_status_proposal'])); ?>"><?php echo htmlspecialchars($row['pengajuan_status_proposal']); ?></span></td>
                                 <td>
                                     <div class="action-buttons">
@@ -368,7 +394,7 @@ $years = range($current_year, $current_year - 5);
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="9" style="text-align:center; padding: 20px;">Tidak ada data kegiatan event untuk filter ini.</td></tr>
+                        <tr><td colspan="10" style="text-align:center; padding: 20px;">Tidak ada data kegiatan event untuk filter ini.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -427,7 +453,7 @@ $years = range($current_year, $current_year - 5);
                 <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                 <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                 <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                <a href="https.www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
             </div>
         </div>
     </div>

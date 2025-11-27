@@ -197,6 +197,9 @@ $years = range($current_year, $current_year - 5);
         .page-link:hover { background-color: #f8f9fa; border-color: #dee2e6; }
         .page-link.active { background-color: var(--secondary-color); color: #ffffff; border-color: var(--secondary-color); }
         .page-link.disabled { color: #8895a7; pointer-events: none; background-color: #f9fafb; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: var(--primary-color); }
     </style>
 </head>
 <body>
@@ -360,7 +363,14 @@ $years = range($current_year, $current_year - 5);
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li>
                 <li><a href="mailto:rektorat@unpar.ac.id" style="color: inherit; text-decoration: none;"><i class="fas fa-envelope"></i> rektorat@unpar.ac.id</a></li>
             </ul>
+            <div class="social-icons">
+                    <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
         </div>
+
     </div>
 </footer>
 

@@ -189,7 +189,7 @@ $conn->close();
                     <span class="user-name"><?php echo htmlspecialchars($nama_ditmawa); ?></span>
                     <i class="fas fa-user-circle icon"></i>
                 </a>
-                <a href="logout.php"><i class="fas fa-sign-out-alt icon"></i></a>
+                <a href="logout.php"><i class="fas fa-sign-out-alt icon"style="color:black;"></i></a>
             </div>
         </nav>
     </header>

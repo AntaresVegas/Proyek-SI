@@ -58,6 +58,22 @@ if (!$sekretariat_data) {
         .card-header { font-size: 1.8em; margin-bottom: 25px; color: #333; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
         .profile-details dt { font-weight: 600; color: #555; font-size: 0.9em; margin-bottom: 5px; }
         .profile-details dd { color: #333; font-size: 1.1em; margin-left: 0; margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 8px; }
+        .page-footer { background-color: #464E51; color: #E0E0E0; padding: 40px 0; margin-top: auto; }        .footer-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 30px; }
+        .footer-left { display: flex; align-items: center; gap: 20px; }
+        .footer-logo { width: 60px; height: 60px; }
+        .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #FFFFFF; }
+        .footer-right ul { list-style: none; padding: 0; margin: 0; }
+        .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 1.5rem 0; margin-top: 20px; border-top: 1px solid #e5e7eb; }
+        .pagination-info { color: #8895a7; font-size: 0.9rem; }
+        .pagination-links { display: flex; gap: 5px; }
+        .page-link { text-decoration: none; padding: 0.5rem 1rem; border: 1px solid #e5e7eb; background: #ffffff; color: var(--secondary-color); border-radius: 8px; font-weight: 500; transition: background 0.2s, color 0.2s; }
+        .page-link:hover { background-color: #f8f9fa; border-color: #dee2e6; }
+        .page-link.active { background-color: var(--secondary-color); color: #ffffff; border-color: var(--secondary-color); }
+        .page-link.disabled { color: #8895a7; pointer-events: none; background-color: #f9fafb; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: var(--primary-color); }
     </style>
 </head>
 <body>
@@ -94,6 +110,29 @@ if (!$sekretariat_data) {
         </dl>
     </div>
 </div>
-
+    <footer class="page-footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo">
+                <div>
+                    <h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4>
+                    <h3 style="font-weight: bold; margin-top: 5px;">SEKRETARIAT UNIVERSITAS</h3>
+                </div>
+            </div>
+            <div class="footer-right">
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li>
+                    <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li>
+                    <li><i class="fas fa-envelope"></i> rektorat@unpar.ac.id</li>
+                </ul>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
