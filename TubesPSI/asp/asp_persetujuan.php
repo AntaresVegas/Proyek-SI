@@ -60,11 +60,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['pengajuan_id'], $_POST
 
 $pengajuan_id = $_GET['id'] ?? null;
 if ($pengajuan_id) {
-    $sql = "SELECT pe.*, m.mahasiswa_nama, m.mahasiswa_email, m.mahasiswa_npm, m.mahasiswa_jurusan,
+    // [MODIFIKASI] Query ditambah 'pe.surat_izin_kegiatan_file'
+    $sql = "SELECT pe.*,
+                   pe.surat_izin_kegiatan_file, -- <--- DITAMBAHKAN
+                   CASE 
+                       WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_nama
+                       WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_nama
+                       ELSE 'N/A'
+                   END AS nama_pengaju,
+                   CASE 
+                       WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_email
+                       WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_email
+                       ELSE 'N/A'
+                   END AS email_pengaju,
+                   CASE 
+                       WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_npm
+                       WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_NIK
+                       ELSE 'N/A'
+                   END AS identitas_pengaju,
+                   CASE 
+                       WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_jurusan
+                       WHEN pe.pengaju_tipe = 'ditmawa' THEN 'Direktorat Kemahasiswaan'
+                       ELSE 'N/A'
+                   END AS unit_pengaju,
                    GROUP_CONCAT(DISTINCT r.ruangan_nama SEPARATOR ', ') AS nama_ruangan,
                    GROUP_CONCAT(DISTINCT g.gedung_nama SEPARATOR ', ') AS nama_gedung
             FROM pengajuan_event pe
             LEFT JOIN mahasiswa m ON pe.pengaju_id = m.mahasiswa_id AND pe.pengaju_tipe = 'mahasiswa'
+            LEFT JOIN ditmawa d ON pe.pengaju_id = d.ditmawa_id AND pe.pengaju_tipe = 'ditmawa'
             LEFT JOIN peminjaman_ruangan pr ON pe.pengajuan_id = pr.pengajuan_id
             LEFT JOIN ruangan r ON pr.ruangan_id = r.ruangan_id
             LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
@@ -111,10 +134,13 @@ $conn->close();
         .detail-grid { display: grid; grid-template-columns: 220px 1fr; gap: 15px 20px; margin-bottom: 30px; }
         .detail-grid dt { font-weight: 600; color: #555; }
         .detail-grid dd { color: #333; display: flex; align-items: center; }
-        .download-link { text-decoration: none; color: #007bff; font-weight: 500; margin-left: 10px; }
+        .download-link { text-decoration: none; color: #007bff; font-weight: 500; }
         .download-link i { margin-right: 5px; }
-        .action-form hr { border: 0; border-top: 1px solid #e0e0e0; margin: 30px 0; }
-        .action-form h2 { font-size: 20px; color: #333; margin-bottom: 15px; }
+        
+        /* [MODIFIKASI] CSS hr dan h2 dibuat global */
+        hr { border: 0; border-top: 1px solid #e0e0e0; margin: 30px 0; }
+        h2 { font-size: 20px; color: #333; margin-bottom: 15px; }
+        
         .action-form textarea { width: 100%; padding: 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; min-height: 100px; margin-bottom: 20px; }
         .button-group { display: flex; gap: 15px; justify-content: flex-end; }
         .button-group button { padding: 10px 25px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; color: white; cursor: pointer; }
@@ -161,13 +187,13 @@ $conn->close();
             <dd><span class="status-badge <?php echo strtolower(htmlspecialchars($event_data['pengajuan_status_proposal'])); ?>"><?php echo htmlspecialchars($event_data['pengajuan_status_proposal']); ?></span></dd>
             
             <dt>Nama Pengaju</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_nama'] ?? 'N/A'); ?></dd>
+            <dd><?php echo htmlspecialchars($event_data['nama_pengaju'] ?? 'N/A'); ?></dd>
             <dt>Email</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_email'] ?? 'N/A'); ?></dd>
-            <dt>NPM</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_npm'] ?? 'N/A'); ?></dd>
-            <dt>Jurusan</dt>
-            <dd><?php echo htmlspecialchars($event_data['mahasiswa_jurusan'] ?? 'N/A'); ?></dd>
+            <dd><?php echo htmlspecialchars($event_data['email_pengaju'] ?? 'N/A'); ?></dd>
+            <dt>NPM / NIK</dt>
+            <dd><?php echo htmlspecialchars($event_data['identitas_pengaju'] ?? 'N/A'); ?></dd>
+            <dt>Jurusan / Unit</dt>
+            <dd><?php echo htmlspecialchars($event_data['unit_pengaju'] ?? 'N/A'); ?></dd>
 
             <dt>Nama Event</dt>
             <dd><?php echo htmlspecialchars($event_data['pengajuan_namaEvent']); ?></dd>
@@ -211,6 +237,24 @@ $conn->close();
             </dd>
         </dl>
         
+        <hr><h2>Surat Izin Kegiatan (SIK)</h2>
+        <dl class="detail-grid">
+            <dt>Status SIK</dt>
+            <?php if (!empty($event_data['surat_izin_kegiatan_file'])): ?>
+                <dd>
+                    <a href="../<?php echo htmlspecialchars($event_data['surat_izin_kegiatan_file']); ?>" class="download-link" target="_blank">
+                        <i class="fas fa-check-circle" style="color: green; margin-right: 8px;"></i> 
+                        <strong>Telah Diterbitkan. Klik untuk melihat.</strong>
+                    </a>
+                </dd>
+            <?php else: ?>
+                <dd>
+                    <i class="fas fa-clock" style="color: #ffc107; margin-right: 8px;"></i>
+                    <em>SIK belum diterbitkan oleh Sekretariat.</em>
+                </dd>
+            <?php endif; ?>
+        </dl>
+
         <?php if ($event_data['pengajuan_status_ditmawa'] === 'Disetujui' && $event_data['pengajuan_status_asp'] === 'Diajukan'): ?>
             <form method="POST" action="" class="action-form">
                 <hr><h2>Tindakan Persetujuan ASP</h2>

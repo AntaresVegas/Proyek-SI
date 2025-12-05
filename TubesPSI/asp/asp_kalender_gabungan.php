@@ -56,6 +56,9 @@ $activities_details_json = json_encode($activities_details);
         .modal-body .activity-item.type-kelas { border-left-color: var(--secondary-color); }
         .modal-body .activity-item h4 { font-size: 1.1rem; color: #333; margin-bottom: 10px; } .modal-body .activity-item span { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.95rem; color: #555; }
         .modal-body .activity-item i.fas { width: 18px; text-align: center; color: #888; } .modal-body .activity-item strong { min-width: 60px; display: inline-block; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #FFD700; }
     </style>
 </head>
 <body>
@@ -73,7 +76,12 @@ $activities_details_json = json_encode($activities_details);
     </div>
 </div>
 <div id="activityModal" class="modal"> <div class="modal-content"> <span class="close-button">&times;</span> <div class="modal-header"><h3 id="modalDate"></h3></div> <div class="modal-body" id="modalBody"></div> </div> </div>
-<footer class="page-footer"> <div class="footer-container"> <div class="footer-left"> <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo"> <div><h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4><h3 style="font-weight: bold; margin-top: 5px;">ADMINISTRASI SARANA & PRASARANA</h3></div> </div> <div class="footer-right"> <ul> <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li> <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li> <li><i class="fas fa-envelope"></i> asp@unpar.ac.id</li> </ul> </div> </div> </footer>
+<footer class="page-footer"> <div class="footer-container"> <div class="footer-left"> <img src="../img/logo.png" alt="Logo UNPAR" class="footer-logo"> <div><h4>UNIVERSITAS KATOLIK PARAHYANGAN</h4><h3 style="font-weight: bold; margin-top: 5px;">ADMINISTRASI SARANA & PRASARANA</h3></div> </div> <div class="footer-right"> <ul> <li><i class="fas fa-map-marker-alt"></i> Jln. Ciumbuleuit No. 94 Bandung 40141 Jawa Barat</li> <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li> <li><i class="fas fa-envelope"></i> asp@unpar.ac.id</li> </ul>                 <div class="social-icons">
+                    <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div></div> </div> </footer>
 <script> const calendarActivitiesData = <?php echo $calendar_activities_json; ?>; const activitiesDetailsData = <?php echo $activities_details_json; ?>; const allFloors = <?php echo json_encode($floors); ?>; const currentMonth = <?php echo $currentMonth; ?>; const currentYear = <?php echo $currentYear; ?>; </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

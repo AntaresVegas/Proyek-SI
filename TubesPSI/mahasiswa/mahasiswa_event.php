@@ -54,7 +54,7 @@ try {
         LEFT JOIN peminjaman_ruangan pr ON pe.pengajuan_id = pr.pengajuan_id
         LEFT JOIN ruangan r ON pr.ruangan_id = r.ruangan_id
         LEFT JOIN lantai l ON r.lantai_id = l.lantai_id
-        WHERE pe.pengajuan_status_ditmawa = 'Disetujui' AND (
+        WHERE pe.pengajuan_status_proposal = 'Disetujui'AND (
             (MONTH(pe.pengajuan_event_tanggal_mulai) = ? AND YEAR(pe.pengajuan_event_tanggal_mulai) = ?) OR
             (MONTH(pe.pengajuan_event_tanggal_selesai) = ? AND YEAR(pe.pengajuan_event_tanggal_selesai) = ?) OR
             (MONTH(pe.tanggal_persiapan) = ? AND YEAR(pe.tanggal_persiapan) = ?) OR
@@ -260,6 +260,7 @@ $calendar_events_json = json_encode($calendar_events);
     </div>
     <ul class="navbar-menu">
         <li><a href="mahasiswa_dashboard.php">Home</a></li>
+        <li><a href="mahasiswa_fasilitas.php">Fasilitas</a></li>
         <li><a href="mahasiswa_rules.php">Rules</a></li>
         <li><a href="mahasiswa_pengajuan.php">Form</a></li>
         <li><a href="mahasiswa_kalender_gabungan.php">Kalender Gabungan</a></li> 

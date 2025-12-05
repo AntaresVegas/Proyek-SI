@@ -12,6 +12,7 @@ $nama = $_SESSION['nama'] ?? 'Staff ASP';
 $selected_bulan = $_GET['bulan'] ?? '';
 $selected_tahun = $_GET['tahun'] ?? '';
 $search_event = $_GET['search_event'] ?? '';
+$selected_status_proposal = $_GET['status_proposal'] ?? ''; // [BARU] Mengambil data filter
 $kegiatan_data = [];
 
 // [BARU] Logika Paginasi (diambil dari ditmawa)
@@ -56,6 +57,21 @@ if (!empty($search_event)) {
     $types .= "s";
 }
 
+// [BARU] Logika filter status proposal (disesuaikan dengan logika TAMPILAN)
+if (!empty($selected_status_proposal)) {
+    if ($selected_status_proposal === 'Ditolak') {
+        // Jika filter 'Ditolak', cari semua yang statusnya Ditolak (baik oleh Ditmawa, ASP, atau Proposal itu sendiri)
+        $conditions[] = "(pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' OR pe.pengajuan_status_proposal = 'Ditolak')";
+    } elseif ($selected_status_proposal === 'Disetujui') {
+        // Jika filter 'Disetujui', Ditmawa/ASP tidak Ditolak, DAN status proposal 'Disetujui'
+        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Disetujui')";
+    } elseif ($selected_status_proposal === 'Diajukan') {
+        // Jika filter 'Diajukan', Ditmawa/ASP tidak Ditolak, DAN status proposal 'Diajukan'
+        $conditions[] = "(pe.pengajuan_status_ditmawa <> 'Ditolak' AND pe.pengajuan_status_asp <> 'Ditolak' AND pe.pengajuan_status_proposal = 'Diajukan')";
+    }
+}
+
+
 try {
     if (isset($conn)) {
         // [BARU] Query untuk COUNT
@@ -87,7 +103,14 @@ try {
             SELECT 
                 pe.pengajuan_id, pe.pengajuan_namaEvent, pe.pengajuan_event_tanggal_mulai,
                 pe.pengajuan_tanggalEdit, pe.pengajuan_status_ditmawa, pe.pengajuan_status_asp,
-                pe.pengajuan_status_proposal,
+                
+                -- [PERBAIKAN] Terapkan logika status proposal yang benar (sama seperti ditmawa)
+                CASE 
+                    WHEN pe.pengajuan_status_ditmawa = 'Ditolak' OR pe.pengajuan_status_asp = 'Ditolak' 
+                    THEN 'Ditolak' 
+                    ELSE pe.pengajuan_status_proposal 
+                END AS pengajuan_status_proposal,
+                
                 CASE
                     WHEN pe.pengaju_tipe = 'mahasiswa' THEN m.mahasiswa_nama
                     WHEN pe.pengaju_tipe = 'ditmawa' THEN d.ditmawa_nama
@@ -186,6 +209,9 @@ $years = range($current_year, $current_year - 5);
         .footer-left h4 { font-size: 1.2em; font-weight: 500; line-height: 1.4; color: #FFFFFF; }
         .footer-right ul { list-style: none; padding: 0; margin: 0; }
         .footer-right li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .footer-right .social-icons { margin-top: 20px; display: flex; gap: 15px; }
+        .footer-right .social-icons a { color: #FFFFFF; font-size: 1.5em; transition: color 0.3s; }
+        .footer-right .social-icons a:hover { color: #FFD700; }
 
         /* [BARU] CSS Untuk Paginasi (disesuaikan tema ASP) */
         .pagination-container {
@@ -280,6 +306,15 @@ $years = range($current_year, $current_year - 5);
                 <option value="">Semua Tahun</option>
                 <?php foreach ($years as $year) { echo '<option value="' . $year . '" ' . ($selected_tahun == $year ? 'selected' : '') . '>' . $year . '</option>'; } ?>
             </select>
+            
+            <label for="status_proposal">Status Proposal:</label>
+            <select name="status_proposal" id="status_proposal">
+                <option value="">Semua Status</option>
+                <option value="Diajukan" <?php echo ($selected_status_proposal == 'Diajukan' ? 'selected' : ''); ?>>Diajukan</option>
+                <option value="Disetujui" <?php echo ($selected_status_proposal == 'Disetujui' ? 'selected' : ''); ?>>Disetujui</option>
+                <option value="Ditolak" <?php echo ($selected_status_proposal == 'Ditolak' ? 'selected' : ''); ?>>Ditolak</option>
+            </select>
+            
             <label for="search_event" style="margin-left: 10px;">Cari Event:</label>
             <input type="text" id="search_event" name="search_event" placeholder="Masukkan nama event..." value="<?php echo htmlspecialchars($search_event); ?>">
 
@@ -378,6 +413,12 @@ $years = range($current_year, $current_year - 5);
                 <li><i class="fas fa-phone-alt"></i> (022) 203 2655</li>
                 <li><a href="mailto:asp@unpar.ac.id" style="color: inherit; text-decoration: none;"><i class="fas fa-envelope"></i> asp@unpar.ac.id</a></li>
             </ul>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/unparofficial" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/unparofficial/" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UCeIZdD9ul6JGpkSNM0oxcBw/featured" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@unparofficial" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
         </div>
     </div>
 </footer>
