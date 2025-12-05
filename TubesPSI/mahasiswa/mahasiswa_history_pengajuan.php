@@ -491,9 +491,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 <i class="fas fa-info-circle"></i> <strong>Informasi Pembatalan Event:</strong>
             </p>
             <ul>
-                <li>Pengajuan pembatalan hanya dapat dilakukan untuk event yang **SUDAH DISEUJUI oleh minimal satu pihak (Ditmawa ATAU ASP)**.</li>
-                <li>Jika event masih berstatus **'Diajukan'** (Belum ada persetujuan Ditmawa atau ASP), Anda dapat langsung melakukan perubahan/pembatalan dengan **mengedit ulang** pengajuan melalui tombol 'Detail' atau 'Edit Ulang' di kolom Aksi.</li>
-                <li>Permohonan pembatalan harus didasari alasan yang **urgen/mendesak** dan memerlukan persetujuan dari Direktorat Kemahasiswaan (Ditmawa).</li>
+                <li>Pengajuan pembatalan hanya dapat dilakukan untuk event yang <b>SUDAH DISEUJUI</b> oleh minimal satu pihak <b>(Ditmawa ATAU ASP).</b>    </li>
+                <li>Jika event masih berstatus <b>Diajukan</b> (Belum ada persetujuan Ditmawa atau ASP), Anda dapat langsung melakukan perubahan/pembatalan dengan <b>mengedit ulang</b> pengajuan melalui tombol 'Detail' atau 'Edit Ulang' di kolom Aksi.</li>
+                <li>Permohonan pembatalan harus didasari alasan yang <b>urgen/mendesak</b> dan memerlukan persetujuan dari Direktorat Kemahasiswaan (Ditmawa).</li>
             </ul>
         </div>
         <form method="GET" class="filter-form">
